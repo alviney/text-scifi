@@ -8,15 +8,35 @@
 
 A text-driven management/automation game with a CLI-style interface. The player reads status panels, schedules tasks, sets up automations, and tries to keep a fragile ship running across interstellar distances. The tone is industrial and utilitarian — think asset management software in space.
 
-### Win Condition
-<!-- TODO: What does "reaching the destination" look like? Is there a scoring system? Multiple endings? -->
-- Automate ship systems well enough to engage **frame jacking** — accelerating time passage to reach the destination.
-- Crew survival matters. How many survive affects the outcome.
+### The Journey
+- **Destination is known** — a star system, centuries away.
+- The journey takes **hundreds of years** of game time.
+- The player *must* eventually automate and frame jack — you can't micromanage for 300 years.
 
-### Lose Condition
-<!-- TODO: Is there a hard fail state, or does the game degrade gracefully? -->
-- Total crew loss?
-- Critical system failure (life support, navigation)?
+### Outcome Spectrum (narrative, no score)
+
+The ending is a **narrative outcome** based on ship and colony state at arrival. No numerical score — the player feels the result.
+
+| Outcome | Condition | Tone |
+|---------|-----------|------|
+| **Perfect arrival** | Nearly all 200 colonists alive, ship in good shape | Triumphant — a new beginning |
+| **Good arrival** | Most colonists alive, some losses along the way | Bittersweet — worth the cost |
+| **Rough arrival** | Significant losses, ship barely holding together | Somber — survival, but at a price |
+| **Skeleton arrival** | Handful of survivors, ship falling apart | Bleak — was it worth it? |
+| **Failure** | Everyone dead or ship destroyed before arrival | — |
+
+### Fail States
+- **Total crew death** — no active crew, and unable to unfreeze more (medbay destroyed, no power, no medical supplies).
+- **Critical system destruction** — reactor irrepairable, life support gone.
+- **Total colony loss** — all cryo pods lost (power shutdown, cascade failure).
+- The game **degrades gracefully** — things get worse before they become unrecoverable. There's always a window to scramble.
+
+### Difficulty Curve
+- **Equipment ages** — maintenance burden grows over the centuries.
+- **Asteroids are rare** — resources dwindle between encounters, stockpiling is essential.
+- **Crew attrition** — deaths shrink the available roster over time.
+- **Parts stockpiles deplete** — manufacturing must keep pace or things spiral.
+- **Cascading failures** — one neglected system breaks its dependents.
 
 ---
 
@@ -111,8 +131,83 @@ Ship
 └── ...
 ```
 
+### Ship Layout (~10 rooms, fixed)
+
+Room connectivity is flavour — it doesn't affect gameplay mechanics.
+Each room has its own LifeSupportNode (can be individually vented/failed).
+
+| Room                    | Purpose                                              |
+|-------------------------|------------------------------------------------------|
+| **Bridge**              | Navigation, comms, speed control, asteroid tracking  |
+| **Engineering**         | Fabrication, manufacturing, ship-wide system controls|
+| **Reactor / Power**     | Energy generation, power distribution                |
+| **Life Support**        | O₂, water recycling, atmosphere control              |
+| **Hydroponics**         | Food production, seed bank storage                   |
+| **Medbay**              | Crew health, cryo management, unfreeze recovery      |
+| **Quarters**            | Crew rest, morale, food consumption                  |
+| **Cargo Bay**           | Raw material storage, refined material storage       |
+| **Drone Bay**           | Drone launch/recovery, asteroid harvesting ops       |
+| **Maintenance Corridor**| Hull access, external repairs, high-danger zone      |
+
+### Per-Room Equipment: LifeSupportNode
+
+Every room has a **LifeSupportNode** — local atmosphere control (air, temp, pressure). These are regular equipment that degrade and need maintenance. The ship-wide Life Support room feeds O₂/water to all nodes, but each node can fail or be vented independently.
+
+```
+Life Support (System)
+├── O₂ Generator (ship-wide, in Life Support room)
+├── Water Recycler (ship-wide, in Life Support room)
+├── Atmosphere Regulator (ship-wide, in Life Support room)
+└── LifeSupportNode × 10 (one per room)
+    ├── Local air, temp, pressure
+    ├── Can vent room (e.g. fire response)
+    └── Degrades independently
+```
+
+If a node fails → that room becomes dangerous. If the ship-wide O₂ generator fails → all nodes eventually starve. Cascading failure.
+
+### Equipment Catalogue
+
+**Passive equipment** (bunks, seed vault, storage racks) does **not degrade** — no maintenance needed.
+
+| Room | Equipment | Danger | Consumables / Parts | Passive? |
+|------|-----------|--------|---------------------|----------|
+| **Bridge** | Nav Computer | Low | Electronics | |
+| | Comms Array | Low | Electronics | |
+| | Speed Controller | Low | — | Yes |
+| **Engineering** | Fabricator | Med | Metal parts, electronics, power | |
+| | Smelter / Refinery | Med | Filters, power | |
+| | Workbench | Low | Tools | |
+| **Reactor** | Reactor Core | High | Coolant, fuel rods | |
+| | Power Distribution | Med | Circuit breakers | |
+| | Solar Array Control | Low | — | |
+| **Life Support** | O₂ Generator | High | Water, filters | |
+| | Water Recycler | Med | Filters, chemical compounds | |
+| | Atmosphere Regulator | Med | Sensors | |
+| **Hydroponics** | Grow Beds | Low | Seeds, water, fertiliser | |
+| | Irrigation System | Low | Pumps, seals | |
+| | Seed Vault | Low | — | Yes |
+| **Medbay** | Cryo Control | High | Medical supplies, power | |
+| | Med Station | Med | Medical supplies | |
+| | Diagnostic Scanner | Low | Electronics | |
+| **Quarters** | Food Dispenser | Low | Food | |
+| | Bunks | Low | — | Yes |
+| | Rec Terminal | Low | Power | |
+| **Cargo Bay** | Storage Racks | Low | — | Yes |
+| | Loading Crane | Med | Metal parts, seals | |
+| **Drone Bay** | Drone Launcher | Med | Drones, fuel | |
+| | Drone Fabricator | Med | Metal parts, electronics | |
+| | Docking Clamp | Med | Seals | |
+| **Maintenance Corridor** | Hull Access Panel | High | Plating, seals, tools | |
+| | Pressure Doors | High | Seals, sensors | |
+| | Utility Conduits | Med | Various | |
+
+*Plus a LifeSupportNode in every room (Med danger, needs filters/sensors).*
+
+~30 active equipment pieces + ~4 passive + 10 LifeSupportNodes = ~44 total items.
+
 ### Equipment Degradation
-- All equipment degrades over time (per tick).
+- Active equipment degrades over time (per game-hour). Passive does not.
 - **Maintenance window**: hasn't been serviced in N days → moves to "at risk".
 - **Danger rating**: Low / Medium / High.
   - High-danger equipment left unmaintained increases risk to the crew member repairing it.
@@ -194,30 +289,68 @@ This rewards having the right crew awake and makes specialists feel distinct fro
 
 ## 6. Resources & Economy
 
-### Raw Materials
-- Sourced from **asteroid harvesting** via drones.
-- Asteroids enter range at random intervals (every N years).
+### Raw Materials (from asteroids)
+
+Sourced via **drone harvesting**. Asteroids are **rare** — every few years — so stockpiling and rationing are core gameplay.
+
+- Asteroids enter range at random intervals.
   - Limited **window of availability** — after which delta-v cost is prohibitive.
-  - Yields: water, metals, rare elements, volatiles.
   - Reference: *Delta-V* by Daniel Suarez for hard-sci-fi asteroid mining.
 
-### Production Chains
-<!-- TODO: Map out the production chains -->
+| Raw Material     | Refined Into           | Used For                          |
+|------------------|------------------------|-----------------------------------|
+| Water ice        | Water                  | Drinking, hydroponics, O₂        |
+| Metal ore        | Refined metal          | Parts, plating, tools, structure  |
+| Silicates        | Silicon                | Electronics, solar panels         |
+| Volatiles        | Chemical compounds     | Fuel, medical supplies, fertiliser|
+| Rare elements    | Rare compounds         | Advanced electronics, medical     |
+
+### Production Chains (3-4 steps deep)
+
 ```
-Asteroid → Raw Ore → Refined Metal → Parts → Equipment
-Seed Bank → Hydroponics → Food
-Water Ice → Water → Life Support / Hydroponics
+REFINING (Engineering)
+  Water ice       → Water
+  Metal ore       → Refined metal
+  Silicates       → Silicon
+  Volatiles       → Chemical compounds
+  Rare elements   → Rare compounds
+
+INTERMEDIATE PRODUCTS (Engineering)
+  Refined metal              → Metal parts (structural, mechanical)
+  Silicon + Rare compounds   → Electronics (boards, sensors)
+  Chemical compounds         → Seals, medical supplies, fertiliser
+
+FINAL ASSEMBLY (Engineering)
+  Metal parts + Electronics + Seals → Equipment (pumps, motors, drones, solar panels)
+  Metal parts + Electronics         → Components (replacement parts for existing equipment)
+  Metal parts                       → Tools, plating, structural repairs
+
+FOOD (Hydroponics)
+  Seeds + Water + Fertiliser + Power → Food
+  Crop types: nutrition, medicinal, morale (coffee?)
+
+LIFE SUPPORT (continuous consumption)
+  Water       → O₂ (electrolysis) + drinking water
+  Power       → atmosphere regulation, heating
+  Filters     → air quality (consumable, manufactured from chemical compounds)
 ```
+
+### Recycling
+- Broken/replaced equipment can be **scrapped** back into raw materials at a loss.
+- Gives value to failed parts rather than just discarding them.
 
 ### Seed Bank
 - Finite stock of organic seeds for hydroponics.
-- Different crops for nutrition, medicine, morale?
+- Different crops for nutrition, medicine, morale.
 
 ### Energy
-- Solar panels (can be manufactured).
-- Power budget for all systems?
+- **Power is a budget.** The reactor produces a finite amount; the player allocates across systems.
+- Solar panels can be manufactured to supplement.
+- If power is critically low, the player may have to **shut down cryo tanks** — killing colonists to keep the ship alive.
+- Each room/system has a power draw. Shutting down non-essential systems frees up power.
 
-<!-- TODO: Is energy a bottleneck or just a background system? -->
+<!-- TODO: Specific power numbers — what draws how much? -->
+<!-- TODO: Can the reactor degrade / need fuel? Or is it always-on? -->
 
 ---
 
@@ -339,16 +472,52 @@ Water Ice → Water → Life Support / Hydroponics
 
 ---
 
-## 10. Open Questions
+## 10. Flavour Text & Narrative Content
 
-1. **Narrative** — Is there a story beyond "reach the destination"? Logs from previous AI? Crew backstories?
-2. **Difficulty** — What makes the game harder over time? Equipment age? Fewer crew? Longer gaps between asteroids?
-3. **Scale** — How big is the ship? How many rooms/systems/crew?
-4. **Saving** — Autosave? Manual save? Browser local storage?
-5. **Procedural generation** — Are asteroid encounters, equipment failures, crew events randomised?
-6. **Frame jacking risk** — What can go wrong if you frame jack too early? Cascade failures?
-7. **Tutorial / onboarding** — How does the player learn the systems?
-8. **Sound** — Any ambient audio, or purely visual?
+### Text Bank (v1 — no LLM needed)
+Even without an LLM, the game should have a **large bank of pre-written text** to keep the signal feed and events feeling alive and varied. These are selected contextually based on game state.
+
+- **Alert messages** — not just "Pump failed", but *why*: "Irrigation pump seized — looks like someone spilled coffee on the intake", "O₂ generator tripped after power fluctuation in Reactor room".
+- **Crew chatter** — idle dialogue in the feed: complaints about food, comments on workload, jokes, reactions to events.
+- **Incident descriptions** — varied flavour for equipment failures, accidents, near-misses.
+- **Milestone messages** — marking years passed, distance covered, crew birthdays, anniversaries of deaths.
+- **Mood-dependent lines** — crew text varies by their stats. A happy crew member quips; an exhausted one snaps.
+
+The text bank should be **large enough that repetition is rare** across a full playthrough. Tagged by context (equipment type, stat thresholds, event type) so the right lines surface at the right time.
+
+### Future: LLM Integration (requires internet)
+
+These features would use an LLM to replace/supplement the text bank with dynamic generation. Not for v1, but worth designing toward.
+
+### Crew Dialogue & Personality
+- Crew members speak in the signal feed — complaints, jokes, mourning, chatter.
+- The LLM generates dialogue grounded in **game state**: the crew member's stats (hunger, sleep, happiness, health), their backstory, recent events (deaths, accidents, victories), and their relationships.
+- A hungry, exhausted engineer who just lost a friend talks differently than a well-rested, happy one.
+- The player overhears crew rather than conversing with them — you're the AI, not their peer.
+
+### Crew Agency & Refusal
+- Crew aren't just obedient task queues — they can **push back**.
+- Ask someone to do a high-danger repair on no sleep? They might refuse, demand someone else go, or do it reluctantly (affecting quality/risk).
+- The LLM evaluates the crew member's state + personality + task danger to decide their response.
+- Gives the happiness and relationship stats real mechanical teeth.
+- The player has to manage *people*, not just task queues.
+
+### Context the LLM receives per interaction
+- Crew member's full stats + backstory + personality traits
+- Recent event log (what's happened to them and around them)
+- Current ship state (what's broken, who's died, resource levels)
+- The specific task or situation triggering the dialogue
+
+---
+
+## 11. Open Questions
+
+1. **Saving** — Autosave? Manual save? Browser local storage?
+2. **Procedural generation** — Are asteroid encounters, equipment failures, crew events randomised?
+3. **Frame jacking risk** — What can go wrong if you frame jack too early? Cascade failures?
+4. **Tutorial / onboarding** — How does the player learn the systems?
+5. **Sound** — Any ambient audio, or purely visual?
+6. **Crew backstories** — Pre-written or generated? How deep?
 
 ---
 
