@@ -180,7 +180,9 @@ If a node fails → that room becomes dangerous. If the ship-wide O₂ generator
 | | Workbench | Low | Tools | |
 | **Reactor** | Reactor Core | High | Coolant, fuel rods | |
 | | Power Distribution | Med | Circuit breakers | |
-| | Solar Array Control | Low | — | |
+| | Battery Bank | Med | Cells, electronics | |
+| | RTG Bank | Low | — | |
+| | Aux Array Control | Low | — | |
 | **Life Support** | O₂ Generator | High | Water, filters | |
 | | Water Recycler | Med | Filters, chemical compounds | |
 | | Atmosphere Regulator | Med | Sensors | |
@@ -204,7 +206,10 @@ If a node fails → that room becomes dangerous. If the ship-wide O₂ generator
 
 *Plus a LifeSupportNode in every room (Med danger, needs filters/sensors).*
 
-~30 active equipment pieces + ~4 passive + 10 LifeSupportNodes = ~44 total items.
+~32 active equipment pieces + ~4 passive + 10 LifeSupportNodes = ~46 total items.
+
+<!-- "Solar Array Control" renamed "Aux Array Control", and Battery Bank / RTG Bank added,
+     to match the generation model in §6 Energy. See Open Question 9. -->
 
 ### Equipment Degradation
 - Active equipment degrades over time (per game-hour). Passive does not.
@@ -214,7 +219,107 @@ If a node fails → that room becomes dangerous. If the ship-wide O₂ generator
   - The longer the neglect, the higher the accident chance.
 
 ### Equipment States
-<!-- TODO: Define the full state machine — operational, degraded, at-risk, failed, destroyed? -->
+
+Two **orthogonal tracks** rather than one combinatorial state machine. Almost everything
+is derived from two numbers, so the sim never manages transitions by hand.
+
+#### Track 1 — Condition (derived from `condition: 0-100`)
+
+| Band | State | Effect |
+|------|-------|--------|
+| 85-100 | `NOMINAL`   | Full output |
+| 60-85  | `WORN`      | Full output; flavour chatter in the feed |
+| 30-60  | `DEGRADED`  | Output scales down linearly; consumable draw rises |
+| 0-30   | `AT_RISK`   | As degraded, plus a per-hour failure roll |
+| —      | `FAULTED`   | **Latched.** Output zero. Repairable in place. |
+| —      | `DESTROYED` | **Latched.** Beyond repair — needs a replacement unit built. |
+
+`FAULTED` and `DESTROYED` are latched flags (set by an event, cleared by a task).
+Every other band is a pure function of `condition` — no transition bookkeeping.
+
+#### Track 2 — Duty (what it's doing right now)
+
+| State | Meaning |
+|-------|---------|
+| `RUNNING`   | Powered, fed, producing |
+| `IDLE`      | Powered, nothing queued |
+| `OFFLINE`   | Player switched it off (power saving, mothballing) |
+| `UNPOWERED` | Power budget cut it |
+| `STARVED`   | Missing an input consumable |
+
+```
+effectiveOutput = rated × conditionFactor(condition) × (duty === RUNNING ? 1 : 0)
+```
+
+A room's status dot on the main screen = the **worst** of (condition band, duty state)
+across its assets. That's the whole green/amber/red rule.
+
+#### Ageing — the difficulty curve in one number
+
+Each asset also carries **`maxCondition`**, starting at 100.
+
+- A repair restores `condition` up to `maxCondition` — never past it.
+- Every repair costs a little `maxCondition` (refurbishment loss): ~0.5 for routine
+  servicing, ~2-3 for a `FAULTED` rebuild.
+
+Everything the difficulty curve needs falls out of that one decaying ceiling:
+
+- Old kit needs servicing **more often** — less headroom above the `AT_RISK` line.
+- Eventually `maxCondition` drops below the `DEGRADED` line and the asset is a permanent
+  liability. The only fix is **replacement**, which costs manufacturing throughput, which
+  costs asteroid material, which is the scarcest thing in the game.
+- No separate "ageing system" to tune. One number, monotonically falling.
+
+#### Degradation rate
+
+```
+wearPerHour = baseWear × dutyFactor × environmentFactor × ageFactor
+```
+
+| Factor | Range | Notes |
+|--------|-------|-------|
+| `baseWear` | per asset class | Reactor Core wears far faster than a Nav Computer |
+| `dutyFactor` | 0.0 - 1.0 | `RUNNING` 1.0, `IDLE` 0.25, `OFFLINE` 0.0 — mothballing genuinely works |
+| `environmentFactor` | 1.0 - 3.0+ | Room's LifeSupportNode faulted or vented → ×3; fire/radiation higher |
+| `ageFactor` | 1.0 - 2.0 | Rises as `maxCondition` falls |
+
+**Scale check.** Tune `baseWear` so an untouched healthy asset takes ~2 game-years to fall
+from 100 to the `AT_RISK` line — roughly **0.005 condition/game-hour**. Across ~44 assets
+over a 300-year journey that's on the order of **13,000 maintenance tasks per playthrough**.
+
+Nobody hand-schedules that. The numbers are what *force* the automation layer — that's
+deliberate. The tuning target is: **unmanageable by hand, comfortable once automated.**
+
+#### Repair accident risk
+
+```
+accidentChance = dangerRating × (1 - condition/100) × crewFactor
+```
+
+`crewFactor` derives from the crew member's sleep, health, and specialisation match.
+A sleep-deprived generalist sent at an `AT_RISK` High-danger Reactor Core is where crew
+die — and the player will have chosen that, which is the point.
+
+#### Transitions
+
+| Trigger | Result |
+|---------|--------|
+| `condition` reaches 0 | → `FAULTED` |
+| `AT_RISK` per-hour failure roll succeeds | → `FAULTED` (early and unpredictable) |
+| Cascade event (fire, decompression) or a `FAULTED` dependency | → `DESTROYED` |
+| Repair task completes | `condition = maxCondition`; `maxCondition -= refurbLoss` |
+| Replacement installed | New asset, `maxCondition = 100` |
+
+#### Events emitted (feeds §5)
+
+Every active asset emits on band and duty changes, so automations bind to states without
+any special-casing:
+
+`state:worn` · `state:degraded` · `state:atRisk` · `state:faulted` · `state:destroyed`
+`duty:starved` · `duty:unpowered` · `duty:offline`
+
+This is what makes the canonical automation trivial to express:
+*"on `state:atRisk` → post a repair task to the board."*
 
 ---
 
@@ -344,13 +449,170 @@ LIFE SUPPORT (continuous consumption)
 - Different crops for nutrition, medicine, morale.
 
 ### Energy
-- **Power is a budget.** The reactor produces a finite amount; the player allocates across systems.
-- Solar panels can be manufactured to supplement.
-- If power is critically low, the player may have to **shut down cryo tanks** — killing colonists to keep the ship alive.
-- Each room/system has a power draw. Shutting down non-essential systems frees up power.
 
-<!-- TODO: Specific power numbers — what draws how much? -->
-<!-- TODO: Can the reactor degrade / need fuel? Or is it always-on? -->
+**Power is the spine.** It is the only system that touches every other one, and it is what
+turns "shut down cryo tanks" from flavour text into a decision the player actually has to make.
+
+Unit: **kW**. All figures below are draw at full duty.
+
+#### Generation
+
+| Source | Output | Notes |
+|--------|--------|-------|
+| **Reactor Core** | 1,000 kW nominal | Degrades like any other asset (§4). Output scales with condition. |
+| **RTG Bank** | 12 kW each | Manufactured. Output decays ~0.8%/year (half-life). Always-on trickle. |
+| **Battery Bank** | 6 h of critical-only load | Buffer, not a source. Recharges from surplus. |
+
+**The reactor is an asset, not a constant.** Its output runs through the same
+`conditionFactor` as everything else in §4:
+
+```
+output = 1000 × conditionFactor(condition)
+conditionFactor = 1.0            when condition ≥ 60
+                = 0.4 + 0.6×(condition/60)   below 60
+```
+
+| Reactor condition | Band | Output |
+|-------------------|------|--------|
+| 100-60 | `NOMINAL` / `WORN` | 1,000 kW |
+| 45 | `DEGRADED` | 850 kW |
+| 30 | `AT_RISK` boundary | **700 kW** |
+| 15 | `AT_RISK` | 550 kW |
+| — | `FAULTED` | 0 kW — battery bank, then RTGs only |
+
+This is the single most important consequence in the design:
+
+> **A reactor that slips into `AT_RISK` cannot power the ship's baseline load.**
+
+The §4 ageing curve *is* the §6 crisis curve. One decaying number produces the whole
+mid-game squeeze — no separate escalation system needed.
+
+#### Fuel
+
+The reactor burns **fuel rods**, measured in *rod-years*: one rod = one year at nominal
+(1,000 kW) output, **scaling with actual delivered load**. Draw less, burn slower.
+
+- Ship departs with **320 rods**.
+- Baseline load (below) is ~0.89 nominal → ~360 years of burn against a 300-year journey.
+  A **~20% margin**, and no more.
+- More rods can be fabricated from **rare compounds** — the scarcest asteroid yield (§6).
+
+So power is *not free even when you have headroom*. Running the smelter around the clock
+doesn't just risk a brownout, it spends journey margin. Every rod inserted is a signal-feed
+event and a natural milestone marker for §10 ("*rod 47 seated — 273 remaining*").
+
+#### Load table
+
+**Continuous** — drawing whenever healthy and powered:
+
+| Asset | kW | Shed class |
+|-------|----|------------|
+| Cryo Control — 8 banks × 50 kW | **400** | `critical` (manual only) |
+| O₂ Generator | 90 | `critical` |
+| Grow Beds | 120 | `dimmable` |
+| LifeSupportNode × 10 @ 8 kW | 80 | `dimmable` (per room) |
+| Water Recycler | 40 | `dimmable` |
+| Atmosphere Regulator | 25 | `critical` |
+| Comms Array | 20 | `sheddable` |
+| Med Station | 20 | `critical` |
+| Nav Computer | 15 | `critical` |
+| Irrigation System | 15 | `dimmable` |
+| Power Distribution | 10 | `critical` |
+| Diagnostic Scanner | 10 | `sheddable` |
+| Pressure Doors | 10 | `critical` |
+| Docking Clamp | 10 | `sheddable` |
+| Aux Array Control | 5 | `sheddable` |
+| Food Dispenser | 5 | `sheddable` |
+| Rec Terminal | 5 | `sheddable` |
+| Utility Conduits | 5 | `critical` |
+| Hull Access Panel | 5 | `sheddable` |
+| **Continuous baseline** | **890 kW** | |
+
+**Intermittent** — draws only in `RUNNING` duty (§4), i.e. when actually working:
+
+| Asset | kW |
+|-------|----|
+| Smelter / Refinery | 140 |
+| Fabricator | 100 |
+| Drone Fabricator | 80 |
+| Drone Launcher | 60 |
+| Loading Crane | 30 |
+| Workbench | 5 |
+| **Industrial peak** | **415 kW** |
+
+#### The core tension
+
+```
+  Reactor nominal    1,000 kW
+  Continuous baseline  890 kW
+  ─────────────────────────────
+  Headroom             110 kW      ← you can run the Fabricator. Barely.
+  Industrial peak      415 kW      ← what you actually want to run.
+```
+
+**You cannot run life support, hydroponics, all eight cryo banks, and manufacture at the
+same time.** Not on day one, at a perfect reactor, with nothing broken. That's the design
+target: the budget is adversarial from the first hour and only gets worse.
+
+The player's levers, roughly in order of how much they cost:
+
+1. **Schedule industry** — smelt in bursts, not continuously. Cheap, just requires attention (or automation).
+2. **Shed empty rooms** — LifeSupportNodes in rooms with no crew. Up to ~70 kW free, and near-costless if you track where crew are.
+3. **Dim hydroponics** — 135 kW available, paid for in food throughput, paid for later in crew hunger.
+4. **Cut comms, rec terminal, scanner** — ~35 kW, paid for in morale and diagnostics.
+5. **Shut a cryo bank** — 50 kW. Twenty-five people die.
+
+#### Priority & load shedding
+
+Every asset carries a **power priority `0-9`** (player-settable, sane defaults shipped).
+When demand exceeds supply, **Power Distribution** sheds from the bottom up until it fits.
+
+- Shed asset → `UNPOWERED` duty state → emits `duty:unpowered` (§4) → automations can react.
+- **`dimmable`** assets scale output down instead of hard-cutting — grow beds run at 60%,
+  LifeSupportNodes hold a thinner atmosphere.
+- **`critical`** assets are never auto-shed. Only the player can turn them off, by hand.
+
+Setting priorities *is* the strategic layer — the same "configure it and trust it" contract
+as the automation console. A player who ranked cryo below hydroponics finds out during the
+first brownout, not before.
+
+**If shedding everything sheddable still isn't enough**, the bus enters a **cascade
+brownout**: everything runs degraded, and power fluctuation inflicts condition damage on
+active assets (§4). This is §1's "degrades gracefully" promise made mechanical — you get a
+window to scramble, and the window itself is costing you equipment.
+
+**Power Distribution is the dependency that matters.** If it goes `FAULTED`, the player
+loses load-shedding control entirely: priorities stop being honoured and brownouts hit
+whatever they hit. Repair it first.
+
+#### Cryo banks — the decision
+
+200 colonists in **8 banks of 25**. 50 kW per bank. Together, **40% of the ship's entire
+generating capacity**, permanently, for three centuries.
+
+- Shutting a bank kills its 25 colonists. **Irreversible.**
+- It can never be automated and never auto-shed. Hard confirmation, every time.
+- Every loss is logged permanently and counted in the §1 arrival outcome. The ending
+  narrative knows exactly how many people you spent, and when.
+- **You cannot wake them to save them.** The ship supports 6-8 active crew — hydroponics
+  can't feed 25 more. Mass-unfreezing swaps a clean death for starvation.
+
+That trap is the point. There is no clever way out; there is only choosing early enough
+that you only have to do it once.
+
+#### Failure modes
+
+| Event | Consequence |
+|-------|-------------|
+| Reactor `DEGRADED` | Output falls below baseline → permanent shedding becomes normal |
+| Reactor `FAULTED` (SCRAM) | Battery bank: ~6 h of critical-only load. Then RTGs (~tens of kW). Life support on RTGs alone is survivable for the crew; **cryo is not.** |
+| Power Distribution `FAULTED` | Priorities unenforced; shedding becomes arbitrary |
+| Fuel exhausted | Reactor stops. Same as SCRAM, but permanent. |
+| Cascade brownout | Condition damage across all active assets |
+
+<!-- TODO: Battery bank capacity in kWh, and how fast surplus recharges it. -->
+<!-- TODO: RTG fabrication cost — should the emergency margin be expensive enough to hurt? -->
+<!-- TODO: Does the reactor need coolant as a separate consumable (it's in the §4 catalogue), or is fuel enough? -->
 
 ---
 
@@ -518,6 +780,52 @@ These features would use an LLM to replace/supplement the text bank with dynamic
 4. **Tutorial / onboarding** — How does the player learn the systems?
 5. **Sound** — Any ambient audio, or purely visual?
 6. **Crew backstories** — Pre-written or generated? How deep?
+
+7. **Offline time — what happens when the app is closed?**
+   "No pause" (§2) plus a mobile-first platform (§8) collide here, and the answer changes
+   what kind of game this is.
+   - *(a) Sim suspends when the app closes.* "No pause" means no pause **button** during
+     play — you can't stop the ship to think — but backgrounding the app freezes the clock.
+   - *(b) Idle-game.* Elapsed real time is simulated on return. You could come back to a
+     dead ship after a weekend. Thematically superb, brutally punishing, and it makes the
+     speed slider almost meaningless.
+
+   **Proposal: (a).** It keeps the design intent (no stopping to think) without punishing
+   someone whose phone rings. Worth noting what it implies: at the 8,760× cap, 300 game-years
+   is **~5 real hours** of pure fast-forward — a *floor* on playthrough length, since real
+   play sits well below max speed. That number is the actual justification for the speed cap,
+   and it should be chosen deliberately rather than inherited from "1 year/minute sounds good".
+
+8. **The signal feed at high speed.**
+   The feed is the player's ambient awareness (§8) — but at 8,760× the ship generates
+   thousands of lines per real minute. It becomes unreadable exactly when the player is
+   relying on it most.
+
+   **Proposal:** give every signal a **severity** — `chatter` / `info` / `warn` / `critical` —
+   and let the speed slider raise the feed's floor. At high speed, chatter and info are
+   suppressed and rolled into periodic digest lines ("*47 maintenance tasks completed,
+   3 parts consumed*"); `warn` and `critical` always surface. This shares its plumbing with
+   the snap-back rules in §2 — snap-back is just "a `critical` signal went unacknowledged
+   for X game-hours" — and it gives the flavour text bank (§10) a natural home: chatter is
+   what you read at 1× and never see at 8,760×, which makes slowing down feel *different*
+   rather than just slower.
+
+9. **Solar panels don't work in interstellar space.**
+   §6 originally had "solar panels can be manufactured to supplement". Between stars there is
+   no meaningful sunlight — for the ~298 middle years of a 300-year journey a solar array
+   generates nothing. Options:
+   - *(a) Replace with RTG banks.* Radioisotope generators work anywhere, and their output
+     **decays over time** — a second ageing curve, thematically perfect for a ship slowly
+     running down. Downside: no interesting spatial variation.
+   - *(b) Keep solar, but only live at departure and arrival.* Makes the journey's first and
+     last decades mechanically distinct — you arrive and the power situation suddenly eases,
+     which is a lovely note to end on.
+   - *(c) Handwave it.*
+
+   **Provisionally took (a)** in the §6 numbers, because the emergency-margin role needed
+   something that works mid-journey. **(b) isn't exclusive with it** and is worth adding on
+   top — an arrival-phase power windfall would give the endgame a distinct texture. The
+   catalogue's "Solar Array Control" is renamed "Aux Array Control" pending this.
 
 ---
 
