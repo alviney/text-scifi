@@ -348,6 +348,29 @@ If a node fails → that room becomes dangerous. If the ship-wide O₂ generator
 <!-- "Solar Array Control" renamed "Aux Array Control", and Battery Bank / RTG Bank added,
      to match the generation model in §6 Energy. See Open Question 9. -->
 
+### Buffers and Backpressure
+
+Every producing asset has a small **input buffer** and **output buffer**, separate from ship
+stores (the abstract global pool held in the Cargo Bay).
+
+```
+ship stores ──► input buffer ──► [ ASSET ] ──► output buffer ──► ship stores
+                                                                  (haul task)
+```
+
+Only one transport hop exists, and it's a crew task, so it's automatable — but it can **jam**:
+
+- **Output buffer full** → the asset cannot start its next cycle. It stalls, silently, at full
+  health, with nothing broken.
+- **Input buffer empty** → `duty:starved` (§4).
+
+That is what turns a sequence of automations into a **chain**: a jam anywhere propagates
+*backwards* up the pipeline. A hauling task nobody picks up stops production three steps
+upstream, and the asset reporting the problem is not the asset that has it.
+
+Backpressure is the single most important property for §5c's chained automations — without it,
+production lines are just lists.
+
 ### Equipment Degradation
 - Active equipment degrades over time (per game-hour). Passive does not.
 - **Maintenance window**: hasn't been serviced in N days → moves to "at risk".
@@ -649,6 +672,231 @@ This rewards having the right crew awake and makes specialists feel distinct fro
 
 ---
 
+## 5c. Automation Cookbook
+
+Worked examples. These double as **test cases** for whoever implements §5, and the failure
+cases pin down what the console diagnostics have to catch.
+
+### How chains form
+
+There is no chaining primitive, and there shouldn't be. Because assets **listen anywhere and
+act only on themselves** (§5), a chain assembles itself out of ordinary rules:
+
+```
+asset A acts on itself  ─►  which emits an event  ─►  asset B is listening  ─►  B acts on itself
+```
+
+Nothing commands anything. The pipeline is **emergent**, which means it can also silently come
+apart — and that's the interesting part. Combined with buffers (§4), a chain has real hydraulics:
+it fills, it stalls, and it applies backpressure upstream.
+
+---
+
+### Chain 1 — Hydroponics, end to end
+
+The canonical chain, and the best place for a player to learn chaining because the consequences
+are slow and legible.
+
+**Stage 1 — keep fertiliser stocked** *(Fabricator, tier 0)*
+```
+[Fabricator]
+  ON    Inventory.fertiliser → removed
+  WHEN  limitUnder(40)
+  DO    queueJob(fertiliser, 20)
+```
+
+**Stage 2 — plant when a bed frees up** *(tier 0)*
+```
+[GrowBed-1..6]
+  ON    self → state:empty
+  WHEN  and( Inventory.seeds     limitOver(2),
+             Inventory.fertiliser limitOver(4),
+             Inventory.water      limitOver(20) )
+  DO    postTask("plant", back)
+```
+
+**Stage 3 — harvest against the clock** *(tier 0)*
+```
+[GrowBed-1..6]
+  ON    self → state:ripe
+  DO    postTask("harvest", FRONT)      ← 8-day window, then it spoils
+```
+
+**Stage 4 — clear the output buffer** *(tier 0, and the one everyone forgets)*
+```
+[GrowBed-1..6]
+  ON    self.outputBuffer → added
+  WHEN  limitOver(80%)
+  DO    postTask("haul to stores", front)
+```
+
+**Stage 5 — keep the galley fed** *(tier 0)*
+```
+[Food Dispenser]
+  ON    self.inputBuffer → removed
+  WHEN  limitUnder(20)
+  DO    postTask("restock dispenser", back)
+```
+
+#### The trap: synchronised ripening
+
+Stages 1-5 are individually correct, and together they will **starve the ship**.
+
+Plant all six beds the day the fertiliser arrives, and all six ripen on the same day. Six
+harvest tasks land on the board at once — and there is **one botanist**. She harvests two,
+maybe three, inside the 8-day window. The rest spoil: seeds gone, fertiliser gone, water gone,
+36 days of bed time gone, and a food gap 36 days wide with a 2% margin to absorb it.
+
+Then the surviving beds free up together, replant together, and it happens again.
+
+**Nothing is broken. Every rule fired correctly.** The player built a boom-bust oscillator out
+of five reasonable automations, and diagnosing that is the actual game.
+
+#### The fix: pipelining *(requires Scheduler Module)*
+
+Stop planting on availability. Plant on a **phase offset**:
+
+```
+[GrowBed-1]  ON every(36 days, offset  0)   WHEN <stage-2 conditions>  DO postTask("plant", back)
+[GrowBed-2]  ON every(36 days, offset  6)   ...
+[GrowBed-3]  ON every(36 days, offset 12)   ...
+[GrowBed-4]  ON every(36 days, offset 18)   ...
+[GrowBed-5]  ON every(36 days, offset 24)   ...
+[GrowBed-6]  ON every(36 days, offset 30)   ...
+```
+
+One harvest every six days, forever, one botanist, no spoilage. The player has discovered
+**pipelining** — and the Scheduler Module stops being a convenience unlock and becomes the thing
+that fixed their famine.
+
+It's still brittle: miss one planting for want of fertiliser and that bed idles a whole cycle
+while its slot marches on. The mature version adds a catch-up rule, which is where the Logic
+Core earns its keep:
+
+```
+[GrowBed-N]                                    ← recover a missed slot without re-synchronising
+  ON    self → state:empty
+  WHEN  and( self.idleFor after(8 days),
+             not( any(GrowBed.*) state:ripe ) )
+  DO    postTask("plant", back)
+```
+
+#### Don't forget the seed crop *(requires Telemetry Suite)*
+
+```
+[Seed Vault]
+  ON    projected(seeds, 20 years)
+  DO    emit(warn, "seed vault trending to exhaustion") + postTask("schedule seed crop", back)
+```
+
+Nothing else in the game warns about this. The vault drains over *centuries*, so no threshold
+alarm set in year 20 is meaningful, and by the time `limitUnder()` fires it is far too late to
+grow the seeds back. This is the clearest case in the design for why `projected()` is the top
+of the ladder.
+
+#### Where this chain breaks
+
+| Break | Symptom | Real cause |
+|-------|---------|------------|
+| No botanist awake | Beds sit `empty` and `ripe` simultaneously | §3 roster latency |
+| Fertiliser starved | Beds never plant | Chemical compounds went to seals/medicine (§7) |
+| Power brownout | Growth stretches, harvests drift late | Grow Beds are `dimmable` (§6) |
+| Output buffer full | Bed can't replant **after a successful harvest** | Nobody hauling — §4 backpressure |
+| Ripe + no harvester | Spoilage | Compounding: seeds, fertiliser, water, and 36 days |
+| Seed crop forgotten | *Nothing, for ~100 years* | Then irreversible |
+
+Note the fourth row. A bed that harvested perfectly can still stall, because the failure is
+**downstream** of it. The asset reporting the problem is not the asset that has it.
+
+---
+
+### Chain 2 — The encounter (a burst pipeline)
+
+Hydroponics is cyclic. This one fires once every three years and has a hard deadline.
+
+```
+[Drone Fabricator]                             ← 1. build ahead of the window
+  ON    Bridge → asteroid:detected
+  WHEN  and( Inventory.drones limitUnder(6), Inventory.rareCompounds limitOver(80) )
+  DO    queueJob(drone, 2)
+
+[Smelter]                                      ← 2. bank propellant before ops start
+  ON    Bridge → asteroid:detected
+  WHEN  Inventory.water limitUnder(400)
+  DO    queueJob(meltIce, 40)
+
+[Medbay / Cryo Control]                        ← 3. wake a pilot, allowing recovery time
+  ON    Bridge → asteroid:detected
+  WHEN  and( Crew.pilots.awake limitUnder(1), MissionProfile.window after(90 days) )
+  DO    postTask("unfreeze pilot", front)
+
+[Fabricator]                                   ← 4. stand down: the launcher needs the power
+  ON    DroneBay → window:open
+  DO    setPowerPriority(2)
+
+[Fabricator]                                   ← 5. and come back up
+  ON    DroneBay → window:close
+  DO    setPowerPriority(7)
+```
+
+Step 3 is the one with teeth. Unfreezing costs medical supplies and days of Medbay recovery, so
+the rule has to fire *early* — `window after(90 days)` — or the pilot is still convalescing when
+the Δv minimum passes. **A correct automation that fires too late is indistinguishable from no
+automation.**
+
+Steps 4-5 are the player automating their own power reallocation, which is the §6 harvest/industry
+alternation expressed as two rules.
+
+---
+
+### Failure gallery
+
+What the Automation Console exists to surface.
+
+**The dead rule** — perfectly good logic, poisoned input.
+```
+[Water Recycler]
+  ON  Inventory.water → removed   WHEN limitUnder(500)   DO postTask("restock", front)
+  ── last fired: 47 years ago ──
+```
+The water sensor drifted (§5): reports 900, actual 300. The console flags it; the sensor's own
+detail pane reads 22% condition. The information was always there.
+
+**The thrash** — a 1° deadband on a drifting, laggy sensor.
+```
+[LSN-Cargo]  A: ON self.temp limitUnder(15)  DO turnOn
+             B: ON self.temp limitOver(16)   DO turnOff
+  ── fired 40,118 times ──
+```
+The node hammers itself on and off, ageing at full `dutyFactor` for nothing. Fix: widen the
+deadband.
+
+**The one that should chill** — everything worked.
+```
+[Reactor Core]
+  ON  self → state:atRisk   DO postTask("service", front)
+  ── fired 34 times · oldest unclaimed: 1,847 days ──
+```
+Every rule fired correctly. No engineer has been awake for five years.
+
+**The interlock nobody adds until it's too late.** The naive fire response vents whatever room
+is burning — including one with people in it:
+```
+[LSN-Quarters]  A: ON FireAlarm.Quarters → alarm:fire
+                   WHEN and( on, not(Quarters.occupied) )   DO vent (self)
+                B: ON FireAlarm.Quarters → alarm:fire
+                   WHEN and( on, Quarters.occupied )
+                   DO emit(critical, "fire in occupied Quarters") + postTask("fire response", front)
+```
+The Logic Core isn't a convenience tier. It's the tier where you stop killing your own crew.
+
+<!-- TODO: Does `any(GrowBed.*)` imply an aggregate/query listener? If so it needs a home on
+     the §7 unlock ladder — probably Telemetry Suite. -->
+<!-- TODO: Should offsets be authored by hand, or should the Scheduler offer "stagger these N
+     assets" as a single action? Hand-authoring teaches more; the helper is kinder. -->
+
+---
+
 ## 6. Resources & Economy
 
 ### Raw Materials (from asteroids)
@@ -688,8 +936,8 @@ FINAL ASSEMBLY (Engineering)
   Refined metal                     → Tools, plating, structural repairs (Workbench)
   Rare compounds + Metal parts      → Fuel rods
 
-FOOD (Hydroponics)
-  Seeds + Water + Fertiliser + Power → Food
+FOOD (Hydroponics) — see "Grow Bed Cycle" below
+  2 Seeds + 4 Fertiliser + 20 Water + Power → 155 Food + 1.8 Seeds   (36 days)
   Crop types: nutrition, medicinal, morale (coffee?)
 
 LIFE SUPPORT (continuous consumption)
@@ -702,8 +950,47 @@ LIFE SUPPORT (continuous consumption)
 - Broken/replaced equipment can be **scrapped** back into raw materials at a loss.
 - Gives value to failed parts rather than just discarding them.
 
+### Grow Bed Cycle
+
+**Grow Beds are six individual bed assets**, not one machine. That's deliberate: six beds on
+independent cycles is what makes staggering possible, and staggering is a real player skill
+(§5c).
+
+| State | Meaning |
+|-------|---------|
+| `empty` | Ready to plant |
+| `growing` | ~36 days at full power — **stretches when dimmed** (§6 load shedding) |
+| `ripe` | Harvestable. **~8 day window.** |
+| `spoiled` | Missed the window. Crop lost, bed needs clearing before replanting. |
+
+Planting and harvesting are both **crew tasks** needing a botanist — so hydroponics is directly
+exposed to §3's roster latency. No botanist awake, no food, however healthy the beds are.
+
+| | |
+|---|---|
+| Planting cost | 2 seeds + 4 fertiliser + 20 water |
+| Harvest yield | **155 food** + 1.8 seeds |
+| Feeds | ~8 crew, at ~2% margin across the journey |
+
+**The margin is deliberately thin.** One spoiled crop is felt immediately — there is no slack to
+absorb a missed harvest.
+
 ### Seed Bank
-- Finite stock of organic seeds for hydroponics.
+
+The seed vault is finite, and a harvest returns only **90%** of the seeds it consumed. Left
+alone, hydroponics slowly starves itself — over 300 years the drift is ~3,500 seeds, far more
+than any plausible starting stock.
+
+The fix is a decision the player has to keep remembering:
+
+- A **seed crop** yields **6 seeds and no food**.
+- Running roughly **one planting in twenty** as a seed crop nets the vault slightly positive.
+
+So every twentieth harvest is deliberately sacrificed. Forget for a few decades and nothing
+whatsoever appears to be wrong — until the vault runs dry a century later and the colony
+starves in a way that cannot be repaired. A slow-burn consequence with no alarm attached to it,
+which is exactly what `projected()` (§5) exists for.
+
 - Different crops for nutrition, medicine, morale.
 
 ### Energy
