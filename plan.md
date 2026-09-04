@@ -268,6 +268,10 @@ Ship
 └── ...
 ```
 
+**The hierarchy is not just filing.** Facilities and Systems are **event participants**: they
+hold counters over their children and emit derived signals of their own. That's what lets §5
+keep every rule 1:1 — aggregation happens by walking up the tree, not by querying across it.
+
 ### Ship Layout (~10 rooms, fixed)
 
 Room connectivity is flavour — it doesn't affect gameplay mechanics.
@@ -503,15 +507,70 @@ cross-**acting** is what's forbidden.)*
 Why it holds: automations stay locally readable. To understand why a pump turned on, you read
 the pump's rules. Nothing else on the ship can have done it to it.
 
-### Two layers
+### Three tiers
 
-| Layer | Scope | Examples |
-|-------|-------|----------|
-| **Asset automations** | An asset acting on itself, or posting a task | Standing orders (§7), auto-shed, vent-on-fire, post-repair |
-| **Ship rules** | Global, player-authored, few | Snap-back (§2), speed changes, alert escalation |
+Every rule is 1:1 — one source, one condition, one action. Complexity comes from **where** a
+rule lives, not from making individual rules cleverer.
 
-Ship rules are the deliberate exception to "act on yourself" — they act on the *game*, not on
-equipment. Keeping them a separate, small category is what stops the asset rule from eroding.
+| Tier | Job | Complexity |
+|------|-----|------------|
+| **Asset** | React to its own state; post a task | Dumb, local, 1:1 |
+| **Facility / System** | Aggregate its children, compose conditions, emit derived signals | **Where the player does clever work** |
+| **Ship rules** | Snap-back (§2), speed, alert escalation | Global, few |
+
+Ship rules are the one deliberate exception to "act on yourself" — they act on the *game*, not
+on equipment. Keeping them small and separate is what stops the asset rule from eroding.
+
+### Facilities are the aggregators
+
+§4's hierarchy — Ship → Facility → System → Asset — is not just filing. **Facilities and systems
+are event participants**, and this is what removes any need for set-queries or wildcard listeners.
+
+A facility holds **counters over its children**, maintained by ordinary 1:1 listeners:
+
+```
+[GrowBed-3] → state:ripe      ─►  [Hydroponics] ripeCount.added
+[GrowBed-3] → state:empty     ─►  [Hydroponics] ripeCount.removed
+```
+
+Because `Countable` is already a shared trait and `limitOver` / `limitUnder` already exist,
+**aggregation needs no new primitives at all**:
+
+| Want | Write |
+|------|-------|
+| "any bed ripe" | `limitOver(0)` on `Hydroponics.ripeCount` |
+| "no bed ripe" | `limitUnder(1)` on `Hydroponics.ripeCount` |
+| "five or more assets at risk" | `limitOver(5)` on `Ship.atRiskCount` |
+
+No selector syntax, no wildcards, no query engine — and nothing that can't be built by tapping
+through menus on a phone (§8).
+
+**Composition lives here too.** A condition combining several inputs is computed **once**, at the
+facility, and distributed as a plain event:
+
+```
+[Hydroponics]   maintains  plantable        ← the one place the AND lives
+[GrowBed-1..6]  ON Hydroponics → plantable  ← six identical, dumb, 1:1 rules
+```
+
+Better than six beds each evaluating the same three-way condition: one place to author it, one
+place to change it, and the beds stay stupid.
+
+So the **Logic Core** (§7) isn't "make rules cleverer" — it's *author derived signals at the
+facility level*. What you buy is an instrument you built, which then composes upward:
+beds → Hydroponics → ship health. Player-built instruments stack; queries wouldn't.
+
+**And they inherit their sensors' lies.** A counter maintained incrementally drifts if an event
+drops — and §5 says worn sensors *do* drop events. Under a query model that would be a bug.
+Here it's the theme: your Hydroponics panel reads 2 ripe when 3 are, and you find out by looking.
+
+#### The cost: boilerplate
+
+Six beds means six listeners; ten LifeSupportNodes means ten. That's the honest price of 1:1.
+
+It's a **UI problem, not a semantic one.** A facility offers *one slot per child of type X*; the
+player fills it once with a template and it expands into N real listeners, each still individually
+visible, inspectable and overridable. No hidden magic, no new concepts.
 
 ### Events (things that happen)
 
@@ -630,9 +689,10 @@ there. The automation worked perfectly and nothing happened.
 This is the mechanism that makes §3's insurance premium bite — the cost of a thin roster isn't
 paid in throughput, it's paid here, in tasks that are correctly identified and never done. So:
 
-- The board tracks **backlog age** per task.
-- Stale tasks are a first-class **snap-back trigger** (§2): *"repair task unclaimed for 40 days →
-  drop speed."*
+- The Task Board is itself a **system** (§4), so it carries counters like any other: backlog
+  size per task type, and age of the oldest unclaimed task.
+- Those make stale work a first-class **snap-back trigger** (§2):
+  *`TaskBoard.oldestUnclaimed limitOver(40 days)` → drop speed.*
 - A player frame-jacking through a decade with no engineer awake should be pulled back by their
   own rules, not discover the wreckage later.
 
@@ -705,15 +765,23 @@ are slow and legible.
   DO    queueJob(fertiliser, 20)
 ```
 
-**Stage 2 — plant when a bed frees up** *(tier 0)*
+**Stage 2 — plant when a bed frees up** *(facility composes, beds stay dumb)*
+
+The facility computes plantability **once**; the six beds each carry one trivial rule.
+
 ```
-[GrowBed-1..6]
+[Hydroponics]                                  ← the only place the AND lives
+  maintains  plantable = and( Inventory.seeds      limitOver(2),
+                              Inventory.fertiliser limitOver(4),
+                              Inventory.water      limitOver(20) )
+
+[GrowBed-1..6]                                 ← six identical 1:1 rules
   ON    self → state:empty
-  WHEN  and( Inventory.seeds     limitOver(2),
-             Inventory.fertiliser limitOver(4),
-             Inventory.water      limitOver(20) )
+  WHEN  Hydroponics.plantable
   DO    postTask("plant", back)
 ```
+
+Change the planting threshold later and you change it in one place, not six.
 
 **Stage 3 — harvest against the clock** *(tier 0)*
 ```
@@ -774,12 +842,19 @@ while its slot marches on. The mature version adds a catch-up rule, which is whe
 Core earns its keep:
 
 ```
+[Hydroponics]                                  ← the facility already counts this
+  maintains  ripeCount        (GrowBed-N → state:ripe  ⇒ added
+                               GrowBed-N → state:empty ⇒ removed)
+
 [GrowBed-N]                                    ← recover a missed slot without re-synchronising
   ON    self → state:empty
   WHEN  and( self.idleFor after(8 days),
-             not( any(GrowBed.*) state:ripe ) )
+             Hydroponics.ripeCount limitUnder(1) )
   DO    postTask("plant", back)
 ```
+
+`limitUnder(1)` on the facility counter *is* "no bed is ripe" — no wildcard, no set query, just a
+counter and a threshold the player already understands.
 
 #### Don't forget the seed crop *(requires Telemetry Suite)*
 
@@ -827,7 +902,7 @@ Hydroponics is cyclic. This one fires once every three years and has a hard dead
 
 [Medbay / Cryo Control]                        ← 3. wake a pilot, allowing recovery time
   ON    Bridge → asteroid:detected
-  WHEN  and( Crew.pilots.awake limitUnder(1), MissionProfile.window after(90 days) )
+  WHEN  and( CrewRoster.pilotsAwake limitUnder(1), MissionProfile.window after(90 days) )
   DO    postTask("unfreeze pilot", front)
 
 [Fabricator]                                   ← 4. stand down: the launcher needs the power
@@ -890,8 +965,6 @@ is burning — including one with people in it:
 ```
 The Logic Core isn't a convenience tier. It's the tier where you stop killing your own crew.
 
-<!-- TODO: Does `any(GrowBed.*)` imply an aggregate/query listener? If so it needs a home on
-     the §7 unlock ladder — probably Telemetry Suite. -->
 <!-- TODO: Should offsets be authored by hand, or should the Scheduler offer "stagger these N
      assets" as a single action? Hand-authoring teaches more; the helper is kinder. -->
 
@@ -1740,7 +1813,7 @@ deliberately primitive, and manufactured control hardware expands it:
 | Built | Unlocks |
 |-------|---------|
 | — (start) | One listener per asset; single condition; self-action or post-task |
-| **Logic Core** | Compound conditions — `and` / `or` / `not` |
+| **Logic Core** | Author derived signals at facility level — `and` / `or` / `not` |
 | **Signal Relay** | More listener slots per asset |
 | **Scheduler Module** | Time-based listeners — `every(interval)`, `after(delay)` |
 | **Telemetry Suite** | `projected(metric, horizon)` — fires on derived trends, not discrete events |
