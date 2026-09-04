@@ -197,7 +197,7 @@ If a node fails → that room becomes dangerous. If the ship-wide O₂ generator
 | | Rec Terminal | Low | Power | |
 | **Cargo Bay** | Storage Racks | Low | — | Yes |
 | | Loading Crane | Med | Metal parts, seals | |
-| **Drone Bay** | Drone Launcher | Med | Drones, fuel | |
+| **Drone Bay** | Drone Launcher | Med | Drones, water (propellant) | |
 | | Drone Fabricator | Med | Metal parts, electronics | |
 | | Docking Clamp | Med | Seals | |
 | **Maintenance Corridor** | Hull Access Panel | High | Plating, seals, tools | |
@@ -406,7 +406,7 @@ are core gameplay.
 
 | Raw Material     | Refined Into           | Used For                          |
 |------------------|------------------------|-----------------------------------|
-| Water ice        | Water                  | Drinking, hydroponics, O₂        |
+| Water ice        | Water                  | Drinking, hydroponics, O₂, **drone propellant** |
 | Metal ore        | Refined metal          | Parts, plating, tools, structure  |
 | Silicates        | Silicon                | Electronics, solar panels         |
 | Volatiles        | Chemical compounds     | Fuel, medical supplies, fertiliser|
@@ -672,13 +672,39 @@ worthless if your drones aren't built and fuelled when it arrives. Preparation i
 | **Cometary fragment** | 10% | 65% | 30% | 5% | — | — |
 | **Exotic** (differentiated) | 5% | — | 10% | 20% | 25% | **45%** |
 
-**Most encounters do not solve your actual problem.** Rare elements — the §7 choke point —
-come almost entirely from M-types and Exotics, which are a quarter of all encounters between
-them. The other three quarters give you water and metal you were never short of. That
-mismatch is the intended anxiety: the famine only ever breaks on a specific kind of rock.
+Rare elements — the §7 choke point — come almost entirely from **M-types and Exotics**,
+a quarter of all encounters between them. The other three quarters look, at first glance,
+like water and metal you were never short of.
 
-C-types earn their keep differently: volatiles → chemical compounds → **drone propellant**.
-You mine volatiles in order to afford mining. Skip them for too long and the fleet is grounded.
+They aren't. See *Propellant* below: the boring rocks are what pay for the valuable ones.
+
+### Propellant — harvesting water costs water
+
+**Drone propellant is water**, used as reaction mass. It is thrown overboard on every sortie
+and **never recovered** — unlike the ship's internal water, which the Water Recycler keeps in
+a near-closed loop. Drone operations are the ship's one permanent water sink.
+
+At a nominal **6 water per sortie** against a 40-unit haul:
+
+| Class | Water ice / sortie | Water gained | **Net** |
+|-------|--------------------|--------------|---------|
+| Cometary fragment | 26.0 | 23.4 | **+17.4** |
+| C-type | 18.0 | 16.2 | **+10.2** |
+| S-type | 4.0 | 3.6 | −2.4 |
+| M-type | 0.8 | 0.7 | **−5.3** |
+| Exotic | — | — | **−6.0** |
+
+Journey total across ~100 encounters: **≈ +7,760 water** — net positive, but *only* because
+comets and C-types subsidise everything else.
+
+Which is the real shape of the encounter table:
+
+> **Mining the rocks you need costs you the water you get from the rocks you don't.**
+
+The rare-bearing objects are water-poor almost by definition, so every M-type and Exotic
+sortie runs the tanks down. The 75% of "boring" encounters are the fuel supply for the 25%
+that break the famine. Skip them for a decade and the fleet grounds itself — not for want of
+drones, but for want of anything to throw out of the back of them.
 
 ### Harvest throughput — the tuning spine
 
@@ -701,6 +727,50 @@ Against §7's requirement of **~6,600 rare elements** over ~100 encounters:
 Metal ore runs comfortable at every fleet size (~24,500 supplied against ~15,700 demanded).
 That asymmetry is deliberate: **you are never short of metal and always short of rares.**
 
+### The drones themselves
+
+A drone is **mostly propellant tank and engine**, with a mining head and a small cargo bay
+bolted on. That's what sets the 40-unit capacity: every unit hauled back is mass that had to
+be accelerated *and* decelerated.
+
+So **capacity trades against Δv**. 40 units is the nominal for a clean intercept; a marginal
+object — launched off-optimum, or a hard velocity match — yields *less per sortie*, not merely
+fewer sorties. Object choice is richer than "can I reach it".
+
+#### A sortie, phase by phase
+
+| Phase | Duration | Crew |
+|-------|----------|------|
+| **Prep** — load propellant, diagnostics, flight plan | ~4 h | **Pilot** |
+| **Outbound** — matching burn | 20-60 h | Autonomous |
+| **On-station** — extraction | 30-80 h | Autonomous |
+| **Return** — burn back to the receding ship | 20-60 h | Autonomous |
+| **Recovery** — capture on the Docking Clamp, unload to Cargo Bay | ~4 h | **Pilot** |
+
+80-200 h end to end (3-8 days), which is where "~4 sorties per window" comes from.
+
+**A pilot is needed only at the two ends**, not through the cruise. So one pilot *can* run six
+drones by staggering launches — but staggered launches can't all hit the Δv minimum together.
+
+> **Fleet throughput is capped by pilot count, not drone count.**
+
+Waking a second pilot is therefore a real decision with a real price (§3: medical consumables,
+plus recovery days in the Medbay before they can work).
+
+#### Drones are individual assets
+
+Each drone is its own entity with `condition`, `maxCondition` and a sortie history — `DRN-04`,
+not "drone #4 of 6". This costs nothing to model, because §4's asset system already does the
+work; a drone is simply an asset that happens to be mobile. What it buys:
+
+- Send the sound drone on the dangerous sortie and hold the worn one back — a real decision.
+- Losses arrive as **events**, not a decrement. *"DRN-04 did not return."*
+- Per-unit ageing is visible, so the fleet reads as a fleet.
+
+Between encounters they idle for ~3 years, and §4 already handles this with no special case:
+`dutyFactor` is 0.0 when `OFFLINE`, so a **mothballed drone barely ages**. Stowing the fleet
+between windows is a genuine, rewarded decision rather than a formality.
+
 ### The fleet is the investment, and it bootstraps badly
 
 A drone costs **8 metal parts + 6 electronics + 2 seals** (§7) — and those 6 electronics are
@@ -719,14 +789,26 @@ drone `condition`, pilot skill, and how hard the margins are being pushed.
 
 The player sets **sortie aggressiveness** per encounter:
 
-| Setting | Propellant margin | Sorties per window | Loss risk |
-|---------|-------------------|--------------------|-----------|
+| Setting | Propellant margin | Sorties per window | Failure risk |
+|---------|-------------------|--------------------|--------------|
 | Conservative | Wide | Fewer | Low |
 | Standard | Nominal | Baseline (~4) | Moderate |
-| Aggressive | Tight | More | High — drones don't come back |
+| Aggressive | Tight | More | High |
 
 A per-encounter risk dial that maps directly onto the game's central theme: take the safe
 haul now, or push for the one that gets you out of the hole.
+
+**Failure is graded, not a coin flip.** Most failed sorties cost the *window*, not the drone:
+
+| Outcome | Cost |
+|---------|------|
+| **Partial haul** — aborted early | Lost tonnage only |
+| **Stranded** — returns dry, needs refuelling before it can fly again | Time: sorties lost inside the window |
+| **Damaged** — returns with a heavy `condition` / `maxCondition` hit (§4) | Repair burden and a shortened service life |
+| **Lost** — did not return | Total, plus the 6 rare compounds to rebuild |
+
+Keeping most failures window-costly rather than fatal is what extends §1's "degrades
+gracefully" promise down to the scale of a single encounter.
 
 ### Sensors decide what you know
 
@@ -769,7 +851,6 @@ Missing a window entirely is a permanent loss and should be recorded prominently
 <!-- TODO: Should a desperate player be able to spend *ship* delta-v on an intercept,
      paying for it with a worse arrival? Powerful, but risks trivialising the constraint
      the whole section is built on. -->
-<!-- TODO: Do drones need a pilot for the whole sortie, or only for launch and recovery? -->
 
 ---
 
