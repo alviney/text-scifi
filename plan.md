@@ -89,3 +89,23 @@ Food or coffee dispenser in the galley might get low in consumables.
 [Countable]
 
 - amount
+
+## Resources
+
+- There's a seed bank for various organics
+- Solar panels can be created
+- Asteroids will be in range every random (n) years.
+  - There will be a window of availability.
+  - After which too much delta-v would be required
+
+## Game Requirements
+
+- Need to be able to view any task at any time and see it's progress bar.
+- This means some sort of global tick
+
+## Code Requirements
+
+- Use proper design patterns for the game systems (https://refactoring.guru/design-patterns/behavioral-patterns). Command pattern might be appropriate for Task system.
+- Componentise everything.
+- Pick appropriate frontend end framework and UI library to support this
+-
