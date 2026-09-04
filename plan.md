@@ -426,9 +426,10 @@ INTERMEDIATE PRODUCTS (Engineering)
   Chemical compounds         → Seals, medical supplies, fertiliser
 
 FINAL ASSEMBLY (Engineering)
-  Metal parts + Electronics + Seals → Equipment (pumps, motors, drones, solar panels)
+  Metal parts + Electronics + Seals → Equipment (pumps, motors, drones, RTG banks)
   Metal parts + Electronics         → Components (replacement parts for existing equipment)
-  Metal parts                       → Tools, plating, structural repairs
+  Refined metal                     → Tools, plating, structural repairs (Workbench)
+  Rare compounds + Metal parts      → Fuel rods
 
 FOOD (Hydroponics)
   Seeds + Water + Fertiliser + Power → Food
@@ -618,12 +619,191 @@ that you only have to do it once.
 
 ## 7. Manufacturing
 
-- The player schedules manufacturing tasks on fabrication equipment.
-- Inputs: raw materials + time.
-- Outputs: components, parts, new equipment.
+**Manufacturing is the ship's only closed loop.** Every other system drains — equipment
+ages, consumables burn, fuel depletes, people die. Manufacturing is the sole mechanism that
+puts anything *back*. It's therefore the bottleneck the entire §4 ageing curve routes
+through, and it competes for the §6 power budget while doing it.
 
-<!-- TODO: Is there a tech tree / research system? -->
-<!-- TODO: Can the player build NEW facilities, or only maintain existing ones? -->
+### The demand it has to meet
+
+Deriving from §4's ageing model (routine repairs cost ~0.5 `maxCondition`, `ageFactor`
+accelerating as assets wear):
+
+| | |
+|---|---|
+| Asset service life before `maxCondition` falls below the `DEGRADED` line | **~56 years** |
+| Replacements over a 300-year journey (46 assets, ~5.4 cycles) | **~246 units** |
+| Average cadence | **one complete piece of equipment every ~15 game-months** |
+| Rare compounds consumed by those replacements alone | **~1,380** |
+| Rare elements that must be mined to yield them (3:10 refining) | **~4,600** |
+
+Before a single dose of medicine, RTG, or spare fuel rod. This is the budget every later
+system has to fit inside — notably asteroid yields, which need to average **~65 rare
+elements per encounter** across ~100 encounters just to break even.
+
+### Fabrication assets
+
+Each fab asset holds **its own job queue**. Jobs aren't a global "build" button.
+
+| Asset | Power | Tier | Role |
+|-------|-------|------|------|
+| **Smelter / Refinery** | 140 kW | 1 | Raw → refined. High throughput, high power. |
+| **Fabricator** | 100 kW | 2-3 | Refined → parts → components → equipment. |
+| **Drone Fabricator** | 80 kW | 3 | Drones only. |
+| **Workbench** | 5 kW | 0 | Crew-powered. Slow, poor yields, **nearly free**. |
+
+**The Workbench is the brownout lifeline.** When the reactor is degraded and there's no
+headroom for the Fabricator, the Workbench still runs. It gives the player something
+productive to do *during* a power crisis instead of waiting it out — badly, slowly, at
+worse yields, but running.
+
+### How a job runs
+
+1. A crew member is dispatched to **set the job up** — a short task (~2 h).
+2. Materials are **committed at setup** and removed from inventory.
+3. The machine then runs **autonomously** to completion. No crew required.
+
+The crew cost is **fixed per job, not per unit**. So batching is rewarded: queue 20 seals
+in one job and you pay one setup task instead of twenty. This matters enormously — it's what
+lets a fab machine keep working while the crew sleep, which is mandatory in a 300-year game.
+
+**But batching is risky.** If power is lost mid-job, the in-progress unit is **scrapped**
+(materials gone); completed units in the batch survive. So a long batch during a marginal
+power situation is a real gamble, and brownouts become *expensive* rather than merely slow.
+Batch size is a genuine risk/reward decision rather than a free optimisation.
+
+### Recipes
+
+**Tier 1 — Refining** *(Smelter, 140 kW)*
+
+| Recipe | In | Out | Hours |
+|--------|----|----|-------|
+| Melt ice | 10 water ice | 9 water | 4 |
+| Crack volatiles | 10 volatiles | 7 chemical compounds | 6 |
+| Refine metal | 10 metal ore | 6 refined metal | 8 |
+| Refine silicon | 10 silicates | 5 silicon | 8 |
+| Refine rares | 10 rare elements | **3 rare compounds** | 16 |
+
+Note the yields: ice is nearly lossless, rares are punishing and slow.
+
+**Tier 2 — Components** *(Fabricator, 100 kW)*
+
+| Recipe | In | Out | Hours |
+|--------|----|----|-------|
+| Seals | 2 chemical compounds | 3 seals | 4 |
+| Filters | 1 chemical compound + 1 refined metal | 2 filters | 3 |
+| Fertiliser | 2 chemical compounds + 1 water | 4 fertiliser | 3 |
+| Metal parts | 4 refined metal | 1 metal part | 6 |
+| Medical supplies | 3 chemical compounds + 1 rare compound | 2 medical supplies | 8 |
+| Electronics | 2 silicon + **1 rare compound** | 1 electronics | 10 |
+
+**Tier 2b — Manual** *(Workbench, 5 kW — worse at everything except power)*
+
+| Recipe | In | Out | Hours |
+|--------|----|----|-------|
+| Seals (manual) | 2 chemical compounds | 2 seals | 10 |
+| Toolset | 2 refined metal | 1 toolset | 12 |
+| Circuit breakers | 1 electronics + 1 refined metal | 2 breakers | 10 |
+| Plating | 3 refined metal | 1 plating | 14 |
+
+**Tier 3 — Assembly** *(Fabricator, 100 kW)*
+
+| Recipe | In | Out | Hours |
+|--------|----|----|-------|
+| Replacement component | 2 metal parts + 1 electronics | 1 component | 12 |
+| Equipment — Low complexity | 6 metal parts + 2 electronics + 2 seals | 1 unit | 48 |
+| Equipment — Med complexity | 10 metal parts + 5 electronics + 4 seals | 1 unit | 96 |
+| Equipment — High complexity | 16 metal parts + 12 electronics + 6 seals + 2 rare compounds | 1 unit | 168 |
+| RTG Bank | 8 metal parts + 4 electronics + **6 rare compounds** | 1 unit | 120 |
+| Fuel rod | 2 metal parts + **12 rare compounds** | 1 rod | 72 |
+| Drone *(Drone Fabricator, 80 kW)* | 8 metal parts + 6 electronics + 2 seals | 1 drone | 72 |
+
+### Rare compounds are the choke point
+
+Electronics, medical supplies, RTG banks, fuel rods and every high-complexity asset all
+pull from the same 3:10-yield, 16-hour bottleneck. **There is no substitution path.** That
+single dependency is what gives asteroid encounters existential weight rather than merely
+being useful — specifically, encounters that carry *rare elements*.
+
+It also means the player is permanently arbitrating between four things they need:
+keep the lights on (fuel), keep people alive (medicine), keep the ship repaired (electronics),
+or buy insurance (RTGs). Any of those can be starved to feed another.
+
+### The collision with power
+
+From §6: **110 kW of headroom** against a healthy reactor.
+
+- **Fabricator (100 kW) fits — barely.** You can fabricate more or less continuously.
+- **Smelter (140 kW) does not fit at all.** Refining always requires shedding something
+  first. It is a deliberate act, never ambient.
+- **Both together (240 kW)** means shedding 130 kW: dim hydroponics, shed nodes, cut comms —
+  or shut a cryo bank.
+
+Which produces the design's best emergent trap:
+
+> **The reactor degrades → you need to build a replacement → building it needs 240 kW of
+> refining and assembly → which is power the degraded reactor no longer has.**
+
+A death spiral with a clearly visible entrance, exactly as §1's "degrades gracefully, always
+a window to scramble" promises. The counterplay is stockpiling refined material *while you
+still have surplus power* — which is the lesson the whole game is trying to teach, and which
+the player will only learn by nearly losing once.
+
+### Standing orders
+
+~246 replacements and tens of thousands of consumable units over the journey. Hand-queueing
+that is as impossible as hand-scheduling the maintenance in §4, and the answer is the same:
+
+A fab asset can hold a **standing order** — a recipe plus a **stock target** and a
+**reorder point**. When inventory of the output drops below the reorder point, the machine
+queues a batch automatically (materials permitting) and posts the setup task to the board (§5b).
+
+This is just the §5 event system applied to inventory: `Countable` → `limitUnder(n)` →
+queue job + post task. No new machinery, and it makes the manufacturing screen a place you
+*configure* rather than babysit.
+
+If materials are missing, the job stalls and emits `job:starved` — which is itself an event
+the player can automate against ("*on `job:starved` → drop speed*").
+
+### Scrapping
+
+Scrapping a `DESTROYED` or aged-out asset returns roughly:
+
+| Recovered | Rate |
+|-----------|------|
+| Refined metal | ~40% of build cost |
+| Seals, plating | ~20% |
+| Electronics | **0%** — fried, always |
+
+Replacement is never a wash, and the electronics loss is what keeps rare compounds draining
+even when the player is diligent about recycling.
+
+### Tech tree — no
+
+**Deliberately none.** All schematics are aboard from departure; this is a colony vessel, not
+an expedition. A research tree implies growth and progress, but this game's arc is **decline** —
+the drama is in maintaining, not expanding, and a tech tree would fight the tone directly.
+
+What replaces it, if the "unlock" beat is wanted:
+
+- **Schematics can be lost.** Data core damage destroys recipes; recovering them becomes a
+  scarcity story rather than a progress story.
+- **Improvisation recipes.** Under duress, crew derive *worse but cheaper* substitutes —
+  a seal made from scrap that lasts a third as long. Progress shaped like desperation.
+
+### Building new equipment — yes, within limits
+
+- **No new rooms.** The layout is fixed (§4).
+- **Additional units of existing equipment, yes** — a second Fabricator, more RTG banks,
+  extra grow beds — subject to **per-room equipment slots**.
+
+Expansion is real but self-limiting, because it's power-gated: a second Fabricator is another
+100 kW you don't have. "Build more" is a trap the player can walk into, which is the correct
+amount of rope.
+
+<!-- TODO: Per-room slot counts. -->
+<!-- TODO: Do fab assets have a quality/precision stat that degrades output as they age? -->
+<!-- TODO: Complexity class (Low/Med/High) per catalogue entry in §4. -->
 
 ---
 
