@@ -462,10 +462,33 @@ This is what makes the canonical automation trivial to express:
 
 ## 5. Event System
 
-The core automation layer. Inspired by IoT event-driven patterns.
+The core automation layer, and the thing the player actually plays. Inspired by IoT
+event-driven patterns.
 
 ### Key Principle
-**Listeners are self-contained.** A piece of equipment only listens for events and acts on *itself*. No cross-targeting. This keeps automations simple and predictable.
+
+> **Listen anywhere. Act only on yourself.**
+
+An asset may watch events from *any* device on the ship, but the only thing it can act on is
+**itself** — plus posting a task to the board (§5b). No asset ever reaches out and commands
+another.
+
+*(This sharpens an ambiguity in the earlier draft, which said "no cross-targeting" and then
+offered to watch "another device on the ship". Cross-**listening** is fine and necessary —
+cross-**acting** is what's forbidden.)*
+
+Why it holds: automations stay locally readable. To understand why a pump turned on, you read
+the pump's rules. Nothing else on the ship can have done it to it.
+
+### Two layers
+
+| Layer | Scope | Examples |
+|-------|-------|----------|
+| **Asset automations** | An asset acting on itself, or posting a task | Standing orders (§7), auto-shed, vent-on-fire, post-repair |
+| **Ship rules** | Global, player-authored, few | Snap-back (§2), speed changes, alert escalation |
+
+Ship rules are the deliberate exception to "act on yourself" — they act on the *game*, not on
+equipment. Keeping them a separate, small category is what stops the asset rule from eroding.
 
 ### Events (things that happen)
 
@@ -473,44 +496,139 @@ The core automation layer. Inspired by IoT event-driven patterns.
 - `Toggleable` — emits `on` / `off`
 - `Countable` — emits `added` / `removed`
 
-**Device-specific** — unique events per equipment type (e.g. fire alarm emits `alarm:fire`)
+**State events** (§4) — every active asset emits on band and duty change:
+`state:worn` · `state:degraded` · `state:atRisk` · `state:faulted` · `state:destroyed`
+`duty:starved` · `duty:unpowered` · `duty:offline`
+
+**Device-specific** — unique per equipment type: `alarm:fire`, `asteroid:detected`,
+`job:starved`, `sortie:lost`, `rod:seated`.
 
 ### Listeners (conditions)
 
-Adapters that watch events and evaluate conditions:
-- `limitUnder(threshold)` — triggers when a countable drops below a value
-- `limitOver(threshold)` — triggers when a countable exceeds a value
+The console starts deliberately primitive and is expanded by manufactured control hardware —
+this is the progression ladder from §7.
 
-<!-- TODO: More listener types — time-based? Compound conditions (AND/OR)? -->
-<!-- These are the unlock ladder for material-gated progression — see §7 "Progression".
-     The console starts primitive; built control hardware expands it. -->
+| Listener | Fires when | Requires |
+|----------|-----------|----------|
+| `on` / `off` | A toggleable changes state | — |
+| `limitUnder(n)` / `limitOver(n)` | A countable crosses a threshold | — |
+| `stateEnters(band)` | An asset enters a §4 condition band | — |
+| `and(...)` `or(...)` `not(...)` | Compound conditions | **Logic Core** |
+| `every(interval)` / `after(delay)` | Time-based | **Scheduler Module** |
+| *(extra slots per asset)* | — | **Signal Relay** |
+| `projected(metric, horizon)` | A *derived* value crosses a line — e.g. "stock-out projected within 30 days" | **Telemetry Suite** |
 
-### Triggers (actions taken in response)
+`projected()` is the top of the ladder and by far the most valuable, because consumption rates
+change over three centuries. A fixed `limitUnder(50)` that was right in year 20 is wrong by
+year 200; "tell me when I have under 30 days left at the *current* burn rate" never goes stale.
+Earning it is a real graduation.
 
-**Shared traits:**
-- `Toggleable` — can `turnOn` / `turnOff`
-- `Countable` — can request `amount`
+### Triggers (actions)
 
-An action can also **post a task to the task board** for crew to pick up (e.g. "needs repair", "needs restock").
+**Self-actions:**
+
+| Trigger | Effect |
+|---------|--------|
+| `turnOn` / `turnOff` | Duty state (§4) |
+| `setPowerPriority(n)` | Reorders itself in the load-shed queue (§6) |
+| `queueJob(recipe, qty)` | Standing orders on a fab asset (§7) |
+| `vent` | LifeSupportNode empties its room |
+| `request(amount)` | Countable draw |
+
+**Board action:** `postTask(type, priority)` — front or back of queue (§5b).
+
+**Feed action:** `emit(severity, message)` — the player writes their **own** alerts into the
+signal feed, at a severity they choose (§2). This is worth calling out: the player is building
+their own instrumentation, which is exactly the "you are the ship's AI" fantasy. A well-run
+ship's feed is largely authored by its own AI.
 
 **Examples:**
+
 | Scenario | Event | Listener | Trigger |
 |----------|-------|----------|---------|
-| Fire suppression | FireAlarm → `alarm:fire` | LifeSupportNode listens | Vent air from room (self-action) |
-| Coffee restock | Dispenser → `removed` | `limitUnder(10)` | Post "restock" task to board |
-| Low O₂ warning | O₂ Sensor → `removed` | `limitUnder(safe_level)` | Alert + reroute supply (self-action) |
-| Equipment failure | Motor → `off` (unexpected) | Motor listens | Post "repair" task to board |
+| Fire suppression | FireAlarm → `alarm:fire` | LifeSupportNode listens | `vent` (self) |
+| Consumable restock | Dispenser → `removed` | `limitUnder(10)` | `postTask("restock", front)` |
+| Preventive maintenance | Asset → `state:atRisk` | self | `postTask("repair", front)` |
+| Standing order | Inventory → `removed` | `limitUnder(reorder)` | `queueJob(seals, 20)` |
+| Brownout response | Self → `duty:unpowered` | self | `emit(warn, "fabricator shed")` |
+| Encounter prep | Bridge → `asteroid:detected` | Drone Fabricator | `queueJob(drone, 2)` |
 
 ### Building Automations (IFTTT-style)
 
 From an equipment's detail pane:
-1. See existing listeners listed
-2. **"Add listener"** → pick an event to watch (from self or another device on the ship)
-3. Pick the condition (limitUnder, limitOver, on/off, etc.)
-4. Pick the action (self-action or post task to board)
+1. See existing listeners listed, with last-fired time and fire count
+2. **"Add listener"** → pick an event to watch (from self or any device on the ship)
+3. Pick the condition — gated by what control hardware you've built
+4. Pick the action (self-action, post task, or emit to feed)
 5. If posting to board: choose front or end of queue priority
 
-<!-- TODO: Can automations fail? Sensors can degrade too? -->
+### Can automations fail? — yes, and this is load-bearing
+
+If automations were perfectly reliable, the late game would be solved: wire it up once, jack to
+maximum speed, and never look again. Something has to erode. But **random failure would be
+unfair**, so the erosion has to be legible and preventable.
+
+**The logic never fails. The senses do.**
+
+Rule evaluation is software — you're the ship's AI, and you work. What degrades is the
+**instrumentation feeding you**, because every sensor is an asset with a `condition` (§4). A
+worn sensor doesn't stop; **it lies**, in the four ways real instruments lie:
+
+| Failure | Behaviour | Consequence |
+|---------|-----------|-------------|
+| **Drift** | Reported value diverges from actual — a tank reads 40% at 22% | Thresholds fire late, or never |
+| **Latency** | The event fires, but hours after the fact | Automations respond to a stale ship |
+| **Dropout** | The event doesn't fire at all | Silent — the worst kind |
+| **Chatter** | Spurious events fire | False alarms, thrashing rules, snap-backs at 3am |
+
+This is the answer to the whole automation question:
+
+> **You cannot automate your way out of maintaining the things that tell you what's happening.**
+
+Neglecting sensors doesn't break your automations — it quietly *poisons* them, and every rule
+built on top inherits the lie. It's also completely fair: a sensor's condition is visible on its
+own detail pane like any other asset, so the information is always there. The player just has to
+look.
+
+And it produces the right endgame texture. By year 200 your rules are running on 40%-condition
+instruments, and you can no longer entirely trust your own ship's telemetry. That's a far more
+unsettling late game than equipment simply breaking faster.
+
+**UI consequence:** values sourced from a degraded sensor should render marked — `47%?`, or
+dimmed — so uncertainty is visible without being explained. Fits the CLI aesthetic exactly.
+
+### The other failure: nobody comes
+
+The quieter failure mode needs no broken hardware at all.
+
+An automation posts a repair task. The task board takes it. **No engineer is awake**, so it sits
+there. The automation worked perfectly and nothing happened.
+
+This is the mechanism that makes §3's insurance premium bite — the cost of a thin roster isn't
+paid in throughput, it's paid here, in tasks that are correctly identified and never done. So:
+
+- The board tracks **backlog age** per task.
+- Stale tasks are a first-class **snap-back trigger** (§2): *"repair task unclaimed for 40 days →
+  drop speed."*
+- A player frame-jacking through a decade with no engineer awake should be pulled back by their
+  own rules, not discover the wreckage later.
+
+### Living with automations
+
+Over 300 years the player will accumulate dozens of rules across ~46 assets and will absolutely
+lose track. The **Automation Console** (§8) is a diagnostic tool as much as an editor:
+
+- Every rule lists **last-fired** and **fire count**.
+- **Never fired** is suspicious — a dead rule, usually a threshold that can't be reached or a
+  sensor that's dropped out. *"Last fired: 47 years ago."*
+- **Firing constantly** is suspicious — thrash, usually chatter or a conflict.
+- **Conflict detection**: two rules acting oppositely on one asset with overlapping bands will
+  oscillate. The console should flag overlaps rather than silently letting a pump hammer itself
+  to death — though letting the player *see* it happen first is the better teacher.
+
+<!-- TODO: Can the player disable a rule without deleting it? (Almost certainly yes.) -->
+<!-- TODO: Should rules be copyable between assets of the same type? 10 LifeSupportNodes
+     want identical automations, and authoring them ten times is nobody's idea of fun. -->
 
 ---
 
@@ -1335,10 +1453,10 @@ deliberately primitive, and manufactured control hardware expands it:
 | Built | Unlocks |
 |-------|---------|
 | — (start) | One listener per asset; single condition; self-action or post-task |
-| **Logic Core** | Compound conditions (AND / OR) — currently a §5 TODO |
+| **Logic Core** | Compound conditions — `and` / `or` / `not` |
 | **Signal Relay** | More listener slots per asset |
-| **Scheduler Module** | Time-based listeners ("every N days") |
-| **Telemetry Suite** | Listeners that watch *other* assets' derived state, not just events |
+| **Scheduler Module** | Time-based listeners — `every(interval)`, `after(delay)` |
+| **Telemetry Suite** | `projected(metric, horizon)` — fires on derived trends, not discrete events |
 
 This is the strongest form of progression available here, because:
 
