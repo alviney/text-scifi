@@ -823,6 +823,112 @@ condition (§4).
 This finally gives the Bridge equipment real mechanical work — until now the Nav Computer and
 Comms Array were power draws with no job.
 
+### Encounter spacing — the famine structure
+
+How are ~100 encounters distributed across 300 years? Four candidates:
+
+| Model | Verdict |
+|-------|---------|
+| **Uniform** — one every ~3 years | **Rejected.** Predictable supply makes stockpiling trivial: hold a three-year buffer forever and you're safe. Kills the rationing the design is built on. |
+| **Poisson** — memoryless, mean 3 years | **Rejected.** Clusters and droughts emerge for free, but memorylessly: a 12-year gap can begin at any moment with no warning. Unfair rather than tragic, and unplannable by construction. |
+| **Authored** — hand-placed famines | Workable but scripted, and it only works once per player. |
+| **Route-shaped** — density follows what the ship is flying through | **Take this.** |
+
+#### The route is the answer
+
+Interstellar space is empty. A hundred encounters can't just happen — so the ship's course was
+**chosen before launch to thread them**: the home system's outer debris on the way out,
+catalogued rogue objects along the way, and the destination's outer debris on approach.
+
+That's physically honest, and it produces a three-act structure for free:
+
+| Act | Years | Encounters | Character |
+|-----|-------|------------|-----------|
+| **I — Departure belt** | 0-50 | ~30, and **rich** | Abundance. Big, well-surveyed objects at low Δv. |
+| **II — The Long Dark** | 50-260 | ~40 across 210 years | Famine. Gaps of 10-20 years. The game. |
+| **III — Arrival debris** | 260-300 | ~30 | Abundance returns — possibly too late to matter. |
+
+Why this is the right shape:
+
+- **The famine coincides with peak equipment decay.** §4's ageing curve bites hardest in the
+  middle centuries, exactly when §6b stops delivering. Two systems, one curve, no coordination
+  needed.
+- **Act I becomes the real difficulty test.** Abundance you must convert into stockpile. A
+  player who treats the first fifty years casually is dead by year 150 and won't understand why
+  until it's far too late to fix — which is precisely the lesson §7 says the player will only
+  learn by nearly losing.
+- **Act III is thematically perfect.** You sail into plenty with a wrecked ship and a third of
+  your colonists gone. The material arrives; the years to use it don't.
+- It **dovetails with Open Question 9(b)** — solar live only at departure and arrival. Power and
+  materials both ease at the ends and starve in the middle. Same silhouette, two systems.
+
+#### Act I has to be rich, and the maths says how rich
+
+Demand is **continuous** — equipment ages on a clock, not on encounters — at ~22 rare elements
+per year. Supply is lumpy. So Act II runs a structural deficit that must be pre-funded.
+
+With uniform richness the structure is simply **unsurvivable**:
+
+| Act | Supply | Demand | Net | Banked |
+|-----|--------|--------|-----|--------|
+| I (40 y, 35 enc) | 2,275 | 879 | +1,396 | +1,396 |
+| II (220 y, 25 enc) | 1,625 | 4,834 | −3,209 | **−1,813 — dead** |
+
+Act I objects therefore need to yield **~2.5× a mid-journey encounter**, which the fiction
+already justifies: belt objects are large, well-surveyed, and cheap to reach — and per §6b's
+capacity/Δv trade, **low-Δv intercepts haul more per sortie automatically.** No special case.
+
+| Act | Supply | Demand | Net | Banked |
+|-----|--------|--------|-----|--------|
+| I (50 y, 30 enc, ×2.5) | 4,875 | 1,099 | +3,776 | +3,776 |
+| II (210 y, 40 enc) | 2,600 | 4,614 | −2,014 | +1,762 |
+| III (40 y, 30 enc) | 1,950 | 879 | +1,071 | +2,833 |
+
+A diligent player reaches Act III with a surplus. A careless one is underwater somewhere around
+year 150, and the §1 outcome tier they reach is essentially **set by how well they played Act I**.
+
+#### Known schedule, unknown yield
+
+Because the route was planned, the player gets the **mission profile from hour one**: a
+catalogue of predicted encounters with dates. This is the single most important choice in the
+model —
+
+> **The famine is planned for, not sprung.**
+
+The tragedy is failing to prepare for a drought you could see coming, which is a far better
+story than being ambushed by a random number. It also gives the player something to *do* with
+Act I's abundance besides hoard.
+
+But composition estimates are **pre-launch guesses**, refined only as the ship closes (§6b,
+*Sensors decide what you know*). So: **you know when, roughly what, and never exactly.**
+
+#### Uncatalogued objects — the lifeline
+
+Layered on top: ~30% of encounters are **not** in the catalogue. Rogue bodies the pre-launch
+survey missed, detected only by the ship's own sensors during the crossing.
+
+- They are the only good news available during the Long Dark.
+- Detection is gated by **Nav Computer and Comms Array condition** (§4).
+- So a player who let the Bridge rot **never learns the lifeline was there.** No alert, no
+  missed-window message — just silence, and a rock passing in the dark.
+
+That gives the Bridge equipment its second job, and it's a crueller one than the first.
+
+#### Storage — should abundance be cappable?
+
+Open. The Cargo Bay's Storage Racks are passive (§4), so raw material could in principle be
+banked without limit — but an uncapped hoard makes Act I a pure "grab everything" exercise.
+
+**Proposal: cap raw material storage, leave finished goods generous.** Then Act I isn't
+*hoard*, it's **process** — the player must run the smelter and fabricator hard during the one
+period they have surplus power to do it, converting raw rock into components before the racks
+overflow. That puts the manufacturing system to work during the abundance phase instead of
+leaving it idle, and makes the Act I→II transition a genuine logistics problem rather than a
+storage-number check.
+
+<!-- TODO: Actual storage cap figures, per raw material. -->
+<!-- TODO: Should famine severity be a difficulty setting — a "sparse route" seed? -->
+
 ### Power
 
 The Drone Launcher draws **60 kW** continuously through launch and recovery ops, against
@@ -847,10 +953,26 @@ because it's irreversible, infrequent, and the single highest-stakes call in the
 Missing a window entirely is a permanent loss and should be recorded prominently in the feed.
 "*Object 47-C receding. Intercept no longer possible.*" — three years until the next one.
 
-<!-- TODO: Encounter spacing distribution — uniform every ~3 years, or clustered with famines? -->
-<!-- TODO: Should a desperate player be able to spend *ship* delta-v on an intercept,
-     paying for it with a worse arrival? Powerful, but risks trivialising the constraint
-     the whole section is built on. -->
+### Spending ship delta-v — the Act II desperation move
+
+The constraint the whole section rests on is that the ship's Δv is reserved for deceleration.
+Breaking it should be *possible* and close to unthinkable — the move a player makes at year 160
+with no rare compounds, three failed assets and a catalogue that says nothing for eleven years.
+
+**Proposal: allow it, and price it in the ending rather than the journey.** Spending course
+margin does not slow the ship or cost resources — it **permanently caps the best outcome the
+player can still reach** (§1). Burn it once and *Perfect arrival* is off the table for good; burn
+it twice and *Good* goes too.
+
+- It reads as a real choice rather than an optimisation, because the cost lands somewhere the
+  player cannot claw back.
+- It's permanent and visible: logged in the mission profile — *"Course margin expended, year
+  147"* — and referenced directly in the arrival narrative.
+- It cannot trivialise the constraint, because it buys **material, never time**: the ship still
+  can't stop, and the ending still remembers.
+
+<!-- TODO: How much material should one Δv expenditure actually buy — a single rich intercept,
+     or a whole window's worth? -->
 
 ---
 
