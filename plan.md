@@ -984,6 +984,25 @@ immediately, then fixes it themselves.
 Diagnose, don't fix. It's the same principle as letting a thrashing rule run visibly before
 flagging it.
 
+### Idea — surface a filtered cookbook in-game
+
+This section could double as **player-facing content**: an in-fiction reference the ship's AI
+consults, styled as archived mission documentation rather than a tutorial.
+
+Filtering, at minimum by **what the player can actually build** — no `projected()` recipes before
+the Telemetry Suite exists — and possibly by current ship state, so the entries offered relate to
+systems they're actually running.
+
+**The tension to resolve first:** §5c's most valuable entries are the ones the player is meant to
+*discover*. Handing over the pipelining fix would do exactly the damage that argued against a
+stagger button — diagnose, don't fix. So the filter probably isn't only "what you've unlocked";
+some recipes may need to stay out of the book entirely, or only appear **after** the player has
+hit the problem they solve.
+
+Worth deciding alongside onboarding (Open Question 4), since a filtered cookbook is a plausible
+answer to "how does the player learn the systems" that costs no separate tutorial.
+
+
 ---
 
 ## 6. Resources & Economy
