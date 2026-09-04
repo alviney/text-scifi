@@ -345,6 +345,8 @@ Adapters that watch events and evaluate conditions:
 - `limitOver(threshold)` — triggers when a countable exceeds a value
 
 <!-- TODO: More listener types — time-based? Compound conditions (AND/OR)? -->
+<!-- These are the unlock ladder for material-gated progression — see §7 "Progression".
+     The console starts primitive; built control hardware expands it. -->
 
 ### Triggers (actions taken in response)
 
@@ -778,16 +780,88 @@ Scrapping a `DESTROYED` or aged-out asset returns roughly:
 Replacement is never a wash, and the electronics loss is what keeps rare compounds draining
 even when the player is diligent about recycling.
 
-### Tech tree — no
+### Progression — material gating, not research
 
-**Deliberately none.** All schematics are aboard from departure; this is a colony vessel, not
-an expedition. A research tree implies growth and progress, but this game's arc is **decline** —
-the drama is in maintaining, not expanding, and a tech tree would fight the tone directly.
+**No research tree.** All schematics are aboard from departure; this is a colony vessel, not
+an expedition. Research implies growth and discovery, and this game's arc is **decline** —
+the drama is in maintaining, not expanding.
 
-What replaces it, if the "unlock" beat is wanted:
+**But there is progression**, and it comes from the supply chain instead. The distinction:
 
-- **Schematics can be lost.** Data core damage destroys recipes; recovering them becomes a
-  scarcity story rather than a progress story.
+| | The gate | Arc it implies |
+|---|---|---|
+| Research tree | You don't *know how* | Growth, discovery — fights the tone |
+| **Material gating** | You know exactly how, you can't **afford** it | Scarcity — reinforces the tone |
+
+The doc already works this way without naming it: fuel rods and RTG banks are fully known
+from hour one, and gated purely by 12 and 6 rare compounds respectively. Enhancements extend
+the same idea — you can't build the retrofit until you've refined and assembled its
+subcomponents, and getting there is the progression.
+
+This gives the player the "I can do a thing I couldn't before" beat with none of the tonal
+problem. But it has to be shaped carefully, because the real risk isn't tone — it's
+**flattening the decline curve**. Three rules:
+
+#### 1. Enhancements mitigate decline, never reverse it
+
+| Good shapes | Effect |
+|-------------|--------|
+| **Efficiency retrofit** | Cuts a load — e.g. cryo bank 50 kW → 42 kW. Buys headroom, adds no capability. |
+| **Wear reduction** | Better bearings/coolant loop lowers `baseWear` for an asset class (§4). |
+| **Yield improvement** | Rare refining 3:10 → 4:10. Attacks the choke point directly. |
+| **Redundancy** | A paired unit sharing duty halves `dutyFactor` on each — so *both* age slower. |
+| **Automation capability** | See below. |
+
+| Avoid | Why |
+|-------|-----|
+| Flat production multipliers (+20% fab speed) | They compound, and eventually outrun the decline curve |
+| **Reactor output upgrades** | Cancels the central tension outright |
+| Anything with no ongoing cost | Free progress breaks the arbitration |
+
+#### 2. Enhancements are assets
+
+An enhancement is a normal piece of equipment with `condition` and `maxCondition` (§4). It
+ages, it needs servicing, and eventually it ages out and **the benefit lapses** unless
+rebuilt.
+
+That makes progression a **treadmill, not a ratchet** — and it needs no new machinery in the
+model whatsoever. An enhancement is just equipment that happens to modify a coefficient.
+
+#### 3. Price them in the choke point
+
+Enhancements cost **rare compounds**. Every one therefore trades directly against fuel,
+medicine, or a replacement the player also needs (§7, *Rare compounds are the choke point*).
+Progress stays an act of arbitration, never a freebie.
+
+#### The best target: the automation console
+
+Gate the **player's own capability**, not the ship's output. §5's automation console starts
+deliberately primitive, and manufactured control hardware expands it:
+
+| Built | Unlocks |
+|-------|---------|
+| — (start) | One listener per asset; single condition; self-action or post-task |
+| **Logic Core** | Compound conditions (AND / OR) — currently a §5 TODO |
+| **Signal Relay** | More listener slots per asset |
+| **Scheduler Module** | Time-based listeners ("every N days") |
+| **Telemetry Suite** | Listeners that watch *other* assets' derived state, not just events |
+
+This is the strongest form of progression available here, because:
+
+- It makes the player **better at the core loop** rather than making the ship stronger, so it
+  cannot flatten the difficulty curve.
+- It is tonally exact — you are the ship's AI, and you are upgrading *yourself*.
+- It **stages the automation system's complexity**, which is a real answer to Open Question 4
+  (onboarding): the player meets one concept at a time, in an order the economy sets, instead
+  of facing the full IFTTT console on hour one.
+
+<!-- TODO: Full enhancement catalogue with costs. -->
+<!-- TODO: Do enhancements occupy a room equipment slot, or attach to a host asset? -->
+
+#### Other unlock beats worth keeping
+
+- **Schematics can be lost.** Data core damage destroys recipes; recovery is a scarcity
+  story rather than a progress story.
 - **Improvisation recipes.** Under duress, crew derive *worse but cheaper* substitutes —
   a seal made from scrap that lasts a third as long. Progress shaped like desperation.
 
@@ -958,6 +1032,9 @@ These features would use an LLM to replace/supplement the text bank with dynamic
 2. **Procedural generation** — Are asteroid encounters, equipment failures, crew events randomised?
 3. **Frame jacking risk** — What can go wrong if you frame jack too early? Cascade failures?
 4. **Tutorial / onboarding** — How does the player learn the systems?
+   *Partly answered:* §7's automation-console unlock ladder stages the complexity — the
+   player meets one automation concept at a time, in an order the economy sets, rather than
+   facing the full console on hour one. Doesn't cover the rest of the game's systems.
 5. **Sound** — Any ambient audio, or purely visual?
 6. **Crew backstories** — Pre-written or generated? How deep?
 
