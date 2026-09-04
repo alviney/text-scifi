@@ -214,7 +214,107 @@ If a node fails → that room becomes dangerous. If the ship-wide O₂ generator
   - The longer the neglect, the higher the accident chance.
 
 ### Equipment States
-<!-- TODO: Define the full state machine — operational, degraded, at-risk, failed, destroyed? -->
+
+Two **orthogonal tracks** rather than one combinatorial state machine. Almost everything
+is derived from two numbers, so the sim never manages transitions by hand.
+
+#### Track 1 — Condition (derived from `condition: 0-100`)
+
+| Band | State | Effect |
+|------|-------|--------|
+| 85-100 | `NOMINAL`   | Full output |
+| 60-85  | `WORN`      | Full output; flavour chatter in the feed |
+| 30-60  | `DEGRADED`  | Output scales down linearly; consumable draw rises |
+| 0-30   | `AT_RISK`   | As degraded, plus a per-hour failure roll |
+| —      | `FAULTED`   | **Latched.** Output zero. Repairable in place. |
+| —      | `DESTROYED` | **Latched.** Beyond repair — needs a replacement unit built. |
+
+`FAULTED` and `DESTROYED` are latched flags (set by an event, cleared by a task).
+Every other band is a pure function of `condition` — no transition bookkeeping.
+
+#### Track 2 — Duty (what it's doing right now)
+
+| State | Meaning |
+|-------|---------|
+| `RUNNING`   | Powered, fed, producing |
+| `IDLE`      | Powered, nothing queued |
+| `OFFLINE`   | Player switched it off (power saving, mothballing) |
+| `UNPOWERED` | Power budget cut it |
+| `STARVED`   | Missing an input consumable |
+
+```
+effectiveOutput = rated × conditionFactor(condition) × (duty === RUNNING ? 1 : 0)
+```
+
+A room's status dot on the main screen = the **worst** of (condition band, duty state)
+across its assets. That's the whole green/amber/red rule.
+
+#### Ageing — the difficulty curve in one number
+
+Each asset also carries **`maxCondition`**, starting at 100.
+
+- A repair restores `condition` up to `maxCondition` — never past it.
+- Every repair costs a little `maxCondition` (refurbishment loss): ~0.5 for routine
+  servicing, ~2-3 for a `FAULTED` rebuild.
+
+Everything the difficulty curve needs falls out of that one decaying ceiling:
+
+- Old kit needs servicing **more often** — less headroom above the `AT_RISK` line.
+- Eventually `maxCondition` drops below the `DEGRADED` line and the asset is a permanent
+  liability. The only fix is **replacement**, which costs manufacturing throughput, which
+  costs asteroid material, which is the scarcest thing in the game.
+- No separate "ageing system" to tune. One number, monotonically falling.
+
+#### Degradation rate
+
+```
+wearPerHour = baseWear × dutyFactor × environmentFactor × ageFactor
+```
+
+| Factor | Range | Notes |
+|--------|-------|-------|
+| `baseWear` | per asset class | Reactor Core wears far faster than a Nav Computer |
+| `dutyFactor` | 0.0 - 1.0 | `RUNNING` 1.0, `IDLE` 0.25, `OFFLINE` 0.0 — mothballing genuinely works |
+| `environmentFactor` | 1.0 - 3.0+ | Room's LifeSupportNode faulted or vented → ×3; fire/radiation higher |
+| `ageFactor` | 1.0 - 2.0 | Rises as `maxCondition` falls |
+
+**Scale check.** Tune `baseWear` so an untouched healthy asset takes ~2 game-years to fall
+from 100 to the `AT_RISK` line — roughly **0.005 condition/game-hour**. Across ~44 assets
+over a 300-year journey that's on the order of **13,000 maintenance tasks per playthrough**.
+
+Nobody hand-schedules that. The numbers are what *force* the automation layer — that's
+deliberate. The tuning target is: **unmanageable by hand, comfortable once automated.**
+
+#### Repair accident risk
+
+```
+accidentChance = dangerRating × (1 - condition/100) × crewFactor
+```
+
+`crewFactor` derives from the crew member's sleep, health, and specialisation match.
+A sleep-deprived generalist sent at an `AT_RISK` High-danger Reactor Core is where crew
+die — and the player will have chosen that, which is the point.
+
+#### Transitions
+
+| Trigger | Result |
+|---------|--------|
+| `condition` reaches 0 | → `FAULTED` |
+| `AT_RISK` per-hour failure roll succeeds | → `FAULTED` (early and unpredictable) |
+| Cascade event (fire, decompression) or a `FAULTED` dependency | → `DESTROYED` |
+| Repair task completes | `condition = maxCondition`; `maxCondition -= refurbLoss` |
+| Replacement installed | New asset, `maxCondition = 100` |
+
+#### Events emitted (feeds §5)
+
+Every active asset emits on band and duty changes, so automations bind to states without
+any special-casing:
+
+`state:worn` · `state:degraded` · `state:atRisk` · `state:faulted` · `state:destroyed`
+`duty:starved` · `duty:unpowered` · `duty:offline`
+
+This is what makes the canonical automation trivial to express:
+*"on `state:atRisk` → post a repair task to the board."*
 
 ---
 
@@ -518,6 +618,35 @@ These features would use an LLM to replace/supplement the text bank with dynamic
 4. **Tutorial / onboarding** — How does the player learn the systems?
 5. **Sound** — Any ambient audio, or purely visual?
 6. **Crew backstories** — Pre-written or generated? How deep?
+
+7. **Offline time — what happens when the app is closed?**
+   "No pause" (§2) plus a mobile-first platform (§8) collide here, and the answer changes
+   what kind of game this is.
+   - *(a) Sim suspends when the app closes.* "No pause" means no pause **button** during
+     play — you can't stop the ship to think — but backgrounding the app freezes the clock.
+   - *(b) Idle-game.* Elapsed real time is simulated on return. You could come back to a
+     dead ship after a weekend. Thematically superb, brutally punishing, and it makes the
+     speed slider almost meaningless.
+
+   **Proposal: (a).** It keeps the design intent (no stopping to think) without punishing
+   someone whose phone rings. Worth noting what it implies: at the 8,760× cap, 300 game-years
+   is **~5 real hours** of pure fast-forward — a *floor* on playthrough length, since real
+   play sits well below max speed. That number is the actual justification for the speed cap,
+   and it should be chosen deliberately rather than inherited from "1 year/minute sounds good".
+
+8. **The signal feed at high speed.**
+   The feed is the player's ambient awareness (§8) — but at 8,760× the ship generates
+   thousands of lines per real minute. It becomes unreadable exactly when the player is
+   relying on it most.
+
+   **Proposal:** give every signal a **severity** — `chatter` / `info` / `warn` / `critical` —
+   and let the speed slider raise the feed's floor. At high speed, chatter and info are
+   suppressed and rolled into periodic digest lines ("*47 maintenance tasks completed,
+   3 parts consumed*"); `warn` and `critical` always surface. This shares its plumbing with
+   the snap-back rules in §2 — snap-back is just "a `critical` signal went unacknowledged
+   for X game-hours" — and it gives the flavour text bank (§10) a natural home: chatter is
+   what you read at 1× and never see at 8,760×, which makes slowing down feel *different*
+   rather than just slower.
 
 ---
 
