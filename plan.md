@@ -709,9 +709,16 @@ lose track. The **Automation Console** (§8) is a diagnostic tool as much as an 
   oscillate. The console should flag overlaps rather than silently letting a pump hammer itself
   to death — though letting the player *see* it happen first is the better teacher.
 
-<!-- TODO: Can the player disable a rule without deleting it? (Almost certainly yes.) -->
-<!-- TODO: Should rules be copyable between assets of the same type? 10 LifeSupportNodes
-     want identical automations, and authoring them ten times is nobody's idea of fun. -->
+### Authoring and debugging
+
+**Rules can be disabled without deleting.** A disabled rule keeps its place, its history and its
+fire count in the console. This is the primary debugging tool — disable half your rules to find
+which one is thrashing — and deleting to test would destroy the evidence you need.
+
+**Rules are copyable across assets of a type.** "Apply to all LifeSupportNodes in this facility"
+expands into ten **real, individually inspectable, individually overridable** rules. It is an
+authoring shortcut, never a live binding — nothing hidden, nothing that changes behind your back.
+This is the same mechanism as the facility per-child slot templates above.
 
 ---
 
@@ -965,8 +972,17 @@ is burning — including one with people in it:
 ```
 The Logic Core isn't a convenience tier. It's the tier where you stop killing your own crew.
 
-<!-- TODO: Should offsets be authored by hand, or should the Scheduler offer "stagger these N
-     assets" as a single action? Hand-authoring teaches more; the helper is kinder. -->
+#### Hand-author the offsets — but show the timeline
+
+**No stagger button.** Pipelining is the insight the player earns by starving once; a one-tap fix
+deletes the discovery that makes the Scheduler Module feel like a graduation.
+
+**But the console shows a cycle timeline** — six beds plotted across 36 days, with overlapping
+harvest windows highlighted. The player sees six bars stacked on the same day and understands
+immediately, then fixes it themselves.
+
+Diagnose, don't fix. It's the same principle as letting a thrashing rule run visibly before
+flagging it.
 
 ---
 
@@ -1228,9 +1244,50 @@ that you only have to do it once.
 | Fuel exhausted | Reactor stops. Same as SCRAM, but permanent. |
 | Cascade brownout | Condition damage across all active assets |
 
-<!-- TODO: Battery bank capacity in kWh, and how fast surplus recharges it. -->
-<!-- TODO: RTG fabrication cost — should the emergency margin be expensive enough to hurt? -->
-<!-- TODO: Does the reactor need coolant as a separate consumable (it's in the §4 catalogue), or is fuel enough? -->
+#### Battery bank — 3,500 kWh
+
+Sized so that a SCRAM presents the player with one clean, horrible choice:
+
+| Load held | Draw | Endurance |
+|-----------|------|-----------|
+| Full critical, **colony alive** | 575 kW | **6.1 hours** |
+| Cryo banks shed, **colony dead** | 175 kW | **20 hours** |
+
+Six hours to restart a reactor with everyone still breathing, or twenty by killing 200 people.
+The entire dilemma falls out of a single capacity figure.
+
+Recharge is capped at **50 kW** and priority-managed like any other load, so refilling after a
+SCRAM takes ~70 hours and competes with everything else. The ship is at its most fragile
+immediately *after* the crisis, not during it.
+
+#### RTG cost — the crew/colony asymmetry
+
+At 12 kW and **6 rare compounds** each:
+
+| To cover | RTGs | Cost | In fuel rods |
+|----------|------|------|--------------|
+| Crew-critical load (175 kW) | 15 | 90 rare compounds | 7.5 rods |
+| Everything, including cryo (575 kW) | 48 | 288 rare compounds | 24 rods |
+
+So the answer to "should the emergency margin hurt?" is **yes, and specifically here**:
+
+> **RTGs can keep the crew alive indefinitely. They can never keep the colony alive.**
+
+A permanent reactor loss is therefore survivable for the people awake and terminal for the 200
+asleep. That asymmetry is worth more than any amount of tuning — and RTG output decays ~0.8%/year
+(half-life ~86 years), so even the crew's lifeline is a treadmill, not a solution.
+
+#### Coolant — keep it, as an incident, not a drain
+
+The §4 catalogue lists coolant on the Reactor Core. Keep it, but as a **closed loop with makeup
+losses** rather than a steady consumable:
+
+- Normal operation draws ~0.5 chemical compounds/year. Negligible bookkeeping.
+- A **coolant leak** is a distinct failure event: dumps 20-40 units at once and forces an
+  immediate SCRAM until repaired.
+
+That buys a specific, dramatic failure mode for almost no ongoing overhead — which is the right
+trade for a consumable that would otherwise just be a second fuel counter.
 
 ---
 
@@ -1541,8 +1598,37 @@ overflow. That puts the manufacturing system to work during the abundance phase 
 leaving it idle, and makes the Act I→II transition a genuine logistics problem rather than a
 storage-number check.
 
-<!-- TODO: Actual storage cap figures, per raw material. -->
-<!-- TODO: Should famine severity be a difficulty setting — a "sparse route" seed? -->
+#### Storage caps — raw is tight, finished is generous
+
+| Tier | Cap per type | Rationale |
+|------|-------------:|-----------|
+| **Raw materials** | **1,500** | About one exceptional Act I haul. Overflow if you haven't refined the last one. |
+| **Refined materials** | 4,000 | Enough to bank the ~2,000 rare-compound Act II deficit. |
+| **Components & finished goods** | 20,000 | This is what you're *meant* to stockpile. |
+
+The ratio is the whole point: **you cannot hoard rock.** An Act I M-type yields ~1,440 metal ore
+against a 1,500 cap, so a second encounter arriving before you've smelted the first one overflows.
+
+**Overflow applies backpressure** exactly as §4 describes — drones can't unload, sorties stall,
+and you lose window time. The punishment for not processing is losing the next haul, not a
+warning message.
+
+And the squeeze is *power*, not time: you have ~1.7 years between Act I encounters, which is
+ample, but the Smelter's 140 kW never fits in headroom (§6). Act I is spent deciding what to
+switch off in order to refine.
+
+#### Famine severity — yes, and make it the difficulty setting
+
+It's the cleanest single lever in the design: it distorts no other system, and it's **diegetic** —
+it's simply how much time the mission planners had to survey the route before launch.
+
+| Route | Act II encounters | Character |
+|-------|------------------:|-----------|
+| **Surveyed** (easy) | ~55, richer | The Long Dark is uncomfortable |
+| **Standard** | ~40 | As designed |
+| **Sparse** (hard) | ~28, skewed to C-types | Fewer encounters, and more of them carry no rares at all |
+
+Difficulty chosen at launch as a course, not a menu of multipliers.
 
 ### Power
 
@@ -1586,8 +1672,21 @@ it twice and *Good* goes too.
 - It cannot trivialise the constraint, because it buys **material, never time**: the ship still
   can't stop, and the ending still remembers.
 
-<!-- TODO: How much material should one Δv expenditure actually buy — a single rich intercept,
-     or a whole window's worth? -->
+**What one burn buys: a single otherwise-impossible intercept.** Not extra sorties on a
+reachable object — that would just be a discount. It buys reach: an off-route body the sensors
+found, or an object whose window you already missed. Yield is then whatever that object's class
+and richness give you, harvested normally.
+
+**Three burns exist for the whole journey**, and each one lowers the ceiling:
+
+| Burn | Best outcome still reachable |
+|------|------------------------------|
+| 1 | *Good arrival* — Perfect is gone |
+| 2 | *Rough arrival* |
+| 3 | *Skeleton arrival* |
+| 4 | Refused — the ship can no longer decelerate. That's a fail state, not a choice. |
+
+A countable, visible resource that only ever spends the ending.
 
 ---
 
@@ -1827,8 +1926,42 @@ This is the strongest form of progression available here, because:
   (onboarding): the player meets one concept at a time, in an order the economy sets, instead
   of facing the full IFTTT console on hour one.
 
-<!-- TODO: Full enhancement catalogue with costs. -->
-<!-- TODO: Do enhancements occupy a room equipment slot, or attach to a host asset? -->
+#### Slot or host? Two categories
+
+- **Retrofits attach to a host asset.** They don't consume a room slot, and they **die with the
+  thing they modify** — which is thematically right, keeps the treadmill honest, and avoids
+  double-penalising the player against slots they've already paid for.
+- **Control hardware occupies a Bridge slot.** It's ship-wide instrumentation, not a modification
+  of any one machine.
+
+#### Enhancement catalogue
+
+**Retrofits** *(attach to host; age and must be rebuilt)*
+
+| Enhancement | Host | Effect | Cost | Hours |
+|-------------|------|--------|------|-------|
+| LSN Recuperator | LifeSupportNode | 8 → **5 kW** | 4 metal parts, 2 electronics, 2 rare cmp | 36 |
+| Cryo Efficiency Retrofit | Cryo Control | 50 → **42 kW** per bank | 12 metal parts, 8 electronics, 10 rare cmp | 144 |
+| Grow Bed LED Retrofit | Grow Beds | 120 → **85 kW** | 10 metal parts, 12 electronics, 6 rare cmp | 120 |
+| Precision Bearing Set | Any mechanical asset | `baseWear` × 0.7 | 6 metal parts, 2 seals, 3 rare cmp | 48 |
+| Reactor Coolant Upgrade | Reactor Core | `baseWear` × 0.75 | 14 metal parts, 6 electronics, 8 rare cmp | 168 |
+| Refinery Cascade Stage | Smelter | Rare yield 3:10 → **3.5:10** | 20 rare cmp + 16 metal parts | 192 |
+| Paired Assembly | Any asset | Second unit shares duty — `dutyFactor` halves on **both** | Full asset cost + 4 metal parts | — |
+
+The **Refinery Cascade** is the one to watch, because yield improvements on the choke point are
+inherently dangerous. Priced honestly: +0.5:10 across ~6,600 rare elements mined is **+330 rare
+compounds** over the journey, against a ~40-year service life meaning ~7 rebuilds at 20 each =
+150. **Net ≈ +180.** Worth building, nowhere near an auto-win — and if you let it lapse, the gain
+stops.
+
+**Control hardware** *(Bridge slot; unlocks §5 listener tiers)*
+
+| Module | Unlocks | Cost | Hours |
+|--------|---------|------|-------|
+| Signal Relay | +2 listener slots per asset (stackable) | 4 metal parts, 6 electronics, 3 rare cmp | 48 |
+| Logic Core | Derived signals at facility level — `and`/`or`/`not` | 8 metal parts, 10 electronics, 6 rare cmp | 96 |
+| Scheduler Module | `every(interval)`, `after(delay)` | 6 metal parts, 12 electronics, 8 rare cmp | 120 |
+| Telemetry Suite | `projected(metric, horizon)` | 12 metal parts, 24 electronics, **20 rare cmp** | 240 |
 
 #### Other unlock beats worth keeping
 
@@ -1847,9 +1980,47 @@ Expansion is real but self-limiting, because it's power-gated: a second Fabricat
 100 kW you don't have. "Build more" is a trap the player can walk into, which is the correct
 amount of rope.
 
-<!-- TODO: Per-room slot counts. -->
-<!-- TODO: Do fab assets have a quality/precision stat that degrades output as they age? -->
-<!-- TODO: Complexity class (Low/Med/High) per catalogue entry in §4. -->
+#### Per-room equipment slots
+
+| Room | Slots | In use | Spare |
+|------|------:|-------:|------:|
+| Bridge | 7 | 4 | 3 — control hardware lives here |
+| Engineering | 7 | 4 | 3 |
+| Reactor / Power | 10 | 6 | 4 — RTG banks stack |
+| Life Support | 6 | 4 | 2 |
+| Hydroponics | 12 | 9 | 3 |
+| Medbay | 6 | 4 | 2 |
+| Quarters | 6 | 4 | 2 |
+| Cargo Bay | 8 | 3 | 5 — storage racks expand |
+| Drone Bay | 7 | 4 | 3 — drones are mobile, they don't hold slots |
+| Maintenance Corridor | 6 | 4 | 2 |
+| **Total** | **75** | **46** | **29** |
+
+Twenty-nine spare slots across the ship, every one of them power-gated. The constraint that
+actually binds is §6, not the slot count — which is how it should be.
+
+#### Fabricator precision — no, deliberately
+
+A separate quality stat would mean tracking quality *on produced items*, which forks the entire
+inventory model into good seals and bad seals. Enormous complexity for a small thematic gain.
+
+The same fiction is available for free. A worn fabricator's `conditionFactor` (§4) already slows
+its jobs, and at `AT_RISK` it gains a chance to **scrap the unit outright** — materials consumed,
+nothing produced. Bad workmanship, expressed as loss, with zero new state.
+
+#### Complexity class per asset
+
+Complexity tracks sophistication, not danger — it's what drives replacement cost (§7 assembly).
+
+| Class | Assets | Rare cmp each |
+|-------|--------|--------------:|
+| **High** (6) | Nav Computer, Fabricator, Reactor Core, O₂ Generator, Cryo Control, Drone Fabricator | 14 |
+| **Med** (22) | Comms Array, Smelter, Power Distribution, Battery Bank, RTG Bank, Water Recycler, Atmosphere Regulator, Med Station, Diagnostic Scanner, Loading Crane, Drone Launcher, Pressure Doors, **LifeSupportNode ×10** | 5 |
+| **Low** (14) | Workbench, Aux Array Control, **Grow Bed ×6**, Irrigation, Food Dispenser, Rec Terminal, Docking Clamp, Hull Access Panel, Utility Conduits | 2 |
+
+42 active assets (+4 passive). The mix is Med-heavy because of the ten LifeSupportNodes, which
+gives **~1,300 rare compounds** for 246 replacements against the 1,378 §7 assumed — 6% under,
+comfortably inside the tolerance of the §6b encounter target.
 
 ---
 
