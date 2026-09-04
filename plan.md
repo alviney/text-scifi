@@ -79,12 +79,100 @@ The ending is a **narrative outcome** based on ship and colony state at arrival.
 
 The skeleton crew are the player's hands. They perform repairs, operate equipment, and keep each other alive.
 
+### What crew are actually for
+
+Totalling the work the ship generates across the journey:
+
+| Work | Crew-hours |
+|------|-----------:|
+| Maintenance tasks (13,000 × ~6 h, §4) | 78,000 |
+| Fab job setups (~4,000 × 2 h, §7) | 8,000 |
+| Drone prep and recovery (§6b) | 19,200 |
+| Medical, hydroponics, everything else | 20,000 |
+| **Total demand** | **125,200** |
+| Supply — 7 crew × 8 h/day × 300 years | 6,132,000 |
+
+**Crew are ~2% utilised.** Labour is not scarce and never will be, so the roster cannot be a
+throughput mechanic. It's something better:
+
+> **Crew are a latency resource, not a throughput resource.**
+
+What matters is never *how much* work the crew can do — it's whether the right specialist is
+**already awake** at the moment something breaks. Average load is 2%; a cascade failure wants
+three engineers *simultaneously*, and unfreezing takes days.
+
+So the roster is an **insurance premium**. Keeping eight people awake for the next twenty years
+costs food, water, O₂, morale management and colonist-years, against a crisis that may not come.
+Keeping four is cheap and leaves you exposed. That decision — *who do I keep awake, and for how
+long?* — is the whole crew game, and it's a completely different shape from every other system
+in this document.
+
+Two knock-on effects worth stating:
+
+- **Headcount is power-gated like everything else.** Crew eat, and food comes from Grow Beds at
+  120 kW (§6). One grow bed installation feeds roughly ten people; an eleventh crew member means
+  a second bed, and 120 kW you don't have.
+- **Idle crew are not wasted crew.** They're the standing reserve. The feed should make idleness
+  feel like readiness rather than inefficiency — this is where §10's crew chatter lives.
+
 ### Cryo Pool & Rotation
 - **~200 people** in cryo storage — the full colony complement.
 - **6-8 active crew** at any time.
 - **Unfreezing** is expensive: costs medical consumables + the crew member spends a few days in medbay recovering before they can work.
 - **Freezing** is cheap and instant — rotate crew freely, the cost gate is on waking them up.
 - This creates a roster drafting mechanic: need a specialist? Wake them, but pay the price.
+
+**Unfreezing costs medical supplies — which cost rare compounds** (§7). So crew are priced in
+the same currency as electronics, fuel rods and RTGs. Every person you wake is an asset you
+didn't repair.
+
+### The colony is the labour pool
+
+The 200 aren't cargo. They're the staffing budget, and it is finite.
+
+A colony vessel carries people balanced for **founding a settlement**, not for maintaining a
+starship, so ship-relevant specialists are a minority:
+
+| Role | Aboard | Role-years available (~35 working years each) |
+|------|-------:|----------------------------------------------:|
+| Engineer | 30 | 1,050 |
+| Technician | 25 | 875 |
+| Medic | 20 | 700 |
+| Botanist | 20 | 700 |
+| **Pilot / Nav** | **15** | **525** |
+| Generalist | 90 | 3,150 |
+
+Filling 7 crew slots for 300 years costs **2,100 crew-years**. Against a specialist pool of
+3,850, that's **55% utilisation if every slot is a specialist** — feasible, but you will feel
+it, and the back half of the journey is staffed by whoever is left.
+
+#### Ageing and rotation
+
+Nobody lives 300 years. Cryo arrests ageing; being awake does not. A crew member wakes at ~30,
+works ~35 years, and must be **refrozen before they age out** — which is why freezing is cheap
+and instant. The colonist returns to cryo alive, just older.
+
+So the real cost of crewing isn't death, it's **colonist-years burned**. Spread evenly, 2,100
+crew-years across 200 people is ~10 years each: everyone serves a shift and arrives a decade
+older. Lean on your best engineer for eighty years and you have spent her whole life.
+
+This gives §1's outcome spectrum a second, quieter dimension. *200 alive, mean age 58* and
+*180 alive, mean age 34* are both arrivals, and they found very different colonies. The ending
+should say so.
+
+#### Role extinction
+
+Because the pools are small and unequal, **specific roles can run dry**, and that's the real
+crew failure mode:
+
+- **Pilots are the fragile one.** 525 role-years total — a single continuously-awake pilot
+  consumes **57% of the entire pool**. Lose a few to drone accidents (§6b) and asteroid
+  harvesting stops permanently. No pilots, no rare compounds, no ship.
+- **No medics** means you cannot safely unfreeze anyone. The roster locks at whoever happens to
+  be awake, and every subsequent death is permanent.
+
+Neither is an instant loss. Both are slow, visible, and entirely the player's doing — which is
+exactly the failure texture §1 asks for.
 
 ### Specialisations
 | Role        | Strengths                              |
@@ -96,17 +184,66 @@ The skeleton crew are the player's hands. They perform repairs, operate equipmen
 | Technician  | Electrical, life support               |
 | Generalist  | Can do anything, but slower            |
 
-<!-- TODO: Can crew gain experience / cross-train over time? -->
-<!-- TODO: Do crew have names, personality traits, relationships? -->
-<!-- TODO: What happens when a crew member dies — narrative event? Log entry? -->
+#### Experience and cross-training — yes
+
+Crew gain skill in the work they actually do. A generalist who performs two hundred repairs
+becomes, functionally, an engineer.
+
+- It's the **only mitigation for role extinction**: you can train replacements, but it takes
+  years, and the early attempts are slow and dangerous (`crewFactor` in §4's accident formula).
+- It rewards long-horizon play — wake a generalist *alongside* a specialist decades before you
+  need them, and pay for the overlap in food, power and colonist-years.
+- **Training dies with the shift.** Skill is attached to the person, and that person ages out.
+  A treadmill, not a ratchet — consistent with §7's enhancement philosophy.
+
+The player who is thinking fifty years ahead has something concrete to do about it. The one who
+isn't discovers in year 200 that nobody left alive can fly a drone.
+
+### Names, traits and relationships
+
+**Names: yes, required.** The signal feed does not work without them. *"Okonkwo took the hull
+repair"* is a story; *"crew member 4 took the hull repair"* is a log line.
+
+**Traits: lightweight in v1.** Two or three per person, modifying stat drift and task
+preference — *insomniac*, *steady hands*, *claustrophobic*. Enough to make crew distinguishable
+without a personality system. Full personality is the §10 LLM future.
+
+**Relationships: cheap and worth it.** A simple `close-to` link, formed by working the same
+shifts over years. When someone dies, those linked to them take a happiness hit and their
+chatter changes. Almost free to implement, and it's most of what makes a death land.
+
+### Death
+
+A crew death is the game's heaviest event and should be treated as one:
+
+- **A prominent feed event**, not a status change — and the feed drops to `critical` severity,
+  which under §2's snap-back rules pulls a frame-jacking player back to real time. *You do not
+  get to fast-forward through someone dying.*
+- **A permanent memorial entry** in the crew log: name, role, years served, cause, the task they
+  were doing.
+- **Happiness hits** for anyone `close-to` them.
+- **Their skills are simply gone**, including any cross-training invested in them — the roster
+  shrinks and the pool shrinks with it.
+- **Named in the arrival narrative.** The ending should be able to count the dead by name.
+
 
 ### Crew Stats
 | Stat       | Description                                      | Consequence of neglect          |
 |------------|--------------------------------------------------|---------------------------------|
 | Hunger     | Driven by food production pipeline               | Weakness → incapacitation → death |
 | Sleep      | Needs scheduled rest periods                     | Errors → accidents              |
-| Happiness  | Affected by conditions, deaths, workload         | Reduced efficiency? Mutiny?     |
+| Happiness  | Affected by conditions, deaths, workload         | Slower work → refusal → withdrawal |
 | Health     | Injury/illness from accidents or environment     | Can't work → needs medical care |
+
+**Withdrawal, not mutiny.** Mutiny belongs to a different genre — you are an AI custodian of
+sleeping colonists, not a captain facing a crew with somewhere to go. The unhappiness ladder is
+quieter and worse: work slows, then dangerous tasks get refused, and finally the crew member
+**asks to be put back into cryo.**
+
+That last step is a pressure valve with teeth. They're not dead and nothing is broken, but the
+roster just lost a specialist and replacing them costs medical supplies — rare compounds — and
+days of Medbay recovery. A player who grinds their crew doesn't face a rebellion; they face an
+empty ship and a bill.
 
 ### Crew Actions
 - Crew members are **task queues** — the player schedules work onto them.
