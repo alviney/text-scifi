@@ -398,11 +398,11 @@ This rewards having the right crew awake and makes specialists feel distinct fro
 
 ### Raw Materials (from asteroids)
 
-Sourced via **drone harvesting**. Asteroids are **rare** — every few years — so stockpiling and rationing are core gameplay.
+Sourced via **drone harvesting** — see **§6b** for the encounter model, object classes and
+yields. Asteroids are **rare** (roughly one every three years), so stockpiling and rationing
+are core gameplay.
 
-- Asteroids enter range at random intervals.
-  - Limited **window of availability** — after which delta-v cost is prohibitive.
-  - Reference: *Delta-V* by Daniel Suarez for hard-sci-fi asteroid mining.
+- Reference: *Delta-V* by Daniel Suarez for hard-sci-fi asteroid mining.
 
 | Raw Material     | Refined Into           | Used For                          |
 |------------------|------------------------|-----------------------------------|
@@ -616,6 +616,160 @@ that you only have to do it once.
 <!-- TODO: Battery bank capacity in kWh, and how fast surplus recharges it. -->
 <!-- TODO: RTG fabrication cost — should the emergency margin be expensive enough to hurt? -->
 <!-- TODO: Does the reactor need coolant as a separate consumable (it's in the §4 catalogue), or is fuel enough? -->
+
+---
+
+## 6b. Asteroids & Drone Harvesting
+
+The ship's only source of new matter, and the input the whole §7 economy is starved of.
+
+### The constraint everything follows from
+
+**The ship cannot stop, slow down, or manoeuvre.** It is on a ballistic interstellar cruise
+and its delta-v budget is reserved — entirely — for deceleration at the destination. Spending
+any of it mid-journey means arriving too fast to stop.
+
+So the ship never intercepts anything. **The drones do.** They carry the delta-v, they match
+velocity with the object, they mine, and they burn back to a ship that has continued on
+without them the whole time. Every design consequence below falls out of that one fact.
+
+### Encounter lifecycle
+
+```
+DETECT ──────► WINDOW OPENS ──────► SORTIES ──────► WINDOW CLOSES
+  │                  │                  │                 │
+  6-18 months     Δv cost falls     drones round-trip   receding at
+  lead time       to a minimum      until it shuts      cruise velocity
+                  then rises                            — gone forever
+```
+
+Objects are detected **6-18 months ahead** by the Nav Computer and Comms Array. That lead
+time is the player's entire preparation budget: build drones, stock propellant, wake a pilot.
+
+### The launch window is a cost curve, not a gate
+
+Δv required for a drone to intercept *and return* falls as the ship closes on the object,
+bottoms out near closest approach, then climbs steeply as the object begins receding at
+cruise velocity.
+
+| Launch timing | Δv cost | Risk |
+|---------------|---------|------|
+| Early | High — the drone burns fuel chasing | Safe but expensive; fewer sorties affordable |
+| **At the minimum** | Lowest | Optimal — but you must be *ready* |
+| Late | Rises steeply | Sorties fail to return; eventually impossible |
+
+So the window is a **decision with a shape**, not a binary in-range flag. Launching early
+wastes propellant you need for later sorties; waiting for the optimum is efficient but
+worthless if your drones aren't built and fuelled when it arrives. Preparation is the skill.
+
+### Object classes
+
+| Class | Freq | Water ice | Volatiles | Silicates | Metal ore | **Rare elements** |
+|-------|------|-----------|-----------|-----------|-----------|-------------------|
+| **C-type** (carbonaceous) | 35% | 45% | 35% | 15% | 5% | — |
+| **S-type** (silicaceous) | 30% | 10% | 7% | 45% | 35% | 3% |
+| **M-type** (metallic) | 20% | 2% | 5% | 15% | 60% | **18%** |
+| **Cometary fragment** | 10% | 65% | 30% | 5% | — | — |
+| **Exotic** (differentiated) | 5% | — | 10% | 20% | 25% | **45%** |
+
+**Most encounters do not solve your actual problem.** Rare elements — the §7 choke point —
+come almost entirely from M-types and Exotics, which are a quarter of all encounters between
+them. The other three quarters give you water and metal you were never short of. That
+mismatch is the intended anxiety: the famine only ever breaks on a specific kind of rock.
+
+C-types earn their keep differently: volatiles → chemical compounds → **drone propellant**.
+You mine volatiles in order to afford mining. Skip them for too long and the fleet is grounded.
+
+### Harvest throughput — the tuning spine
+
+The window limits **how much you can take**, not whether you can take it. A rich object you
+can only partially strip before it recedes is the normal case.
+
+```
+haul per encounter = drones × sorties per window × capacity per sortie
+                   = drones × ~4 × 40 units
+```
+
+Against §7's requirement of **~6,600 rare elements** over ~100 encounters:
+
+| Fleet | Units / encounter | Rare / encounter | Rare over journey | Verdict |
+|-------|-------------------|------------------|-------------------|---------|
+| 4 drones | 640 | 43 | 4,320 | **34% short** — cannibalising, losing ground |
+| **6 drones** | 960 | 65 | 6,480 | **Break-even.** No margin for losses. |
+| 8 drones | 1,280 | 86 | 8,640 | +31% surplus — room to build enhancements |
+
+Metal ore runs comfortable at every fleet size (~24,500 supplied against ~15,700 demanded).
+That asymmetry is deliberate: **you are never short of metal and always short of rares.**
+
+### The fleet is the investment, and it bootstraps badly
+
+A drone costs **8 metal parts + 6 electronics + 2 seals** (§7) — and those 6 electronics are
+**6 rare compounds**. Expanding the fleet spends exactly the resource the fleet exists to
+collect.
+
+- Early game: 6 drones is break-even, so any loss puts you underwater.
+- Losing a drone costs twice — the haul it would have carried, and the rares to replace it.
+- Drones are **assets** (§4): they age, they need servicing, and a worn drone fails more often.
+  The fleet adds to the maintenance burden it exists to fund.
+
+### Sortie risk and the aggressiveness dial
+
+Per-sortie failure chance rises with object class hazard (M-types are dense and rough),
+drone `condition`, pilot skill, and how hard the margins are being pushed.
+
+The player sets **sortie aggressiveness** per encounter:
+
+| Setting | Propellant margin | Sorties per window | Loss risk |
+|---------|-------------------|--------------------|-----------|
+| Conservative | Wide | Fewer | Low |
+| Standard | Nominal | Baseline (~4) | Moderate |
+| Aggressive | Tight | More | High — drones don't come back |
+
+A per-encounter risk dial that maps directly onto the game's central theme: take the safe
+haul now, or push for the one that gets you out of the hole.
+
+### Sensors decide what you know
+
+Composition is an **estimate with error bars** until a drone actually arrives. The estimate
+narrows as the ship closes, and its quality depends on **Nav Computer** and **Comms Array**
+condition (§4).
+
+- Degraded sensors → shorter lead time and wider error bars.
+- The player commits a fleet to an object that *might* be Exotic and might be another C-type.
+- Neglecting the Bridge means flying blind through the encounters you can't afford to misjudge.
+
+This finally gives the Bridge equipment real mechanical work — until now the Nav Computer and
+Comms Array were power draws with no job.
+
+### Power
+
+The Drone Launcher draws **60 kW** continuously through launch and recovery ops, against
+§6's **110 kW** of headroom. During a harvest window:
+
+- The Fabricator (100 kW) can no longer run alongside it.
+- The Smelter (140 kW) was already impossible.
+
+So a window forces a **power reallocation for its whole duration** — and the ore you're
+hauling in can't be refined until the window closes. Harvest and industry alternate; they
+never overlap.
+
+### Automation and snap-back
+
+Preparation automates cleanly: *on `asteroid:detected` → queue drone fabrication, stock
+propellant, post a "wake pilot" task*.
+
+The **intercept decision itself should not be automated.** It's the canonical snap-back
+event (§2) — the one thing that must pull a frame-jacking player back down to real time,
+because it's irreversible, infrequent, and the single highest-stakes call in the game.
+
+Missing a window entirely is a permanent loss and should be recorded prominently in the feed.
+"*Object 47-C receding. Intercept no longer possible.*" — three years until the next one.
+
+<!-- TODO: Encounter spacing distribution — uniform every ~3 years, or clustered with famines? -->
+<!-- TODO: Should a desperate player be able to spend *ship* delta-v on an intercept,
+     paying for it with a worse arrival? Powerful, but risks trivialising the constraint
+     the whole section is built on. -->
+<!-- TODO: Do drones need a pilot for the whole sortie, or only for launch and recovery? -->
 
 ---
 
