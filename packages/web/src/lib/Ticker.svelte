@@ -53,15 +53,19 @@
 
 <style>
   .ticker {
-    display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: left;
-    padding: 8px 12px; border-bottom: 1px solid var(--rule);
+    display: flex; gap: 8px; align-items: center; width: 100%; text-align: left;
+    height: 66px; padding: 10px 12px; border-bottom: 1px solid var(--rule);
     background: var(--panel); font-size: 11.5px; cursor: pointer;
   }
   .ticker.pinned { background: color-mix(in srgb, var(--crit) 22%, var(--panel)); }
   .ticker.pinned .msg { color: var(--crit); }
-  .mk { color: var(--faint); white-space: pre; flex: none; }
+  .mk { color: var(--faint); white-space: pre; flex: none; align-self: flex-start; padding-top: 1px; }
   .ticker.pinned .mk { color: var(--crit); }
-  .msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* At the taller height there is room for a second line, so a long signal wraps
+     instead of being cut off mid-word. Still capped: the strip must never change
+     height, or every screen reflows each time an item rotates. */
+  .msg { flex: 1; min-width: 0; overflow: hidden; line-height: 1.35;
+         display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .plus { flex: none; color: var(--faint); }
   .ackbtn { flex: none; border: 1px solid var(--crit); color: var(--crit); padding: 0 6px; font-size: 10px; }
 </style>

@@ -154,7 +154,7 @@
 
   nav { display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
         border-top: 1px solid var(--rule); background: var(--panel); }
-  .tab { padding: 11px 2px; font-size: 11px; color: var(--dim); min-width: 0; }
+  .tab { min-height: 76px; padding: 8px 2px; font-size: 11px; color: var(--dim); min-width: 0; }
   .tab[aria-pressed="true"] { color: var(--accent); box-shadow: inset 0 2px 0 var(--accent); }
 
   .sheet { position: fixed; inset: 0; max-width: 560px; margin: 0 auto;
