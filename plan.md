@@ -2334,8 +2334,8 @@ subsection can carry.
 The short version: the simulation is a **standalone TypeScript library with no UI knowledge**
 — deterministic, seeded, integer-ticked, plain-data state. The web client is Svelte over the
 DOM, because §8's interface is text and the DOM renders text better than a canvas does. The web
-build stays the primary version; iOS is a second client, and the decision there is really whether
-the simulation exists once or twice.
+build stays the primary version; iOS ships as a Capacitor build of the same codebase, with a
+native client deferred until something specific proves the WebView inadequate.
 
 The split pays off immediately regardless of the second client: a headless core makes a
 300-year playthrough run in seconds, which turns this document's tuned numbers into a **test

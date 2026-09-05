@@ -129,17 +129,38 @@ balance change is made twice. Every fix is made twice. Any divergence means the 
 quietly play differently, and saves stop transferring between them. The core's determinism makes
 the port *tractable* — identical output is testable — but it does not make it free.
 
-### Recommended: Capacitor first, and decide later
+### Decided: Capacitor first, native deferred
 
 Ship the WebView build. It is weeks of work, it shares everything, and for a game whose visual
 language is monospace characters and box-drawing it renders the target aesthetic **better than
 any engine would** — real text, real scrolling, real accessibility.
 
 Then find out whether it is actually inadequate before paying for a rewrite. If it is fine, the
-question never needs answering. If it is not, you will know precisely *why*, which is what should
-choose between the two ports.
+question never needs answering — which is the point of deferring it.
 
-### If a native client is genuinely needed
+**What would reopen it.** A deferred decision needs a trigger, or it just drifts:
+
+- Tap latency or scroll jank in the feed that cannot be fixed in CSS.
+- Suspend and resume behaving badly enough to compromise §11 Q7 (offline time).
+- App Store friction that a WebView build cannot get past.
+- Wanting something the WebView genuinely cannot do.
+
+Absent one of those, there is nothing to decide.
+
+**What keeps the door open, at no cost.** Deferring is only free if the discipline in §2 holds,
+so these are the things that must not slip:
+
+| Keep | Because |
+|------|---------|
+| The core dependency-free and deterministic | A port is only tractable if it is self-contained |
+| No web APIs anywhere in `sim/` | `localStorage`, `fetch` and `Date.now()` in the core would each have to be unpicked later |
+| UI logic out of the core | Anything the client knows, a second client has to be taught |
+| **The balance suite as the port's acceptance test** | A native rewrite is "correct" when it produces byte-identical output from the same seed. Without that, a port is unverifiable. |
+
+That last row is the one that turns a rewrite from a gamble into a task, and it exists already —
+it is the same harness that validates the tuning.
+
+### If one of those triggers fires
 
 **Unity, honestly assessed for an iOS-only target.** Its central benefit is reaching many
 platforms from one project — and if the target is iOS alone, that benefit goes unused while its
