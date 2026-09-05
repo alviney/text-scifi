@@ -51,6 +51,10 @@ export type Policy = {
   name: string;
   /** service an asset once condition falls below this */
   serviceAt: number;
+  /** Optional separate threshold for the systems everything depends on.
+   *  Experiment knob only: sweeping it found no benefit over a single
+   *  ship-wide threshold, so the game should not expose per-asset values. */
+  criticalServiceAt?: number;
   /** replace an asset once its ceiling falls below this */
   replaceAt: number;
   /** drone fleet the player tries to maintain */

@@ -48,10 +48,12 @@ export function inheritedRules(assets: Asset[]): Rule[] {
 }
 
 /** Rules the player writes once they understand the game (§5c curriculum). */
-export function playerRules(assets: Asset[], serviceAt: number, replaceAt: number): Rule[] {
+export function playerRules(assets: Asset[], serviceAt: number, replaceAt: number,
+                            criticalAt?: number, isCritical?: (id: string) => boolean): Rule[] {
   const out: Rule[] = [];
   for (const a of assets) {
-    out.push({ id: `svc-${a.id}`, watch: a.id, kind: "condition", threshold: serviceAt,
+    const th = (criticalAt !== undefined && isCritical?.(a.id)) ? criticalAt : serviceAt;
+    out.push({ id: `svc-${a.id}`, watch: a.id, kind: "condition", threshold: th,
                action: "service", inherited: false, fires: 0, lastFired: -1 });
   }
   return out;

@@ -40,3 +40,33 @@ for (const at of thresholds) {
 const span = Math.max(...rows.map(r => r[1])) - Math.min(...rows.map(r => r[1]));
 console.log(`\n  best: service at ${best.at} — ${best.surv.toFixed(0)}/200 survive, condition ${best.cond.toFixed(0)}`);
 console.log(`  spread across the range: ${span.toFixed(0)} colonists\n`);
+
+/* Phase 2. If there is an interior optimum, the obvious next move is to give the
+ * systems everything else depends on — reactor, life support, cryo — an earlier
+ * threshold than the rest. Test it rather than assume it. */
+
+const arms: { label: string; critical?: number; rest: number }[] = [
+  { label: "uniform 60",             rest: 60 },
+  { label: "critical 75, rest 50",   critical: 75, rest: 50 },
+  { label: "critical 80, rest 45",   critical: 80, rest: 45 },
+  { label: "critical 70, rest 55",   critical: 70, rest: 55 },
+];
+
+console.log("Differentiated thresholds — earlier service for the critical path\n");
+console.log("  arm                     survivors  end cond  services  brownout%");
+console.log("  " + "-".repeat(63));
+
+for (const arm of arms) {
+  const p: Policy = { name: arm.label, serviceAt: arm.rest, criticalServiceAt: arm.critical,
+                      replaceAt: 62, droneTarget: 6, botanistShare: 0.25,
+                      prioritise: true, automate: true, maintainSensors: true };
+  const rs: State[] = [];
+  for (let seed = 1; seed <= SEEDS; seed++) rs.push(run(seed, p));
+  const arrived = rs.filter(s => s.dead === "arrived");
+  console.log("  " + arm.label.padEnd(24) +
+    avg(rs.map(survivors)).toFixed(0).padStart(9) +
+    (arrived.length ? avg(arrived.map(s => avg(s.assets.map(a => a.cond)))) : 0).toFixed(0).padStart(10) +
+    avg(rs.map(s => s.counters.services)).toFixed(0).padStart(10) +
+    (avg(rs.map(s => s.counters.brownoutDays)) / (300 * 365) * 100).toFixed(0).padStart(11));
+}
+console.log();

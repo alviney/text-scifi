@@ -514,6 +514,71 @@ Correcting this took a diligent ship from 2,943 faults and 182 dead to **0 fault
   costs asteroid material, which is the scarcest thing in the game.
 - No separate "ageing system" to tune. One number, monotonically falling.
 
+#### Where to set the service threshold
+
+The proportional refurbishment model implies an *interior* optimum — service too late and
+assets fail, too early and the fixed overhead per visit erodes ceilings for nothing. Sweeping
+the threshold across 140 playthroughs (`packages/harness/sweep.ts`, 10 seeds × 14 thresholds)
+confirms it, and the shape matters more than the peak:
+
+| Service at | Survivors | End cond | Faults | Services | Replaced | Brownout |
+|-----------:|----------:|---------:|-------:|---------:|---------:|---------:|
+| 20 | 100 | 46 | 906 | 10,812 | 290 | 34% |
+| 30 | 100 | 53 | 195 | 15,874 | 270 | 33% |
+| 40 | 100 | 60 | 19 | 19,440 | 266 | 34% |
+| 50 | 145 | 58 | 18 | 24,849 | 269 | 13% |
+| **60** | **190** | **69** | 23 | 38,976 | 281 | **5%** |
+| 70 | 160 | 72 | 26 | 68,049 | 318 | 6% |
+| 80 | 160 | 66 | 33 | 105,198 | 344 | 9% |
+| 85 | 150 | 57 | 45 | 129,165 | 350 | 12% |
+
+**The optimum is 55–65, peaking at 60**, and it is a *plateau, not a knife edge* — 55, 60 and
+65 all land on 190 survivors. That is the shape we want: a player who reasons "keep things
+above about sixty" is playing well, and does not have to find an exact number to avoid being
+punished. The full range is worth 90 colonists, so the decision matters; the flat top means
+getting it roughly right is enough.
+
+Two different mechanisms bracket it.
+
+**Below 45 — output, not failure.** The obvious reading is that late servicing kills through
+faults, and faults do collapse across that range (906 at threshold 20 down to 19 at 40). But
+survivors do not move at all: 100 lost at 20, and still 100 lost at 40 with faults essentially
+eliminated. Brownout sits at 33–34% throughout. What kills the colony is that reactor output
+scales with condition, so a ship kept permanently in the thirties runs a third of the voyage
+short of power and the cryo banks pay for it.
+
+> **The reactor doesn't have to break to kill you. It just has to be worn.**
+
+That is a better failure mode than the one we assumed, because it is legible: the player can
+watch output sag without a single alarm firing.
+
+**Above 70 — overhead, not wear.** Total ceiling erosion tracks total wear, so servicing early
+does not waste much *per visit* — but the small fixed cost is charged per visit, and visits
+explode. Threshold 85 runs 129,165 services against 60's 38,976, a 3.3× increase to recover the
+same wear, and the fixed component alone drives replacements from 281 to 350. The extra
+replacements consume rare compounds, and the choke point does the rest.
+
+#### Uniform thresholds beat differentiated ones
+
+The natural follow-up is to service the critical path — reactor, life support, cryo — earlier
+than everything else. Tested, and it does nothing:
+
+| Policy | Survivors | End cond | Services |
+|--------|----------:|---------:|---------:|
+| **uniform 60** | 190 | **69** | **38,976** |
+| critical 75, rest 50 | 190 | 60 | 43,266 |
+| critical 80, rest 45 | 190 | 63 | 46,540 |
+| critical 70, rest 55 | 190 | 62 | 41,596 |
+
+Every arm reaches the same 190 survivors, and uniform 60 gets there with the best end condition
+and the fewest services. The hypothesis was wrong, and the reason is the *awaiting replacement*
+rule above: once an asset is never abandoned, the critical path is already protected, and
+servicing it earlier only spends labour that the rest of the ship then goes without.
+
+**Design consequence:** don't build per-asset service thresholds into the automation UI. One
+ship-wide number is not a simplification — it is the better policy, and it keeps the player's
+first automation rule to a single slider.
+
 #### Degradation rate
 
 ```

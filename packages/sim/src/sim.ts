@@ -28,7 +28,8 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   s.stores.parts = 120; s.stores.electronics = 40; s.stores.rareCmp = 60; s.stores.refMetal = 200;
   // §5c: the ship never launches empty — the departure crew left standing rules
   s.rules = inheritedRules(s.assets);
-  if (p?.automate) s.rules.push(...playerRules(s.assets, p.serviceAt, p.replaceAt));
+  if (p?.automate) s.rules.push(...playerRules(s.assets, p.serviceAt, p.replaceAt,
+    p.criticalServiceAt, id => CRITICAL_ORDER[id] !== undefined));
   return s;
 }
 

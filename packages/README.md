@@ -177,8 +177,59 @@ diligent ship now arrives with **200 of 200 alive and zero faults** — the firs
 
 Note also that **steady now slightly outperforms diligent** (25 colonists lost against 45).
 The fixed overhead in the refurbishment model means over-servicing has a mild cost, so there
-is an optimum service interval rather than "more is always better". That looks like a feature,
-but it is untuned.
+is an optimum service interval rather than "more is always better". That looks like a feature.
+Tuned next.
+
+### The service interval, tuned
+
+`sweep.ts` runs 14 thresholds × 10 seeds and finds a genuine interior optimum:
+
+```
+  serviceAt  survivors  end cond   faults  services  replaced  brownout%
+         20        100        46      906     10812       290         34
+         30        100        53      195     15874       270         33
+         40        100        60       19     19440       266         34
+         50        145        58       18     24849       269         13
+         60        190        69       23     38976       281          5
+         70        160        72       26     68049       318          6
+         80        160        66       33    105198       344          9
+         85        150        57       45    129165       350         12
+```
+
+**Optimum 55–65, peak 60, and it is a plateau rather than a knife edge** — 55, 60 and 65 all
+reach 190 survivors. The range is worth 90 colonists, so the choice matters; the flat top means
+a player reasoning "keep things above about sixty" is already playing well.
+
+The interesting half is *why* the low end fails. Faults collapse from 906 to 19 between
+threshold 20 and 40 — and survivors do not move at all, staying at exactly 100 lost, with
+brownout pinned at 33–34% throughout. Eliminating failures changed nothing. What kills the
+colony is that **reactor output scales with condition**: a ship held permanently in the thirties
+runs a third of the voyage short of power, no alarm ever fires, and the cryo banks pay for it.
+The reactor doesn't have to break to kill you; it just has to be worn.
+
+The high end fails for an unrelated reason. Ceiling erosion tracks total wear, so early
+servicing wastes little per visit — but the small *fixed* cost is charged per visit and visits
+explode: 129,165 services at threshold 85 against 38,976 at 60, recovering the same wear. That
+overhead alone pushes replacements from 281 to 350, and the rare-compound choke point does the
+rest.
+
+**Differentiated thresholds do not help.** The obvious next move — service the reactor, life
+support and cryo earlier than everything else — was tested and gains nothing:
+
+```
+  arm                     survivors  end cond  services  brownout%
+  uniform 60                    190        69     38976          5
+  critical 75, rest 50          190        60     43266          5
+  critical 80, rest 45          190        63     46540          5
+  critical 70, rest 55          190        62     41596          5
+```
+
+Every arm reaches 190; uniform 60 does it with the best end condition and the fewest services.
+The hypothesis was wrong, and the cascade fix above is why: once no asset is abandoned while
+awaiting replacement, the critical path is already protected, and servicing it earlier only
+spends labour the rest of the ship then goes without. `Policy.criticalServiceAt` stays in the
+types as an experiment knob, but **the game should ship one ship-wide threshold** — that is not
+a simplification, it is the better policy.
 
 ### Previously unresolved (kept for the record)
 
