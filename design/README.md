@@ -18,10 +18,50 @@ Figures are illustrative but consistent with the tuned economy in `plan.md`.
 
 ### Information architecture
 
-§8 listed ten screens flat. Five are tabs — **Ship, Crew, Auto, Mfg, Nav**, one per
-system the player manages — and the rest drill off the thing they describe
-(Jobs and Stores from Ship; detail panes from their parent).
-This keeps §8's promise that every feed line links to its source.
+**Three tabs, and a ticker above everything.**
+
+An earlier five-tab version mixed two organising ideas — some tabs were *places*
+(Workshop is Engineering) and some were *lenses* — giving two routes to the same object,
+which is what made navigation feel complicated even when each screen was simple.
+
+| Tab | Holds |
+|-----|-------|
+| **Voyage** | Where the ship is going. The storytelling surface. |
+| **Facilities** | Everything with an address — the ten rooms, and Automation, Jobs and Stores from its root |
+| **Crew** | Everyone aboard, awake or asleep |
+
+Workshop and Automation lost their tabs and are found where they live — Engineering, and
+the equipment a rule is attached to. Automation is *also* reachable from the Facilities
+root, because "which of my rules is broken" is a real question with no single address.
+
+### The ticker
+
+One feed item at the top of **every** screen, always. New items replace the old one, so
+the ship can be monitored from anywhere without navigating to look.
+
+A serious alert turns the strip red and **holds it** — rotation stops until acknowledged.
+
+That hold is the visible half of §2's **snap-back**: the same event that pins the strip
+drops the speed, and the same acknowledgement releases both. §5 already treats
+"unacknowledged for X hours" as a rule, so acknowledgement existed in the design — it just
+had no surface. Tapping the ticker opens the full feed.
+
+At 8,760× items arrive faster than anyone can read, so an item holds for a minimum dwell
+and a `+n` badge counts what stacked behind it. This is §11 Q8's severity floor doing its
+work: at 1× the strip carries crew chatter, at full speed only warnings survive — so
+**the strip's content tells the player what speed they are at** without showing a number.
+
+### Voyage
+
+A progress bar says where you are; this says what it cost to get there — *"Behind you:
+38 rocks taken, 6 missed, 7 people dead. Ahead: 153 years."*
+
+Two scales, because 300 years and the next decade are different questions. The whole
+voyage puts the Long Dark in front of the player as a long stretch of nothing. The
+thirty-year lane is the one they act on, with a hollow diamond for an object nobody
+surveyed before launch — unknown rather than merely uncertain.
+
+Fuel lives here because it is a property of the journey, not of a room.
 
 ### One question per level
 

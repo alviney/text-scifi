@@ -112,7 +112,7 @@ h1{
 .screen{flex:1;overflow-y:auto;padding:12px 12px 18px}
 .screen[hidden]{display:none!important}
 .navbar{
-  display:grid;grid-template-columns:repeat(5,1fr);flex:none;
+  display:grid;grid-template-columns:repeat(3,1fr);flex:none;
   border-top:1px solid var(--d-rule);background:var(--d-panel);
 }
 .navbar button{
@@ -196,6 +196,44 @@ h1{
 .act:hover{border-color:var(--d-accent);color:var(--d-accent)}
 .act.danger:hover{border-color:var(--d-crit);color:var(--d-crit)}
 
+/* ---- persistent feed ticker: top of every screen ---- */
+.ticker{
+  display:flex;align-items:center;gap:8px;flex:none;cursor:pointer;width:100%;text-align:left;
+  font-family:inherit;font-size:11.5px;background:var(--d-panel);color:var(--d-text);
+  border:none;border-bottom:1px solid var(--d-rule);padding:9px 10px;min-height:38px;
+}
+.ticker:hover{background:var(--d-panel2)}
+.ticker:focus-visible{outline:2px solid var(--d-accent);outline-offset:-2px}
+.ticker .tdot{flex:none}
+.ticker .tmsg{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  transition:opacity .28s ease}
+.ticker .tyr{flex:none;color:var(--d-faint);font-size:10px;letter-spacing:.05em}
+.ticker .tq{flex:none;font-size:9.5px;color:var(--d-faint);border:1px solid var(--d-rule);
+  border-radius:8px;padding:0 5px}
+.ticker .tex{flex:none;color:var(--d-faint);font-size:11px}
+.ticker.held{background:#2A100C;border-bottom-color:var(--d-crit)}
+.ticker.held .tmsg{color:#FFC9BE}
+.ticker.fading .tmsg{opacity:.15}
+@media (prefers-reduced-motion:reduce){.ticker .tmsg{transition:none}}
+
+/* ---- voyage ---- */
+.sky{position:relative;height:112px;overflow:hidden;border-bottom:1px solid var(--d-rule);
+  margin:-10px -10px 12px}
+.sky pre{position:absolute;top:0;left:0;margin:0;font-family:inherit;font-size:11px;line-height:1.32;
+  color:var(--d-faint);white-space:pre;will-change:transform}
+.sky .far{opacity:.5;animation:drift 90s linear infinite}
+.sky .near{opacity:.9;animation:drift 42s linear infinite}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.sky .far,.sky .near{animation:none}}
+.sky .craft{position:absolute;top:46px;left:50%;transform:translateX(-50%);
+  color:var(--d-accent);font-size:15px}
+.track{font-family:inherit;font-size:11px;line-height:1.35;white-space:pre;margin:0;
+  overflow-x:auto;color:var(--d-dim)}
+.track .done{color:var(--d-accent)} .track .ahead{color:var(--d-faint)}
+.track .here{color:var(--d-text)}
+.tracklbl{display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--d-faint);margin:2px 0 0}
+
 /* lead sentence: every pane opens with words, not numbers */
 .lead{font-size:13.5px;line-height:1.55;color:var(--d-text);margin:2px 0 12px;max-width:34ch}
 .lead .q{color:var(--d-dim)}
@@ -276,7 +314,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
   <header class="masthead">
     <div class="eyebrow">Seedship &middot; §8 interface design</div>
     <h1>Seedship Console</h1>
-    <p class="standfirst">Ten mobile panes for the ship-management game, in the CLI idiom §8 calls for. The device is live &mdash; tap facilities, feed lines and equipment to drill in. Each level answers one question, in a sentence before a number. State shown is <strong>year 147</strong>, mid&#8209;Long&#8209;Dark: the reactor is failing, rare compounds are running out, and no engineer is awake. Swap the skin above the device &mdash; the layout never changes, only the treatment.</p>
+    <p class="standfirst">Ten mobile panes for the ship-management game, in the CLI idiom §8 calls for. The device is live &mdash; tap facilities, feed lines and equipment to drill in. Three tabs, a feed ticker above every screen, and one question per level answered in a sentence before a number. State shown is <strong>year 147</strong>, mid&#8209;Long&#8209;Dark: the reactor is failing, rare compounds are running out, and no engineer is awake. Swap the skin above the device &mdash; the layout never changes, only the treatment.</p>
   </header>
   <div class="rule"></div>
 
@@ -291,17 +329,96 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
         <button class="skinbtn" data-skin-set="hazard" aria-pressed="false"><span class="sw" style="background:linear-gradient(135deg,#0F1418 50%,#F5C518 50%)"></span>Hazard</button>
       </div>
       <div class="device" data-skin="amber">
-        <div class="statusbar">
-          <span>Y<b>147</b>.084 &middot; d112</span>
-          <span>SPD <b>8760&times;</b></span>
-          <span>PWR <b>780</b>kW</span>
-        </div>
+        <button class="ticker" id="ticker" data-go="feedfull">
+          <span class="tdot" id="tdot">&middot;</span>
+          <span class="tmsg" id="tmsg">Fuel rod 47 loaded. 149 left.</span>
+          <span class="tq" id="tq" hidden>+0</span>
+          <span class="tyr">y147</span>
+          <span class="tex">&#9650;</span>
+        </button>
 
-        <!-- ---------- SHIP (calibration point: unchanged density) ---------- -->
-        <section class="screen" id="s-ship">
-          <h2 class="scr-title">Ship <span>year 147</span></h2>
+        <!-- ---------- VOYAGE (tab 1 — the storytelling surface) ---------- -->
+        <section class="screen" id="s-voyage">
+          <div class="sky" aria-hidden="true">
+            <pre class="far">  ·      ˙        ·    ˙   ·         ˙      ·   ˙        ·      ˙   ·     ·   ˙      ·  
+     ˙     ·    ˙      ·        ˙    ·     ˙        ·   ˙     ·      ˙    ·      ˙    
+·       ˙      ·    ˙       ·      ˙    ·      ˙   ·       ˙      ·    ˙      ·    ˙ 
+   ˙  ·      ˙     ·     ˙      ·    ˙      ·   ˙      ·     ˙    ·      ˙   ·      
+      ·   ˙     ·      ˙    ·      ˙     ·      ˙    ·    ˙      ·     ˙    ·    ˙  
+ ˙      ·    ˙      ·   ˙       ·    ˙      ·      ˙    ·      ˙    ·      ˙    ·     ·      ˙        ·    ˙   ·         ˙      ·   ˙        ·      ˙   ·     ·   ˙      ·  
+     ˙     ·    ˙      ·        ˙    ·     ˙        ·   ˙     ·      ˙    ·      ˙    
+·       ˙      ·    ˙       ·      ˙    ·      ˙   ·       ˙      ·    ˙      ·    ˙ 
+   ˙  ·      ˙     ·     ˙      ·    ˙      ·   ˙      ·     ˙    ·      ˙   ·      
+      ·   ˙     ·      ˙    ·      ˙     ·      ˙    ·    ˙      ·     ˙    ·    ˙  
+ ˙      ·    ˙      ·   ˙       ·    ˙      ·      ˙    ·      ˙    ·      ˙    ·   </pre>
+            <pre class="near">    *        .            *        .        *          .        *         .       *  
+         .        *          .          *         .        *        .         *      
+  .          *        .           *         .          *        .        *        .  
+       *        .          *         .         *          .         *        .      
+ .        *          .         *          .        *          .        *        .    
+      .        *         .          *        .         *         .        *             *        .            *        .        *          .        *         .       *  
+         .        *          .          *         .        *        .         *      
+  .          *        .           *         .          *        .        *        .  
+       *        .          *         .         *          .         *        .      
+ .        *          .         *          .        *          .        *        .    
+      .        *         .          *        .         *         .        *         </pre>
+            <span class="craft">&#9654;</span>
+          </div>
+
+          <h2 class="scr-title">Voyage <span>year 147 of 300</span></h2>
+          <pre class="track"><span class="done">████████████████████████</span><span class="here">▶</span><span class="ahead">·······························</span></pre>
+          <div class="tracklbl"><span>launch</span><span>you are here</span><span>arrival</span></div>
+          <p class="quiet">Behind you: 38 rocks taken, 6 missed, 7 people dead. Ahead: 153 years.</p>
+
+          <div class="sect">The next thirty years</div>
+          <pre class="track"><span class="ahead">├──────</span><span class="acc">◆</span><span class="ahead">───────────────</span><span class="acc">◆</span><span class="ahead">──────</span><span class="dim">◇</span><span class="ahead">────────┤</span></pre>
+          <div class="tracklbl"><span>6y icy</span><span>21y metal?</span><span>24y ?</span></div>
+          <p class="lead" style="margin-top:10px">Nothing within reach for six years. <span class="q">This is the long stretch between stars.</span></p>
+          <p class="quiet">These were charted before launch. What they&rsquo;re made of is a guess until a drone gets there &mdash; and the hollow one was never surveyed at all.</p>
+
+          <div class="sect">Fuel</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Rods left</span><span class="vl">149</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Burning</span><span class="vl">1 per 15 months</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Enough for</span><span class="vl">190 years</span></div>
+          <p class="quiet">153 years to go, so fuel is not the problem. Burn faster and that changes.</p>
+
+          <div class="sect">Reactor</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Failing</span><span class="vl">780 kW</span></div>
+          <p class="quiet">The ship wants 890 kW. Some things are switched off to cover the gap.</p>
+
+          <div class="menu">
+            <button data-go="equipment">Go to the reactor<span class="g">&rsaquo;</span></button>
+            <button data-go="feedfull">Everything that&rsquo;s happened<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- FULL FEED ---------- -->
+        <section class="screen" id="s-feedfull" hidden>
+          <button class="backbtn" data-go="voyage">&lsaquo; back</button>
+          <h2 class="scr-title">What&rsquo;s happened <span>4 unread</span></h2>
+          <div class="acts" style="margin:0 0 10px">
+            <button class="act">Everything</button><button class="act">Warnings</button><button class="act">Serious</button>
+          </div>
+          <div class="feed">
+            <button class="feedline" data-go="equipment"><span class="ts">14:32</span><span class="msg"><span class="crit">●</span> The reactor is failing. It can&rsquo;t make enough power.</span></button>
+            <button class="feedline" data-go="rule"><span class="ts">11:07</span><span class="msg"><span class="warn">●</span> The water restock rule hasn&rsquo;t run in 47 years.</span></button>
+            <button class="feedline" data-go="inventory"><span class="ts">09:41</span><span class="msg"><span class="warn">●</span> Rare compounds run out in about 90 days.</span></button>
+            <button class="feedline" data-go="tasks"><span class="ts">08:15</span><span class="msg"><span class="warn">●</span> A repair job has waited five years. No engineer is awake.</span></button>
+            <button class="feedline" data-go="voyage"><span class="ts">04:02</span><span class="msg">Fuel rod 47 loaded. 149 left.</span></button>
+            <button class="feedline chatter" data-go="crew"><span class="ts">02:20</span><span class="msg">Okonkwo: &ldquo;third week of the same ration block.&rdquo;</span></button>
+            <button class="feedline" data-go="facility"><span class="ts">01:15</span><span class="msg">Adeyemi picked the crop in bed 4.</span></button>
+            <button class="feedline chatter" data-go="crew"><span class="ts">y146</span><span class="msg">Year 146 closed. Nobody died.</span></button>
+          </div>
+          <div class="menu">
+            <button id="ackbtn">Mark as read<span class="c">&nbsp;&middot; resumes the ticker</span><span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- FACILITIES (tab 2) ---------- -->
+        <section class="screen" id="s-facilities" hidden>
+          <h2 class="scr-title">Facilities <span>10 rooms</span></h2>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Bridge</span><span class="vl">OK</span></button>
-          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Engineering</span><span class="vl">Powered down</span></button>
+          <button class="row" data-go="mfg"><span class="dot warn">◐</span><span class="nm">Engineering</span><span class="vl">Powered down</span></button>
           <button class="row" data-go="equipment"><span class="dot crit">○</span><span class="nm">Reactor</span><span class="vl">Failing</span></button>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Life Support</span><span class="vl">OK</span></button>
           <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Hydroponics</span><span class="vl">Crops ready</span></button>
@@ -310,17 +427,8 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
           <button class="row" data-go="inventory"><span class="dot ok">●</span><span class="nm">Cargo Bay</span><span class="vl">OK</span></button>
           <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Drone Bay</span><span class="vl">Stowed</span></button>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Maintenance</span><span class="vl">OK</span></button>
-
-          <div class="sect">What's happening</div>
-          <div class="feed">
-            <button class="feedline" data-go="equipment"><span class="ts">14:32</span><span class="msg"><span class="crit">●</span> The reactor is failing. It can&rsquo;t make enough power.</span></button>
-            <button class="feedline" data-go="rule"><span class="ts">11:07</span><span class="msg"><span class="warn">●</span> The water restock rule hasn&rsquo;t run in 47 years.</span></button>
-            <button class="feedline" data-go="inventory"><span class="ts">09:41</span><span class="msg"><span class="warn">●</span> Rare compounds run out in about 90 days.</span></button>
-            <button class="feedline" data-go="tasks"><span class="ts">08:15</span><span class="msg"><span class="warn">●</span> A repair job has waited five years. No engineer is awake.</span></button>
-            <button class="feedline" data-go="astro"><span class="ts">04:02</span><span class="msg">Fuel rod 47 loaded. 149 left.</span></button>
-            <button class="feedline chatter" data-go="crew"><span class="ts">02:20</span><span class="msg">Okonkwo: &ldquo;third week of the same ration block.&rdquo;</span></button>
-          </div>
           <div class="menu">
+            <button data-go="auto">Automation<span class="c">&nbsp;&middot; 3 need attention</span><span class="g">&rsaquo;</span></button>
             <button data-go="tasks">Jobs<span class="c">&nbsp;&middot; 14 waiting</span><span class="g">&rsaquo;</span></button>
             <button data-go="inventory">Stores<span class="g">&rsaquo;</span></button>
           </div>
@@ -328,7 +436,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
 
         <!-- ---------- FACILITY ---------- -->
         <section class="screen" id="s-facility" hidden>
-          <button class="backbtn" data-go="ship">&lsaquo; ship</button>
+          <button class="backbtn" data-go="facilities">&lsaquo; facilities</button>
           <h2 class="scr-title">Hydroponics <span class="warn">◐</span></h2>
           <p class="lead">Three crops are ready to pick, and only one botanist is awake to pick them.</p>
           <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 1</span><span class="vl">Ready</span></button>
@@ -347,7 +455,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
 
         <!-- ---------- EQUIPMENT ---------- -->
         <section class="screen" id="s-equipment" hidden>
-          <button class="backbtn" data-go="ship">&lsaquo; ship</button>
+          <button class="backbtn" data-go="facilities">&lsaquo; facilities</button>
           <h2 class="scr-title">Reactor Core <span class="crit">○</span></h2>
           <p class="lead">Failing. It hasn&rsquo;t been serviced in six years.</p>
           <div class="bigbar b-crit"><span class="fill">███████</span><span class="empty">░░░░░░░░░░░░░</span></div>
@@ -515,7 +623,7 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
         <!-- ---------- JOBS ---------- -->
         <section class="screen" id="s-tasks" hidden>
-          <button class="backbtn" data-go="ship">&lsaquo; ship</button>
+          <button class="backbtn" data-go="facilities">&lsaquo; facilities</button>
           <h2 class="scr-title">Jobs <span>14 waiting</span></h2>
           <p class="lead">Nobody aboard can do three of these.</p>
           <div class="sect">Waiting for an engineer</div>
@@ -530,7 +638,7 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
         <!-- ---------- STORES ---------- -->
         <section class="screen" id="s-inventory" hidden>
-          <button class="backbtn" data-go="ship">&lsaquo; ship</button>
+          <button class="backbtn" data-go="facilities">&lsaquo; facilities</button>
           <h2 class="scr-title">Stores</h2>
           <div class="sect">Running out</div>
           <div class="row static"><span class="dot crit">○</span><span class="nm">Rare compounds</span><span class="vl">84 &middot; ~90 days</span></div>
@@ -546,11 +654,9 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         </section>
 
         <nav class="navbar">
-          <button data-go="ship" aria-current="true">SHIP</button>
+          <button data-go="voyage" aria-current="true">VOYAGE</button>
+          <button data-go="facilities">FACILITIES</button>
           <button data-go="crew">CREW</button>
-          <button data-go="auto">AUTO</button>
-          <button data-go="mfg">MFG</button>
-          <button data-go="astro">NAV</button>
         </nav>
       </div>
       <p class="skincap" id="skincap"><b>Amber CRT.</b> IBM Plex Mono on warm charcoal. The saved baseline &mdash; industrial terminal, VT220 era, warm enough to sit with for hours.</p>
@@ -602,27 +708,43 @@ svc  ^  ^   ^  ^   ^  ^</pre>
       <section>
         <h2>Jump to a screen</h2>
         <ul class="screenlist">
-          <li><button data-go="ship"><span class="k">SHIP</span>Ship status &mdash; facilities + signal feed</button></li>
-          <li><button data-go="facility"><span class="k">drill</span>Facility detail &mdash; Hydroponics</button></li>
-          <li><button data-go="equipment"><span class="k">drill</span>Equipment &mdash; Reactor Core</button></li>
+          <li><button data-go="voyage"><span class="k">VOYAGE</span>The journey &mdash; where you are, what&rsquo;s ahead, fuel</button></li>
+          <li><button data-go="feedfull"><span class="k">expand</span>Full feed &mdash; from the ticker</button></li>
+          <li><button data-go="facilities"><span class="k">FACILITIES</span>The ten rooms</button></li>
+          <li><button data-go="facility"><span class="k">drill</span>Hydroponics</button></li>
+          <li><button data-go="equipment"><span class="k">drill</span>Reactor Core</button></li>
           <li><button data-go="equipdetails"><span class="k">opt-in</span>Details &mdash; the numbers, on demand</button></li>
-          <li><button data-go="crew"><span class="k">CREW</span>Crew roster + colony pool</button></li>
-          <li><button data-go="crewmember"><span class="k">drill</span>Crew member &mdash; Okonkwo</button></li>
-          <li><button data-go="colony"><span class="k">opt-in</span>The colony &mdash; who is left</button></li>
-          <li><button data-go="auto"><span class="k">AUTO</span>Automation &mdash; three rules need attention</button></li>
+          <li><button data-go="mfg"><span class="k">drill</span>Engineering &mdash; the workshop</button></li>
+          <li><button data-go="auto"><span class="k">drill</span>Automation &mdash; three rules need attention</button></li>
           <li><button data-go="rule"><span class="k">drill</span>One rule &mdash; Restock water</button></li>
           <li><button data-go="newrule"><span class="k">drill</span>Rule builder &mdash; sentence-shaped</button></li>
-          <li><button data-go="mfg"><span class="k">MFG</span>Manufacturing queue</button></li>
-          <li><button data-go="astro"><span class="k">NAV</span>Navigation &amp; mission profile</button></li>
-          <li><button data-go="tasks"><span class="k">drill</span>Task board</button></li>
-          <li><button data-go="inventory"><span class="k">drill</span>Resource inventory</button></li>
+          <li><button data-go="tasks"><span class="k">drill</span>Jobs</button></li>
+          <li><button data-go="inventory"><span class="k">drill</span>Stores</button></li>
+          <li><button data-go="crew"><span class="k">CREW</span>Crew roster</button></li>
+          <li><button data-go="crewmember"><span class="k">drill</span>Okonkwo</button></li>
+          <li><button data-go="colony"><span class="k">opt-in</span>The colony &mdash; who is left</button></li>
         </ul>
       </section>
 
       <section>
-        <h2>Five tabs, everything else drills</h2>
-        <p>§8 listed ten screens flat. Ten is too many for a mobile root, so five are tabs &mdash; <strong>Ship, Crew, Auto, Mfg, Nav</strong>, one per system the player actually manages &mdash; and the other five are reached by drilling into the thing they describe. Task board and Inventory hang off Ship; the three detail panes hang off their parent.</p>
-        <p>That keeps the promise §8 makes about the feed: <strong>every line is a link to its source</strong>. Tapping the reactor alert lands on Reactor Core, not on a filtered log.</p>
+        <h2>Three tabs, and a ticker above everything</h2>
+        <p>Five tabs mixed two organising ideas &mdash; some were <em>places</em> (Workshop is Engineering) and some were <em>lenses</em>. That gave two routes to the same object, which is what made navigation feel complicated even when each screen was simple.</p>
+        <p>Now: <strong>Voyage</strong> is where the ship is going, <strong>Facilities</strong> is everything with an address, <strong>Crew</strong> is everyone aboard. The Workshop and Automation lost their tabs and are found where they live &mdash; Engineering, and the equipment a rule is attached to &mdash; with Automation also reachable from the Facilities root, since &ldquo;which of my rules is broken&rdquo; is a real question.</p>
+      </section>
+
+      <section>
+        <h2>The ticker is the game&rsquo;s pulse</h2>
+        <p>One feed item, at the top of every screen, always. New items replace the old one, so you can monitor the ship from anywhere without going and looking.</p>
+        <p class="callout">A serious alert turns the strip red and <strong>holds it there</strong> &mdash; the ticker stops rotating until you acknowledge it.</p>
+        <p>That hold is the visible half of §2&rsquo;s <strong>snap-back</strong>. The same event that pins the strip drops the speed, and the same acknowledgement releases both. §5 already treats &ldquo;unacknowledged for X hours&rdquo; as a rule, so acknowledgement was in the design already &mdash; it just never had a surface.</p>
+        <p>At 8,760&times; items arrive faster than anyone reads, so an item holds for a minimum dwell and a <code>+3</code> badge counts what stacked up behind it. That is §11&rsquo;s severity floor doing its work: at 1&times; the strip carries crew chatter and small events, at full speed only warnings survive. <strong>The strip&rsquo;s content tells you what speed you are at</strong> without showing a number.</p>
+      </section>
+
+      <section>
+        <h2>Voyage carries the story</h2>
+        <p>A progress bar says where you are. This says <em>what it cost to get there</em>: <em>&ldquo;Behind you: 38 rocks taken, 6 missed, 7 people dead. Ahead: 153 years.&rdquo;</em></p>
+        <p>Two scales, because 300 years and the next decade are different questions. The whole voyage puts the Long Dark in front of you as a long stretch of nothing, which is honest. The thirty-year lane is the one you act on &mdash; and the hollow diamond is an object nobody surveyed before launch, so its composition is unknown rather than merely uncertain.</p>
+        <p>Fuel sits here because it is a property of the journey, not of a room. It reads as reassurance at year 147 &mdash; 190 years of margin against 153 to go &mdash; which is the truth. Fuel is not this ship&rsquo;s problem. Rare compounds are.</p>
       </section>
 
       <section>
@@ -661,10 +783,12 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
 <script>
 (function(){
-  var screens = ["ship","facility","equipment","equipdetails","crew","colony","crewmember","auto","rule","newrule","mfg","astro","tasks","inventory"];
-  var tabs = {ship:"ship", crew:"crew", auto:"auto", mfg:"mfg", astro:"astro",
-              facility:"ship", equipment:"ship", equipdetails:"ship", tasks:"ship",
-              inventory:"ship", crewmember:"crew", colony:"crew", rule:"auto", newrule:"auto"};
+  var screens = ["voyage","feedfull","facilities","facility","equipment","equipdetails","crew","colony","crewmember","auto","rule","newrule","mfg","tasks","inventory"];
+  var tabs = {voyage:"voyage", feedfull:"voyage",
+              facilities:"facilities", facility:"facilities", equipment:"facilities",
+              equipdetails:"facilities", mfg:"facilities", auto:"facilities",
+              rule:"facilities", newrule:"facilities", tasks:"facilities", inventory:"facilities",
+              crew:"crew", colony:"crew", crewmember:"crew"};
   var navBtns = Array.prototype.slice.call(document.querySelectorAll(".navbar button"));
 
   function go(name){
@@ -700,6 +824,56 @@ svc  ^  ^   ^  ^   ^  ^</pre>
       b.setAttribute("aria-pressed", b.getAttribute("data-skin-set") === name ? "true" : "false");
     });
   }
+
+  /* ---- persistent feed ticker ----
+     Rotates ambient items; a serious one HOLDS the strip red and stops the
+     rotation. That hold is the visible half of §2 snap-back: acknowledging
+     it is what resumes both. */
+  var items = [
+    {sev:"",     dot:"·", msg:"Fuel rod 47 loaded. 149 left."},
+    {sev:"faint",dot:"·", msg:"Okonkwo: \u201Cthird week of the same ration block.\u201D"},
+    {sev:"warn", dot:"\u25CF", msg:"Rare compounds run out in about 90 days."},
+    {sev:"",     dot:"·", msg:"Adeyemi picked the crop in bed 4."},
+    {sev:"warn", dot:"\u25CF", msg:"A repair job has waited five years."},
+    {sev:"crit", dot:"\u25CF", msg:"The reactor is failing. It can\u2019t make enough power."}
+  ];
+  var tk = document.getElementById("ticker"),
+      td = document.getElementById("tdot"),
+      tm = document.getElementById("tmsg"),
+      tq = document.getElementById("tq");
+  var idx = 0, held = false, queued = 0, timer = null;
+
+  function paint(){
+    var it = items[idx];
+    td.className = "tdot " + (it.sev || "dim");
+    td.textContent = it.dot;
+    tm.textContent = it.msg;
+    tm.className = "tmsg" + (it.sev === "faint" ? " faint" : "");
+    tk.classList.toggle("held", it.sev === "crit");
+    held = (it.sev === "crit");
+    if (held) { queued = 3; }
+    tq.hidden = !held;
+    if (held) tq.textContent = "+" + queued;
+  }
+  function advance(){
+    if (held) return;
+    tm.parentNode.classList.add("fading");
+    setTimeout(function(){
+      idx = (idx + 1) % items.length;
+      paint();
+      tk.classList.remove("fading");
+    }, 280);
+  }
+  function start(){ if (timer) clearInterval(timer); timer = setInterval(advance, 3400); }
+  paint(); start();
+
+  var ack = document.getElementById("ackbtn");
+  if (ack) ack.addEventListener("click", function(e){
+    e.stopPropagation();
+    held = false; queued = 0; tq.hidden = true;
+    tk.classList.remove("held");
+    idx = 0; paint(); start();
+  });
 
   document.addEventListener("click", function(e){
     var s = e.target.closest("[data-skin-set]");
