@@ -2,6 +2,8 @@
 
 The prototype client. Svelte 5 + Vite, per `ARCHITECTURE.md` §4.
 
+Published to play: https://claude.ai/code/artifact/81179ce3-b560-4b71-80fd-55747fbcd05b
+
 ```
 npm install
 npm run dev      # http://localhost:5173
