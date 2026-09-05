@@ -113,6 +113,23 @@ with the Rooms delivery marker: the same mark meant cargo in transit on one scre
 abstraction on the next, so the lanes read as transfers rather than rules firing. The trace is
 now a scrolling time axis (90 days, newest at the right), which cannot be misread as a journey.
 
+### The cutaway, rebuilt against the real simulation
+
+`packages/web` now renders this hero from live state, and the first attempt got it wrong in a
+way worth recording: it was drawn on a canvas as a single line of ten dots. That lost three
+things the design was carrying — the two-deck shape that makes it read as a ship rather than a
+grid, the bays as real tap targets with the same destinations as the list below, and the
+distinction between a marker travelling and a badge sitting still.
+
+It is DOM again, and the rules above hold literally: a consignment's position on the spine is
+its actual progress between its actual endpoints, and held cargo is badged on the room holding
+it with the room's own status dot left alone.
+
+One addition the mockup could not have: the mockup's caption said *"shifting it needs the crane,
+and there's no power spare to run one"*, because that was the state being depicted. Live, there
+are three different reasons a haul sits still — the crane is broken, the bus has no headroom, or
+nobody has picked the job up — and printing the wrong one sends the player to the wrong screen.
+
 ### The ticker
 
 One feed item at the top of **every** screen, always. New items replace the old one, so
