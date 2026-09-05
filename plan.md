@@ -368,6 +368,18 @@ Costed: ~1,480 delivery jobs across the voyage, about **11% more work** than the
 load, taking ~0.07% of crew capacity. It spends the idle roster §3 identified rather than
 overloading it, and it finally gives the Cargo Bay and the Loading Crane a job.
 
+**Bulk deliveries need the Loading Crane**, which is a 30 kW intermittent load (§6). Small
+consumables move by hand; raw material in the hundreds of units does not. That makes material
+movement **power-gated**, and closes §7's death spiral one turn tighter:
+
+> The reactor fails → there is no headroom → the crane can't run → ore can't leave the Cargo
+> Bay → the smelter is idle → there is no refined metal → there are no parts → **to fix the
+> reactor.**
+
+Every rule in that chain fires correctly. The jam is not a broken automation, a missing crew
+member, or an empty store — it is 612 units of ore sitting eleven days away from a machine that
+needs it, in a ship that cannot spare 30 kW to carry it there.
+
 Transport is a crew task, so it's automatable — but it can **jam**:
 
 - **Output buffer full** → the asset cannot start its next cycle. It stalls, silently, at full

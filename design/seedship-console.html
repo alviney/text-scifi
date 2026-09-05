@@ -490,7 +490,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
               <span class="bd">A repair job has waited five years. No engineer is awake.</span></button>
             <button class="fl2" data-go="inventory">
               <span class="hd"><span class="sig"><span class="lv warn">[WRN]</span><span class="fc">[ENG]</span><span class="cd">[MOVE]</span></span><span class="tm">07:50</span></span>
-              <span class="bd">Ore delivery unclaimed 11 days. The smelter is idle.</span></button>
+              <span class="bd">Ore can&rsquo;t leave the Cargo Bay. The crane has no power, and the smelter has been idle 11 days.</span></button>
             <button class="fl2" data-go="voyage">
               <span class="hd"><span class="sig"><span class="lv dim">[INF]</span><span class="fc">[RCT]</span><span class="cd">[FUEL]</span></span><span class="tm">04:02</span></span>
               <span class="bd">Fuel rod 47 loaded. 149 left.</span></button>
@@ -524,7 +524,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
                 </div>
                 <div class="spine">
                   <span class="flow moving">&#9656;&#9656; filters &rarr; LFS</span>
-                  <span class="flow stuck" style="right:2%">&#9888; ore stuck</span>
+                  <span class="flow stuck" style="right:2%">&#9888; ore held</span>
                 </div>
                 <div class="deck">
                   <button class="bay s-ok"   data-go="inventory"><span class="bd">&#9679;</span>CRG</button>
@@ -536,7 +536,8 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
               </div>
               <span class="tail">&#9655;</span>
             </div>
-            <div class="hullcap"><span>bow</span><span>2 deliveries in transit</span><span>drive</span></div>
+            <div class="hullcap"><span>bow</span><span>1 moving &middot; 1 held</span><span>drive</span></div>
+            <p class="quiet" style="margin:8px 0 0">Ore can&rsquo;t leave the Cargo Bay &mdash; shifting it needs the crane, and there&rsquo;s no power spare to run one.</p>
           </div>
 
           <h2 class="scr-title">Rooms <span>1 failing &middot; 2 need attention</span></h2>
@@ -742,8 +743,8 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <p class="quiet">Three rules, each one simple, feeding each other:</p>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Life Support: filters low</span><span class="vl">fetch 40</span></div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Engineering: filters low</span><span class="vl">make 60</span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineering: ore low</span><span class="vl">fetch from Cargo</span></div>
-          <p class="quiet">The last one is jammed &mdash; nobody has picked up the delivery, so the smelter is idle and the whole chain has stopped behind it.</p>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineering: ore low</span><span class="vl">blocked</span></div>
+          <p class="quiet">The last one is jammed. It raised the delivery correctly &mdash; but the crane it needs has no power, so the smelter is idle and the whole chain has stopped behind it. Every rule here is working exactly as written.</p>
           <div class="menu">
             <button>Rules that are working<span class="c">&nbsp;&middot; 58</span><span class="g">&rsaquo;</span></button>
             <button data-go="newrule">Write a new rule<span class="g">&rsaquo;</span></button>
@@ -846,8 +847,8 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <div class="row static"><span class="dot crit">○</span><span class="nm">Service the fabricator</span><span class="vl">1 yr</span></div>
           <div class="sect">Moving things about</div>
           <div class="row static"><span class="dot warn">◐</span><span class="nm">Filters &rarr; Life Support</span><span class="vl">2 days</span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Metal ore &rarr; Engineering</span><span class="vl">11 days</span></div>
-          <p class="quiet">The smelter has been idle eleven days waiting for ore that&rsquo;s sitting in the Cargo Bay.</p>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Metal ore &rarr; Engineering</span><span class="vl">blocked</span></div>
+          <p class="quiet">Nobody can do this one. Shifting three hundred units needs the loading crane, and the reactor isn&rsquo;t making enough power to run it. The smelter has been idle eleven days as a result.</p>
           <div class="sect">Being done now</div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Okonkwo &middot; water recycler</span><span class="vl">4h</span></div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Lindqvist &middot; hauling seals</span><span class="vl">1h</span></div>
@@ -868,7 +869,7 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <div class="sect">Metal ore &middot; 612 left</div>
           <div class="row static"><span class="dot warn">◐</span><span class="nm">Cargo Bay</span><span class="vl">612</span></div>
           <div class="row static"><span class="dot crit">○</span><span class="nm">Engineering</span><span class="vl">0 &mdash; smelter idle</span></div>
-          <p class="quiet">It&rsquo;s all in the wrong room. A delivery job has been waiting eleven days.</p>
+          <p class="quiet">It&rsquo;s all in the wrong room, and it can&rsquo;t be moved: the crane needs power the reactor isn&rsquo;t making. Fix the reactor and the ore moves, the smelter runs, and you can make the parts to fix the reactor.</p>
 
           <div class="sect">Filters &middot; 62 left</div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Engineering</span><span class="vl">48</span></div>
@@ -989,6 +990,7 @@ svc  ^  ^   ^  ^   ^  ^</pre>
       <section>
         <h2>The ship is the hero on Rooms</h2>
         <p>§4 says room connectivity is flavour. That was true when inventory was a single global pool &mdash; but <strong>per-room stores changed the brief</strong>. Things physically move between rooms now, and a schematic is the only place that layer can be seen at all.</p>
+        <p class="callout">The held delivery is the whole §7 trap in one marker: the reactor is failing, so there is no power for the crane, so the ore can&rsquo;t move, so the smelter is idle, so there are no parts &mdash; <strong>to fix the reactor.</strong></p>
         <p>So the cutaway does three jobs rather than decorating: <strong>where every room is</strong>, <strong>what state it&rsquo;s in</strong>, and <strong>what is moving between them right now</strong>. The filter delivery slides along the spine; the ore delivery sits stuck against the drive end with a warning, which is why the smelter has been idle eleven days.</p>
         <p>Two decks around a spine, bow to the left and drive to the right, so the shape reads as a ship rather than a grid. Every bay is a tap target &mdash; the same destinations as the list below it, reached spatially instead of alphabetically. Over a few hundred hours the player will know where things are without reading the labels, which is the real prize.</p>
         <p>It mirrors Voyage deliberately: hero above, detail below. Voyage answers <em>where are we going</em>; Rooms answers <em>what shape are we in</em>.</p>
