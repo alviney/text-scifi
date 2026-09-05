@@ -6,6 +6,7 @@ import { emptyStores, refine, makeParts, canMakeRod, makeRod, canMakeDrone, make
          RARE_RESERVE, ELEC_TARGET } from "./economy.ts";
 import { BASELINE_KW, reactorOutput, rodsPerDay, conditionFactor } from "./power.ts";
 import { type Rule, type Task, inheritedRules, playerRules, evaluate, reportedCondition } from "./rules.ts";
+import { newColony, tickColony, labour } from "./colony.ts";
 
 export const START_RODS = 320;
 export const START_DRONES = 6;
@@ -16,7 +17,7 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   const s: State = {
     day: 0, rngState: 0, assets: buildAssets(), rods: START_RODS, drones: START_DRONES,
     stores: emptyStores(), schedule: buildSchedule(r, actII), next: 0,
-    gauges: { parts: 100, rods: 100, rareCmp: 100, drones: 100 }, rules: [], board: [],
+    gauges: { parts: 100, rods: 100, rareCmp: 100, drones: 100 }, colony: newColony(), rules: [], board: [],
     counters: { ruleFires: 0, staleTasks: 0, blindDays: 0, services: 0, replacements: 0,
                 faults: 0, encountersTaken: 0, encountersMissed: 0, rodsMade: 0,
                 deficitDays: 0, brownoutDays: 0 },
@@ -143,7 +144,8 @@ export function step(s: State, p: Policy): State {
   // Servicing only helps if there is wear to recover: an asset already at its
   // ceiling gains nothing and still pays the refurbishment loss.
   // The crew work the board, not the ship: a job nobody raised is a job nobody does.
-  let jobs = p.labourPerDay;
+  // Crew capacity is people, not a constant. Lose them and the ship stops being repaired.
+  let jobs = labour(s.colony) * (1 - p.botanistShare);
   s.board.sort((x, y) => x.priority - y.priority || x.raised - y.raised);
   const done: Task[] = [];
   for (const task of s.board) {
@@ -190,6 +192,8 @@ export function step(s: State, p: Policy): State {
       if (chance(r, 0.06 * s.drones)) s.drones--;         // sortie losses
     } else s.counters.encountersMissed++;
   }
+
+  tickColony(s, r, output, labour(s.colony) * p.botanistShare / 0.6);
 
   s.day++;
   s.rngState = r.s;

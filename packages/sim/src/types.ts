@@ -39,6 +39,7 @@ export type State = {
   next: number;          // index into schedule
   /** §5: gauges on the stores. They wear, and a worn one reads high. */
   gauges: Record<string, number>;
+  colony: import("./colony.ts").Colony;
   rules: import("./rules.ts").Rule[];
   board: import("./rules.ts").Task[];
   counters: Counters;
@@ -54,8 +55,8 @@ export type Policy = {
   replaceAt: number;
   /** drone fleet the player tries to maintain */
   droneTarget: number;
-  /** maintenance jobs the crew can complete per day */
-  labourPerDay: number;
+  /** share of crew effort spent on hydroponics rather than repairs */
+  botanistShare: number;
   /** does the player look after the systems everything else depends on first? */
   prioritise: boolean;
   /** does the player write maintenance rules, or notice things by hand? */

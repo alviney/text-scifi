@@ -3,7 +3,7 @@
 import { run } from "../sim/src/sim.ts";
 import type { Policy, State } from "../sim/src/types.ts";
 
-const base = { serviceAt: 55, replaceAt: 62, droneTarget: 6, labourPerDay: 2, prioritise: true };
+const base = { serviceAt: 55, replaceAt: 62, droneTarget: 6, botanistShare: 0.25, prioritise: true };
 const P = (name: string, automate: boolean, maintainSensors: boolean): Policy =>
   ({ ...base, name, automate, maintainSensors });
 

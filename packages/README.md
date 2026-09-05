@@ -120,8 +120,46 @@ Every derived figure in plan.md now reproduces within tolerance, from an indepen
 implementation. Play styles order correctly, and the raw-rare backlog that suggested a refining
 bottleneck has gone — it was the dead drone fleet, not throughput.
 
-**Still true, and still a problem:** 0 of 20 runs hit a fail state. §1's fail states remain
-unreachable even for a player who neither automates nor maintains anything.
+## The colony, and why nothing used to fail
 
-**Still untested:** the 2% food margin, and whether 13,000 maintenance tasks reads as pressure
-or noise — hydroponics and individual crew are both still stubbed.
+An earlier pass reported "§1's fail states are unreachable" as a finding about the design. That
+was wrong, and worth recording as a lesson: **the sim had no people in it.** Its only endings
+were "out of fuel" and "arrived". The O₂ generator could be dead for two centuries and nothing
+happened, because nobody was aboard to suffocate. A model with no deaths in it will always
+report that a neglected ship arrives safely.
+
+`colony.ts` adds the half that kills you: crew who eat and breathe, six grow beds that must be
+tended, air that depends on the O₂ generator and the LifeSupportNodes, and cryo banks that need
+490 kW met before they get any power at all. Crucially, **labour is now people rather than a
+constant** — lose crew and the ship stops being repaired, which is the spiral §1 describes.
+
+Fail states are now reachable, and they discriminate:
+
+| Arm | Arrived | End cond | Died awake | Died frozen |
+|-----|--------:|---------:|-----------:|------------:|
+| diligent | 100% | 55 | 0 | 182 |
+| steady | 100% | 56 | 0 | 48 |
+| no gauges | 100% | 35 | 0 | 192 |
+| **no rules** | **0%** | — | 8 | 192 |
+| **neglectful** | **0%** | — | 8 | 190 |
+| **underfed** | **0%** | — | 8 | 192 |
+
+Three distinct causes, all ending in *crew lost*: never automating, never maintaining, and
+under-tending hydroponics. **A ship with no automation dies every time**, which is exactly what
+§1 claims and had never been demonstrated.
+
+### Unresolved: the year-278 cascade
+
+A well-run ship still loses 182 of 192 colonists, and tracing it shows they die **in a single
+cascade at year 278** rather than bleeding away. The reactor slides from condition 42 to 12 in
+a short window at the very end of the voyage and the banks go dark four at a time.
+
+That is not the slow decline the design intends, and it is not yet diagnosed. Adding thermal
+mass to the banks (21 days of grace, so a dip does not kill) did not change it, which rules out
+brief brownouts. Something about the endgame — Act III material arriving, or the replacement
+threshold sitting exactly at the reactor's floor — is worth a session on its own.
+
+Until that is understood, treat *died frozen* as untuned. *Arrived* and *died awake* look right.
+
+**Still untested:** whether 13,000 maintenance tasks reads as pressure or noise. That one needs
+a player, not a harness.
