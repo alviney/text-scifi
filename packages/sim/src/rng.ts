@@ -15,7 +15,8 @@ export function next(r: Rng): number {
 export const range = (r: Rng, lo: number, hi: number) => lo + next(r) * (hi - lo);
 export const chance = (r: Rng, p: number) => next(r) < p;
 
-export function pick<T>(r: Rng, items: T[], weights: number[]): T {
+export function pick<T>(r: Rng, items: T[], weights?: number[]): T {
+  if (!weights) return items[Math.min(items.length - 1, Math.floor(next(r) * items.length))];
   const total = weights.reduce((a, b) => a + b, 0);
   let x = next(r) * total;
   for (let i = 0; i < items.length; i++) { x -= weights[i]; if (x <= 0) return items[i]; }

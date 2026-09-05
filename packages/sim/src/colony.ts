@@ -3,7 +3,9 @@
  *  report that a neglected ship arrives safely. */
 import type { Asset, State } from "./types.ts";
 import { chance, type Rng } from "./rng.ts";
+import { emit } from "./signals.ts";
 import type { Bus } from "./power.ts";
+import { effort, makePerson, mourn, nextRole, type Person } from "./crew.ts";
 
 export const CREW_TARGET = 8;
 export const FOOD_PER_CREW_PER_DAY = 3;
@@ -37,9 +39,16 @@ export const newColony = (): Colony => ({
   food: 400, fed: 100, air: 100, diedAwake: 0, diedFrozen: 0, cold: 0,
 });
 
-/** Crew capacity is not a constant — it is however many people are alive and well. */
+/** Crew capacity is not a constant — it is however many people are alive and
+ *  well. With §3's roster in, it is the sum of what each of them can actually
+ *  manage today: a tired, unhappy or injured person works slower, by name. */
 export function labour(c: Colony): number {
   return c.awake * 0.36 * (c.fed / 100) * (c.air / 100);
+}
+
+export function crewLabour(crew: Person[], c: Colony): number {
+  const raw = crew.reduce((n, p) => n + effort(p), 0) * 0.45;
+  return raw * (c.fed / 100) * (c.air / 100);
 }
 
 export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
@@ -68,8 +77,24 @@ export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
 
   // ---- crew die of starvation or bad air ----
   const risk = (c.fed < 25 ? 0.004 : 0) + (c.air < 25 ? 0.010 : 0);
-  for (let i = 0; i < c.awake; i++)
-    if (risk > 0 && chance(r, risk)) { c.awake--; c.diedAwake++; }
+  if (risk > 0) {
+    for (const person of s.crew.filter(p => !p.asleep)) {
+      if (!chance(r, risk)) continue;
+      person.asleep = true; person.health = 0;
+      s.memorial.push({ name: person.name, role: person.role,
+                        years: Math.floor((s.day - person.wokeOn) / 365),
+                        cause: c.air < 25 ? "asphyxiation" : "starvation", day: s.day });
+      s.crew.splice(s.crew.indexOf(person), 1);
+      mourn(s.crew, person);
+      c.diedAwake++;
+      // §3: a death is the heaviest event in the game. It goes out at critical
+      // severity, which under §2 pulls a fast-forwarding player back to real
+      // time. You do not get to skip past someone dying.
+      emit(s, "critical", "Quarters", "CRW-DIED",
+           `${person.name} has died. ${c.air < 25 ? "The air gave out." : "There was no food."}`);
+    }
+    c.awake = s.crew.filter(p => !p.asleep).length;
+  }
 
   // ---- the colony needs power, and gets it last ----
   // A bank has thermal mass: it survives a dip and dies to a drought. Killing
@@ -86,7 +111,22 @@ export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
   // ---- wake replacements, if there is anyone left and a medbay to do it in ----
   const medbay = s.assets.find(a => a.id === "medstation")!;
   if (c.awake < CREW_TARGET && c.frozen > 0 && !medbay.faulted && c.fed > 40 && c.air > 40) {
-    if (chance(r, 0.02)) { c.awake++; c.frozen--; }
+    if (chance(r, 0.02)) {
+      // §3: whichever speciality the ship is missing is the one worth thawing —
+      // but only if any of that speciality are left. The pools are small and
+      // unequal, and running one dry is permanent.
+      const want = nextRole(s.crew, s.pool);
+      if (want) {
+        s.pool[want]--;
+        const p = makePerson(r, want, s.day, s.nextCrewId++);
+        s.crew.push(p); c.awake++; c.frozen--;
+        emit(s, "info", "Medbay", "CRW-WAKE",
+             `${p.name} is out of cryo. ${p.role[0].toUpperCase() + p.role.slice(1)}, age ${Math.floor(p.age)}.`);
+        if (s.pool[want] === 0)
+          emit(s, "warn", "Medbay", "CRW-LAST",
+               `${p.name} was the last ${want} in the bank.`);
+      }
+    }
   }
 
   // ---- §1 fail states ----

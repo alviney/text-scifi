@@ -454,6 +454,47 @@ difficulty curve either, and the next session's work is a tuning pass on the log
 specifically — bulk load size, transit times, and the room thresholds — rather than on
 maintenance, which is now well understood.
 
+## Crew as people, saving, and a start screen
+
+Three things that were missing between "a simulation you watch" and "a game you play".
+
+**§3's crew, as individuals.** Names, roles, traits, ageing, relationships, and a two-way task
+board. plan.md is blunt about why names are mandatory: *"Okonkwo took the hull repair" is a
+story; "crew member 4 took the hull repair" is a log line* — and the feed is most of the game.
+
+The parts of §3 that turned out to be load-bearing rather than flavour:
+
+- **Ageing is the rotation mechanic.** Cryo arrests it, being awake does not. Crew wake at ~30
+  and are finished by ~65, so with no rotation the whole roster ages out together — the ship
+  died at **year 51** the first time, with everyone at a third of their strength.
+- **The request IS the valve.** §3's withdrawal ladder ends in *"put me back under"*, and
+  granting it frees the berth that a replacement is woken into. Wiring that took the same ship
+  from year 51 to **year 184**. Declining costs 25 happiness, which is what finally gives the
+  §3 stat table the teeth it asked for and never had.
+- **Role pools are small and unequal.** 44 engineers, 34 botanists, 22 medics, **15 pilots**.
+  Over a voyage the pilots drain fastest (15 → 5), exactly as §3 predicts, and running them out
+  is permanent: no pilots awake, no drone sorties, no rare compounds.
+
+Two bugs worth recording. Person ids were derived from `crew.length`, which collided the moment
+anyone was frozen — the roster shrank and the next wake reused a live id, so the Crew tab threw
+`each_key_duplicate` and silently refused to render. And the "who do we thaw next" fallback
+picked the first role in the roster template, which produced a ship crewed by **seven engineers
+and a botanist** by year 49. It now thaws whoever is furthest below their share.
+
+**Saving** is `localStorage`, autosaved every 15 seconds. `State` is the save format exactly as
+ARCHITECTURE §2 promised, and it lives in the client because §5's table forbids web APIs in
+`sim/`. The one wrinkle: `state.stores` and `state.rooms.Engineering` are the same object in
+memory, so JSON splits them and the link is remade on load.
+
+**The start screen asks the automation question directly** — begin with the departure crew's
+fifteen standing rules, or with a ship that watches nothing. That belongs on the front screen
+rather than in the source, because it is not settled and playing both is the only way to settle
+it.
+
+**Deliberately not retuned.** Every one of these systems moves the balance, and tuning between
+each addition is work that the next addition throws away. The numbers below are from before the
+crew layer went in and should be treated as stale until the feature set stops moving.
+
 ### Previously unresolved (kept for the record)
 
 A well-run ship still loses 182 of 192 colonists, and tracing it shows they die **in a single

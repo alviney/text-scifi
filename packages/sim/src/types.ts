@@ -47,6 +47,18 @@ export type State = {
   /** §5: gauges on the stores. They wear, and a worn one reads high. */
   gauges: Record<string, number>;
   colony: import("./colony.ts").Colony;
+  /** §3: the awake roster, as people. The colony above stays aggregate. */
+  crew: import("./crew.ts").Person[];
+  /** §5b: the board runs both ways — these come UP from the crew. */
+  requests: import("./crew.ts").Request[];
+  /** §3: the dead, by name. The ending should be able to count them. */
+  memorial: import("./crew.ts").Memorial[];
+  /** §3: how many of each speciality are left in cryo. Run one dry and that
+   *  capability is gone for the rest of the voyage. */
+  pool: Record<import("./crew.ts").Role, number>;
+  /** Monotonic. Deriving person ids from crew.length collided the moment anyone
+   *  was frozen — the roster shrank and the next wake reused a live id. */
+  nextCrewId: number;
   rules: import("./rules.ts").Rule[];
   board: import("./rules.ts").Task[];
   /** §8's feed. A bounded window, not a ledger — totals live in counters. */
@@ -75,11 +87,14 @@ export type Settings = {
   prioritise: boolean;
   /** §6 lever 2: stop holding atmosphere in rooms nobody is in. ~56 kW. */
   shedEmptyRooms: boolean;
+  /** §3: put people back under when they ask, without waiting to be told.
+   *  Off, and the roster ages out while you are looking at something else. */
+  autoRetire: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   replaceAt: 62, droneTarget: 6, botanistShare: 0.25, prioritise: true,
-  shedEmptyRooms: true,
+  shedEmptyRooms: true, autoRetire: true,
 };
 
 /** An autopilot: a scripted player, used by the balance harness.

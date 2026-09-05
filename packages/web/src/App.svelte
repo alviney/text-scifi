@@ -5,12 +5,16 @@
   import { LEVEL_MARK } from "../../sim/src/signals.ts";
   import { num, year, when } from "./lib/view.ts";
   import Ticker from "./lib/Ticker.svelte";
+  import Start from "./lib/Start.svelte";
+  import { save, load, peek, clear } from "./lib/save.ts";
   import Voyage from "./tabs/Voyage.svelte";
   import Facilities from "./tabs/Facilities.svelte";
   import Crew from "./tabs/Crew.svelte";
   import Rules from "./tabs/Rules.svelte";
 
-  const engine = new Engine(1);
+  let engine = $state<Engine>(new Engine(1));
+  let running = $state(false);
+  let saved = $state(peek());
   let ship = $state<State>(engine.state);
   let speedIx = $state(engine.speedIx);
   let snapped = $state(false);
@@ -19,22 +23,29 @@
   let showAll = $state(true);
   let skin = $state("amber");
 
-  onMount(() => {
+  let off: (() => void) | null = null;
+
+  function begin(e: Engine) {
+    off?.(); engine.stop();
+    engine = e;
     // The store is a plain callback, not a Svelte store: the engine publishes at
     // 12Hz while the sim may tick 1,200 times a second. ARCHITECTURE §4 — the
     // two rates are deliberately not coupled.
-    const off = engine.subscribe(s => {
+    off = engine.subscribe(s => {
       ship = { ...s };            // new identity so $state sees the change
       speedIx = engine.speedIx;
       snapped = engine.snapped;
     });
+    engine.onSave = s => { save(s); saved = peek(); };
     engine.start();
+    running = true;
     // Prototype hook. The whole point of apply(state, command) is that the game
     // is drivable from outside the UI, so exposing it costs nothing and makes
     // the thing testable from a script: seedship.send({kind:"addRule", ...}).
     (window as unknown as { seedship: Engine }).seedship = engine;
-    return () => { off(); engine.stop(); };
-  });
+  }
+
+  onMount(() => () => { off?.(); engine.stop(); });
 
   const TABS = [["voyage", "Voyage"], ["facilities", "Facilities"],
                 ["crew", "Crew"], ["rules", "Rules"]];
@@ -43,7 +54,12 @@
 
 <svelte:body />
 
-<div class="shell" data-skin={skin}>
+<div class="shell" class:pre={!running} data-skin={skin}>
+{#if !running}
+  <Start {saved}
+         onstart={o => { clear(); saved = null; begin(new Engine(o.seed, { inherited: o.inherited })); }}
+         oncontinue={() => { const st = load(); if (st) begin(new Engine(1, { from: st })); }} />
+{:else}
   <Ticker {ship} {snapped} floor={SPEEDS[speedIx].floor}
           onack={() => engine.send({ kind: "ack" })}
           onopen={() => feedOpen = true} />
@@ -81,7 +97,7 @@
           {num(ship.counters.faults)} things broke.
           {num(ship.counters.services)} repairs made.
         </div>
-        <button class="act" onclick={() => location.reload()}>Again</button>
+        <button class="act" onclick={() => { clear(); saved = null; running = false; }}>Again</button>
       </div>
     </div>
   {:else if tab === "voyage"}
@@ -120,6 +136,7 @@
       </div>
     </div>
   {/if}
+{/if}
 </div>
 
 <style>
@@ -155,6 +172,7 @@
   .line.critical .mk, .line.critical { color: var(--crit); }
   .line.warn .mk { color: var(--warn); }
   .line.chatter { color: var(--dim); }
+  .shell.pre { grid-template-rows: minmax(0,1fr); }
   .end .act { border: 1px solid var(--accent); color: var(--accent);
               padding: 9px 14px; margin-top: 14px; display: inline-block; }
 </style>

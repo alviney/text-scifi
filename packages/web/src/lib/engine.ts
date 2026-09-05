@@ -52,8 +52,14 @@ export class Engine {
   private lastPublish = 0;
   private raf = 0;
 
-  constructor(seed = 1) {
+  constructor(seed = 1, opts?: { inherited?: boolean; from?: State }) {
+    if (opts?.from) { this.state = opts.from; return; }
     this.state = init(seed);
+    // The one question worth asking before a run: do you inherit the departure
+    // crew's automation, or start with a ship that watches nothing? Both are
+    // playable and they feel completely different, so it is a choice, not a
+    // default. (plan.md §5c argues for inheriting; this is how to find out.)
+    if (opts?.inherited === false) this.state.rules = [];
   }
 
   subscribe(fn: Sub) {
@@ -80,6 +86,10 @@ export class Engine {
     if (c.kind === "ack") this.snapped = false;
     this.publish();
   }
+
+  /** Real time is the client's business, so autosave is too. */
+  onSave?: (s: State) => void;
+  private lastSave = 0;
 
   start() {
     if (this.raf) return;
@@ -109,6 +119,10 @@ export class Engine {
       if (t - this.lastPublish > 1000 / PUBLISH_HZ) {
         this.lastPublish = t;
         this.publish();
+      }
+      if (this.onSave && t - this.lastSave > 15000) {
+        this.lastSave = t;
+        this.onSave(this.state);
       }
     };
     this.raf = requestAnimationFrame(frame);

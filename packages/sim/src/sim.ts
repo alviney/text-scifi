@@ -9,8 +9,10 @@ import { CRANE_KW, HOLD, SHOP, capOf, daysOf, deposit, isBulk, land, loadOf, new
          withdraw, type MatKey } from "./logistics.ts";
 import { BASELINE_KW, bus, emptyRoomSaving, reactorOutput, rodsPerDay } from "./power.ts";
 import { type Task, inheritedRules, playerRules, evaluate, reportedCondition } from "./rules.ts";
-import { newColony, tickColony, labour } from "./colony.ts";
+import { newColony, tickColony, crewLabour } from "./colony.ts";
+import { newCrew, tickCrew, hasAwake, POOL, type Person } from "./crew.ts";
 import { emit } from "./signals.ts";
+import { apply } from "./commands.ts";
 
 export const START_RODS = 320;
 export const START_DRONES = 6;
@@ -23,6 +25,7 @@ export function init(seed: number, actII = 40, p?: Policy): State {
     stores: emptyStores(), rooms: newRooms(), shipments: [],
     schedule: buildSchedule(r, actII), next: 0,
     gauges: { parts: 100, rods: 100, rareCmp: 100, drones: 100 }, colony: newColony(),
+    crew: newCrew(r), requests: [], memorial: [], pool: { ...POOL }, nextCrewId: 0,
     rules: [], board: [], signals: [], acked: 0, settings: { ...DEFAULT_SETTINGS },
     counters: { ruleFires: 0, staleTasks: 0, blindDays: 0, services: 0, replacements: 0,
                 faults: 0, encountersTaken: 0, encountersMissed: 0, rodsMade: 0,
@@ -44,10 +47,13 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   if (p) {
     s.settings = { replaceAt: p.replaceAt, droneTarget: p.droneTarget,
                    botanistShare: p.botanistShare, prioritise: p.prioritise,
-                   shedEmptyRooms: true };
+                   shedEmptyRooms: true, autoRetire: true };
     if (p.automate) s.rules.push(...playerRules(s.assets, p.serviceAt, p.replaceAt,
       p.criticalServiceAt, id => CRITICAL_ORDER[id] !== undefined));
   }
+  // The launch roster comes out of the same pools everyone else does.
+  for (const c of s.crew) s.pool[c.role]--;
+  s.nextCrewId = s.crew.length;
   emit(s, "info", "Voyage", "DEPART", "Seedship under way. 300 years to target.");
   return s;
 }
@@ -251,7 +257,7 @@ export function step(s: State): State {
   // ceiling gains nothing and still pays the refurbishment loss.
   // The crew work the board, not the ship: a job nobody raised is a job nobody does.
   // Crew capacity is people, not a constant. Lose them and the ship stops being repaired.
-  let jobs = labour(s.colony) * (1 - p.botanistShare);
+  let jobs = crewLabour(s.crew, s.colony) * (1 - p.botanistShare);
   s.board.sort((x, y) => x.priority - y.priority || x.raised - y.raised);
   const done: Task[] = [];
   for (const task of s.board) {
@@ -313,7 +319,8 @@ export function step(s: State): State {
   const year = s.day / 365;
   while (s.next < s.schedule.length && s.schedule[s.next].year <= year) {
     const enc = s.schedule[s.next++];
-    if (s.drones > 0 && !reactor.faulted) {
+    // §3: "No pilots, no rare compounds, no ship." Drones do not fly themselves.
+    if (s.drones > 0 && !reactor.faulted && hasAwake(s.crew, "pilot")) {
       const h = harvest(enc, s.drones);
       const bay = s.rooms[HOLD], cap = capOf(HOLD);
       let spilled = 0;
@@ -340,12 +347,30 @@ export function step(s: State): State {
     } else {
       s.counters.encountersMissed++;
       emit(s, "warn", "Cargo Bay", "HRV-MISS",
-           `${enc.cls}-type passed unworked — ${s.drones > 0 ? "no power" : "no drones"}.`);
+           `${enc.cls}-type passed unworked — ${
+             s.drones <= 0 ? "no drones" :
+             !hasAwake(s.crew, "pilot") ? "nobody awake can fly them" : "no power"}.`);
     }
   }
 
   const frozenBefore = s.colony.frozen, awakeBefore = s.colony.awake;
-  tickColony(s, r, b, labour(s.colony) * p.botanistShare / 0.6);
+  // §3: the people, before the aggregate. A ship with no botanist awake grows
+  // less food however many hands are aboard — the roster is a latency resource,
+  // and this is where that bites.
+  const perHead = s.board.length / Math.max(1, s.crew.length);
+  for (const rq of tickCrew(s.crew, r, s.day, perHead, s.colony.fed, s.colony.air, b.dimmed)) {
+    s.requests.push(rq);
+    const who = s.crew.find(c => c.id === rq.from);
+    emit(s, "warn", "Quarters", rq.kind === "cryo" ? "CRW-ASK-CRYO" : "CRW-ASK-REST",
+         `${who?.name ?? "Someone"}: "${rq.text}"`);
+    // A standing order, not a rule the engine runs: §3's rotation is a decision
+    // the player either makes by hand or delegates once.
+    if (p.autoRetire && rq.kind === "cryo") apply(s, { kind: "answer", request: rq.id, grant: true });
+  }
+  s.colony.awake = s.crew.filter(c => !c.asleep).length;
+  const botany = crewLabour(s.crew, s.colony) * p.botanistShare / 0.6
+               * (hasAwake(s.crew, "botanist") ? 1 : 0.55);
+  tickColony(s, r, b, botany);
   if (s.colony.frozen < frozenBefore)
     emit(s, "critical", "Colony", "CRY-LOST",
          `Cryo bank lost. ${frozenBefore - s.colony.frozen} colonists dead.`);

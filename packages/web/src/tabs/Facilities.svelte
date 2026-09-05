@@ -13,6 +13,7 @@
            mark, num, shown, shownStock, shelf, inbound, logistics,
            ROOMS, roomOf } from "../lib/view.ts";
   import { MAXCOND_FLOOR } from "../../../sim/src/sim.ts";
+  import Cutaway from "../lib/Cutaway.svelte";
   import { PART_COST, ELEC_COST, RARE_COST } from "../../../sim/src/catalogue.ts";
 
   let { ship, send }: { ship: State; send: (c: Command) => void } = $props();
@@ -129,6 +130,7 @@
 
 {:else}
   <!-- LEVEL 1: what needs me? -->
+  <Cutaway {ship} onpick={r => room = r} />
   <div class="pad">
     <div class="label">Facilities</div>
     <div class="big">{ship.assets.filter(a => band(a) !== "ok").length}

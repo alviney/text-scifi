@@ -63,11 +63,24 @@ seedship.send({ kind: "addRule", rule: { id: "p-reactor", watch: "reactor",
 seedship.setSpeed(5);
 ```
 
+## The start screen asks one real question
+
+`lib/Start.svelte` offers the voyage with the departure crew's fifteen standing rules, or with
+nothing at all. That is on the front screen rather than in the source because it is genuinely
+undecided: `plan.md` §5c argues the inherited rules are a curriculum that teaches by going wrong
+slowly, but a ship that watches nothing is a different game and might be a better one. Playing
+both is the only way to find out.
+
+Saving is `localStorage`, autosaved every 15 seconds, and lives in the client because §5's rules
+say no web APIs in `sim/`. `State` is the save format, unchanged — the one wrinkle is that
+`state.stores` and `state.rooms.Engineering` are the same object in memory, so the link is
+remade on load.
+
 ## Not built yet
 
-- The ship cutaway with delivery markers, and per-room stores with delivery jobs (§5b).
-  Facilities currently shows one ship-wide store.
-- Crew as individuals — names, roles, requests. The tab shows the colony in aggregate.
-- Rules beyond `condition → service`. The builder writes the one shape that matters most;
-  `plan.md` §5c's chained automations need the full grammar.
-- Saving. `State` is already the save format; nothing writes it anywhere.
+- Rules beyond `condition → service` and `roomstock → deliver`. The builder writes the shape
+  that matters most; §5c's chained automations need the full grammar.
+- Crew skill growth and cross-training (§3) — the only mitigation for role extinction.
+- Manual crew assignment. Jobs are worked off the board; you cannot hand one to a person.
+- The arrival narrative. §1 wants an ending that counts the dead by name, and the memorial is
+  already carrying the names.
