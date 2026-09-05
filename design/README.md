@@ -156,6 +156,12 @@ typing the game does not support.
 
 ### Not yet designed
 
+- **Delivery arrival animation.** Right now a delivery is either travelling or badged as held —
+  the *moment of arrival* passes silently. Worth making it land: the marker reaching its
+  destination bay, that bay's stores ticking up, and the badge clearing. It is the one point in
+  the logistics loop where the player gets paid for setting a chain up correctly, and a chain
+  that visibly completes is what makes the next one worth building.
+
 - Speed slider and snap-back controls — a status-bar readout only. Where the actual
   control lives on a phone is unresolved, and it is the most-used control in the game.
 - The §5c cycle timeline (six beds across 36 days, overlaps highlighted) is stubbed
