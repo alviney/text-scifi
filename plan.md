@@ -2326,7 +2326,20 @@ and `[CRT][RCT][POWR]` are the two ends of the game in the same shape.
 - Reference: [Refactoring Guru — Behavioral Patterns](https://refactoring.guru/design-patterns/behavioral-patterns)
 
 ### Tech Stack
-<!-- TODO: Decide on framework and UI library -->
+
+**See `ARCHITECTURE.md`** — moved out of this document, because a second client (web first,
+then iOS) makes the subject *portability* rather than framework choice, which is more than a
+subsection can carry.
+
+The short version: the simulation is a **standalone TypeScript library with no UI knowledge**
+— deterministic, seeded, integer-ticked, plain-data state. The web client is Svelte over the
+DOM, because §8's interface is text and the DOM renders text better than a canvas does. iOS is
+Capacitor around the same build; Unity is the wrong tool for a game with no 3D, no physics and
+a monospace interface.
+
+The split pays off immediately regardless of the second client: a headless core makes a
+300-year playthrough run in seconds, which turns this document's tuned numbers into a **test
+suite** rather than a spreadsheet argument.
 
 **Considerations:**
 - Needs to support the multi-pane CLI aesthetic efficiently.
@@ -2341,8 +2354,6 @@ and `[CRT][RCT][POWR]` are the two ends of the game in the same shape.
 | Vue | Good middle ground | — |
 | Vanilla + Web Components | Maximum control over aesthetic | More boilerplate |
 
-<!-- TODO: Evaluate terminal-style CSS frameworks / component libraries -->
-<!-- TODO: State management approach — how to handle the game world state? -->
 
 ---
 
