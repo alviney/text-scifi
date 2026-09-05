@@ -196,6 +196,38 @@ h1{
 .act:hover{border-color:var(--d-accent);color:var(--d-accent)}
 .act.danger:hover{border-color:var(--d-crit);color:var(--d-crit)}
 
+/* ---- ship schematic: the Facilities hero ---- */
+.hull{margin:-10px -10px 12px;padding:14px 8px 12px;border-bottom:1px solid var(--d-rule);
+  position:relative;overflow:hidden}
+.decks{display:flex;align-items:center;gap:3px}
+.nose,.tail{flex:none;color:var(--d-faint);font-size:15px;line-height:1}
+.bays{flex:1;display:flex;flex-direction:column;gap:0;min-width:0}
+.deck{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.bay{
+  border:1px solid var(--d-rule);background:var(--d-panel);color:var(--d-dim);
+  font-size:9px;letter-spacing:.06em;text-align:center;padding:7px 0 6px;cursor:pointer;
+  font-family:inherit;position:relative;
+}
+.bay:hover{border-color:var(--d-accent);color:var(--d-text)}
+.bay:focus-visible{outline:2px solid var(--d-accent);outline-offset:-2px}
+.bay .bd{display:block;font-size:10px;line-height:1;margin-bottom:3px}
+.bay.s-ok{color:var(--d-dim)}
+.bay.s-ok .bd{color:var(--d-ok)}
+.bay.s-warn{border-color:#584512;color:var(--d-text)}
+.bay.s-warn .bd{color:var(--d-warn)}
+.bay.s-crit{border-color:#5A241B;background:#1F1310;color:var(--d-text)}
+.bay.s-crit .bd{color:var(--d-crit)}
+.bay.s-off{opacity:.45}
+.spine{height:14px;position:relative;margin:2px 0}
+.spine::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--d-rule)}
+.flow{position:absolute;top:50%;transform:translateY(-50%);font-size:10px;line-height:1;white-space:nowrap}
+.flow.moving{color:var(--d-ok);animation:slide 6s linear infinite}
+.flow.stuck{color:var(--d-crit)}
+@keyframes slide{from{left:12%}to{left:62%}}
+@media (prefers-reduced-motion:reduce){.flow.moving{animation:none;left:37%}}
+.hullcap{display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--d-faint);margin-top:9px}
+
 /* ---- signal markers: fixed-width metadata, prose message ---- */
 .sig{flex:none;letter-spacing:-.02em;white-space:nowrap;font-variant-numeric:tabular-nums}
 .sig .lv{font-weight:500}
@@ -450,7 +482,35 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
 
         <!-- ---------- FACILITIES (tab 2) ---------- -->
         <section class="screen" id="s-facilities" hidden>
-          <h2 class="scr-title">Facilities <span>10 rooms</span></h2>
+          <div class="hull">
+            <div class="decks">
+              <span class="nose">&#9666;</span>
+              <div class="bays">
+                <div class="deck">
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>BRG</button>
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>MED</button>
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>QTR</button>
+                  <button class="bay s-warn" data-go="facility"><span class="bd">&#9680;</span>HYD</button>
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>LFS</button>
+                </div>
+                <div class="spine">
+                  <span class="flow moving">&#9656;&#9656; filters &rarr; LFS</span>
+                  <span class="flow stuck" style="right:2%">&#9888; ore stuck</span>
+                </div>
+                <div class="deck">
+                  <button class="bay s-ok"   data-go="inventory"><span class="bd">&#9679;</span>CRG</button>
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>MNT</button>
+                  <button class="bay s-warn" data-go="mfg"><span class="bd">&#9680;</span>ENG</button>
+                  <button class="bay s-crit" data-go="equipment"><span class="bd">&#9675;</span>RCT</button>
+                  <button class="bay s-off"  data-go="facility"><span class="bd">&#183;</span>DRN</button>
+                </div>
+              </div>
+              <span class="tail">&#9655;</span>
+            </div>
+            <div class="hullcap"><span>bow</span><span>2 deliveries in transit</span><span>drive</span></div>
+          </div>
+
+          <h2 class="scr-title">Rooms <span>1 failing &middot; 2 need attention</span></h2>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Bridge</span><span class="vl">OK</span></button>
           <button class="row" data-go="mfg"><span class="dot warn">◐</span><span class="nm">Engineering</span><span class="vl">Powered down</span></button>
           <button class="row" data-go="equipment"><span class="dot crit">○</span><span class="nm">Reactor</span><span class="vl">Failing</span></button>
@@ -846,6 +906,15 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         <p class="callout">Nothing in the set is badly written. It comes apart because <strong>the ship changes and the rules cannot.</strong></p>
         <p>They can only use tier-0 conditions, because there is no Logic Core or Scheduler aboard at launch &mdash; so every one is a single threshold with no guard and no sense of time. Thresholds sized for eight crew drift wrong as the roster shrinks. The grow beds launch already out of phase, so &ldquo;replant when empty&rdquo; holds a working stagger for forty years and then collapses the first time a planting is missed. And around year 100 a worn gauge quietly kills the water rule &mdash; which is the one on this device, still listening to a liar at year 147.</p>
         <p>That is the tutorial: working examples to read on hour one, and four decades of slow, legible failure after that. It answers most of Open Question 4 without a tutorial mode existing.</p>
+      </section>
+
+      <section>
+        <h2>The ship is the hero on Rooms</h2>
+        <p>§4 says room connectivity is flavour. That was true when inventory was a single global pool &mdash; but <strong>per-room stores changed the brief</strong>. Things physically move between rooms now, and a schematic is the only place that layer can be seen at all.</p>
+        <p>So the cutaway does three jobs rather than decorating: <strong>where every room is</strong>, <strong>what state it&rsquo;s in</strong>, and <strong>what is moving between them right now</strong>. The filter delivery slides along the spine; the ore delivery sits stuck against the drive end with a warning, which is why the smelter has been idle eleven days.</p>
+        <p>Two decks around a spine, bow to the left and drive to the right, so the shape reads as a ship rather than a grid. Every bay is a tap target &mdash; the same destinations as the list below it, reached spatially instead of alphabetically. Over a few hundred hours the player will know where things are without reading the labels, which is the real prize.</p>
+        <p>It mirrors Voyage deliberately: hero above, detail below. Voyage answers <em>where are we going</em>; Rooms answers <em>what shape are we in</em>.</p>
+        <p class="callout">Both heroes show <strong>motion the numbers can&rsquo;t</strong> &mdash; a starfield for a ship that cannot appear to move, and delivery markers for cargo that has no other representation.</p>
       </section>
 
       <section>
