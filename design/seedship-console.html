@@ -1,0 +1,654 @@
+<title>Seedship Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap">
+<style>
+/* ---------- page tokens (themed) ---------- */
+:root{
+  --pg-bg:#F2EFE9; --pg-panel:#FFFFFF; --pg-rule:#DCD5C8;
+  --pg-text:#221E17; --pg-dim:#6B6355; --pg-accent:#9A6413;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --pg-bg:#0C0B08; --pg-panel:#151209; --pg-rule:#2A241A;
+    --pg-text:#E4DCCB; --pg-dim:#918872; --pg-accent:#E8A33D;
+  }
+}
+:root[data-theme="dark"]{
+  --pg-bg:#0C0B08; --pg-panel:#151209; --pg-rule:#2A241A;
+  --pg-text:#E4DCCB; --pg-dim:#918872; --pg-accent:#E8A33D;
+}
+/* ---------- device skins ---------- *
+ * The device commits to its own visual world, independent of page theme.
+ * Every skin defines the same token set, so screen markup never changes. */
+[data-skin]{
+  --d-bg:#100E0A; --d-panel:#181510; --d-panel2:#201C14; --d-rule:#2E2820;
+  --d-text:#E4D8C0; --d-dim:#8B8069; --d-faint:#59503F;
+  --d-accent:#E8A33D; --d-ok:#7DA35E; --d-warn:#E0B84E; --d-crit:#D0553F;
+  --d-font:"IBM Plex Mono"; --d-shadow:0 18px 44px rgba(0,0,0,.34);
+}
+[data-skin="phosphor"]{
+  --d-bg:#040A05; --d-panel:#09130B; --d-panel2:#0E1C11; --d-rule:#1A3220;
+  --d-text:#8FE39B; --d-dim:#4E8C58; --d-faint:#2C5334;
+  --d-accent:#C4FFCF; --d-ok:#5FBF6E; --d-warn:#E4C63F; --d-crit:#FF6B52;
+  --d-font:"IBM Plex Mono"; --d-shadow:0 18px 44px rgba(0,0,0,.5);
+}
+[data-skin="blueprint"]{
+  --d-bg:#E7EDF3; --d-panel:#DCE5ED; --d-panel2:#CFDAE5; --d-rule:#A6BACB;
+  --d-text:#13314C; --d-dim:#4D6E8B; --d-faint:#8BA3B7;
+  --d-accent:#0B6FA4; --d-ok:#2C7A57; --d-warn:#9A6410; --d-crit:#B03A2E;
+  --d-font:"Roboto Mono"; --d-shadow:0 12px 30px rgba(19,49,76,.18);
+}
+[data-skin="teletype"]{
+  --d-bg:#F4F1E8; --d-panel:#EDE9DE; --d-panel2:#E4DFD2; --d-rule:#C7C0AE;
+  --d-text:#1A1712; --d-dim:#5D5648; --d-faint:#948B78;
+  --d-accent:#1A1712; --d-ok:#3F5B36; --d-warn:#8A6B12; --d-crit:#B32517;
+  --d-font:"Courier Prime"; --d-shadow:0 12px 30px rgba(26,23,18,.16);
+}
+[data-skin="hazard"]{
+  --d-bg:#0F1418; --d-panel:#161D23; --d-panel2:#1C252D; --d-rule:#2B3841;
+  --d-text:#DCE6ED; --d-dim:#8296A5; --d-faint:#4F6070;
+  --d-accent:#F5C518; --d-ok:#4CAF6A; --d-warn:#F0A828; --d-crit:#E2513C;
+  --d-font:"JetBrains Mono"; --d-shadow:0 18px 44px rgba(0,0,0,.42);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--pg-bg); color:var(--pg-text);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;
+  line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 20px 80px}
+
+/* ---------- page chrome ---------- */
+.masthead{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+.eyebrow{
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--pg-accent);font-weight:600;
+}
+h1{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:clamp(28px,4.4vw,42px);font-weight:600;margin:0;
+  letter-spacing:-.02em;text-wrap:balance;
+}
+.standfirst{max-width:62ch;color:var(--pg-dim);font-size:15.5px;margin:0}
+.rule{height:1px;background:var(--pg-rule);margin:26px 0}
+
+.layout{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:44px;align-items:start}
+@media (max-width:860px){.layout{grid-template-columns:1fr;gap:32px}}
+
+/* ---------- device ---------- */
+.skinbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.skinbtn{
+  display:flex;align-items:center;gap:7px;cursor:pointer;
+  font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12px;font-weight:500;
+  background:var(--pg-panel);border:1px solid var(--pg-rule);border-radius:3px;
+  color:var(--pg-dim);padding:5px 9px 5px 6px;
+}
+.skinbtn:hover{color:var(--pg-text)}
+.skinbtn[aria-pressed="true"]{border-color:var(--pg-accent);color:var(--pg-text)}
+.skinbtn:focus-visible{outline:2px solid var(--pg-accent);outline-offset:1px}
+.sw{width:13px;height:13px;border-radius:2px;flex:none;border:1px solid rgba(128,128,128,.35)}
+.skincap{
+  font-size:12.5px;color:var(--pg-dim);margin:10px 0 0;min-height:3.2em;
+  max-width:46ch;
+}
+.skincap b{color:var(--pg-text);font-weight:600}
+.device-col{position:sticky;top:24px}
+@media (max-width:860px){.device-col{position:static}}
+.device{
+  background:var(--d-bg);border:1px solid var(--d-rule);border-radius:14px;
+  overflow:hidden;box-shadow:var(--d-shadow);
+  font-family:var(--d-font),ui-monospace,monospace;
+  color:var(--d-text);font-size:12.5px;line-height:1.5;
+  display:flex;flex-direction:column;height:648px;
+}
+.statusbar{
+  display:flex;justify-content:space-between;gap:8px;
+  padding:9px 12px;border-bottom:1px solid var(--d-rule);
+  color:var(--d-dim);font-size:10.5px;letter-spacing:.06em;
+  background:var(--d-panel);flex:none;
+}
+.statusbar b{color:var(--d-accent);font-weight:500}
+.screen{flex:1;overflow-y:auto;padding:12px 12px 18px}
+.screen[hidden]{display:none!important}
+.navbar{
+  display:grid;grid-template-columns:repeat(5,1fr);flex:none;
+  border-top:1px solid var(--d-rule);background:var(--d-panel);
+}
+.navbar button{
+  font-family:inherit;font-size:10px;letter-spacing:.1em;
+  background:none;border:none;border-top:2px solid transparent;
+  color:var(--d-faint);padding:9px 2px 8px;cursor:pointer;
+}
+.navbar button[aria-current="true"]{color:var(--d-accent);border-top-color:var(--d-accent)}
+.navbar button:focus-visible,.row:focus-visible,.backbtn:focus-visible,.act:focus-visible{
+  outline:2px solid var(--d-accent);outline-offset:-2px;
+}
+
+/* device typography */
+.scr-title{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--d-accent);margin:0 0 10px;font-weight:500;
+}
+.scr-title span{color:var(--d-faint);letter-spacing:.06em}
+.sect{
+  font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--d-faint);margin:16px 0 6px;
+  border-bottom:1px solid var(--d-rule);padding-bottom:4px;
+}
+.sect:first-of-type{margin-top:4px}
+.backbtn{
+  font-family:inherit;font-size:10.5px;background:none;border:none;cursor:pointer;
+  color:var(--d-dim);padding:0 0 8px;letter-spacing:.08em;
+}
+.backbtn:hover{color:var(--d-accent)}
+
+/* rows */
+.row{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+  font-family:inherit;font-size:12.5px;color:var(--d-text);
+  background:none;border:none;border-bottom:1px solid var(--d-rule);
+  padding:7px 2px;cursor:pointer;
+}
+.row:hover{background:var(--d-panel2)}
+.row.static{cursor:default}
+.row.static:hover{background:none}
+.row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .vl{color:var(--d-dim);font-variant-numeric:tabular-nums;flex:none}
+.dot{flex:none;width:1em;text-align:center}
+.ok{color:var(--d-ok)} .warn{color:var(--d-warn)} .crit{color:var(--d-crit)}
+.dim{color:var(--d-dim)} .faint{color:var(--d-faint)} .acc{color:var(--d-accent)}
+.tag{
+  font-size:9.5px;letter-spacing:.09em;border:1px solid currentColor;
+  padding:0 4px;border-radius:2px;flex:none;
+}
+
+/* bars */
+.bar{font-size:11px;letter-spacing:-.5px;white-space:nowrap}
+.bar .fill{color:var(--d-accent)} .bar .empty{color:var(--d-faint)}
+.bar.b-ok .fill{color:var(--d-ok)} .bar.b-warn .fill{color:var(--d-warn)} .bar.b-crit .fill{color:var(--d-crit)}
+
+/* key/value block */
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px;margin:2px 0 4px}
+.kv dt{color:var(--d-dim)}
+.kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+
+/* feed */
+.feed{display:flex;flex-direction:column}
+.feedline{
+  display:flex;gap:8px;width:100%;text-align:left;font-family:inherit;font-size:12px;
+  background:none;border:none;border-bottom:1px solid var(--d-rule);
+  padding:6px 2px;cursor:pointer;color:var(--d-text);
+}
+.feedline:hover{background:var(--d-panel2)}
+.feedline .ts{color:var(--d-faint);flex:none;font-variant-numeric:tabular-nums}
+.feedline .msg{flex:1;min-width:0}
+.feedline.chatter .msg{color:var(--d-faint);font-style:italic}
+
+/* actions */
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.act{
+  font-family:inherit;font-size:10.5px;letter-spacing:.07em;
+  background:var(--d-panel2);border:1px solid var(--d-rule);color:var(--d-text);
+  padding:5px 9px;border-radius:2px;cursor:pointer;
+}
+.act:hover{border-color:var(--d-accent);color:var(--d-accent)}
+.act.danger:hover{border-color:var(--d-crit);color:var(--d-crit)}
+
+/* rule card in automation console */
+.rulecard{border:1px solid var(--d-rule);border-radius:3px;padding:8px;margin-bottom:8px;background:var(--d-panel)}
+.rulecard.bad{border-color:#4A2B22}
+.rulecard pre{
+  margin:0 0 6px;font-family:inherit;font-size:11.5px;color:var(--d-text);
+  white-space:pre-wrap;word-break:break-word;
+}
+.rulecard .meta{font-size:10px;color:var(--d-faint);letter-spacing:.05em}
+.note-inline{font-size:10.5px;color:var(--d-crit);margin-top:4px}
+
+/* ---------- annotations ---------- */
+.notes h2{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--pg-accent);margin:0 0 4px;font-weight:600;
+}
+.notes > section{margin-bottom:30px}
+.notes p{margin:0 0 10px;max-width:64ch;font-size:15px}
+.notes p:last-child{margin-bottom:0}
+.notes strong{font-weight:600}
+.notes code{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em;
+  background:var(--pg-panel);border:1px solid var(--pg-rule);padding:.5px 4px;border-radius:2px;
+}
+.screenlist{list-style:none;padding:0;margin:0;display:grid;gap:2px}
+.screenlist button{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;
+  background:none;border:none;border-bottom:1px solid var(--pg-rule);
+  color:var(--pg-text);padding:7px 2px;width:100%;text-align:left;cursor:pointer;
+  display:flex;gap:10px;align-items:baseline;
+}
+.screenlist button:hover{color:var(--pg-accent)}
+.screenlist button:focus-visible{outline:2px solid var(--pg-accent);outline-offset:-2px}
+.screenlist .k{color:var(--pg-dim);flex:none;font-size:11px;letter-spacing:.06em;min-width:5.5em}
+.callout{
+  border-left:2px solid var(--pg-accent);padding:2px 0 2px 14px;
+  margin:0 0 10px;max-width:64ch;font-size:15px;
+}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);color:var(--pg-dim);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="eyebrow">Seedship &middot; §8 interface design</div>
+    <h1>Seedship Console</h1>
+    <p class="standfirst">Ten mobile panes for the ship-management game, in the CLI idiom §8 calls for. The device is live &mdash; tap facilities, feed lines and equipment to drill in. State shown is <strong>year 147</strong>, mid&#8209;Long&#8209;Dark: reactor degraded, rare compounds running out, no pilot awake. Swap the skin above the device &mdash; the layout never changes, only the treatment.</p>
+  </header>
+  <div class="rule"></div>
+
+  <div class="layout">
+    <!-- ================= DEVICE ================= -->
+    <div class="device-col">
+      <div class="skinbar" role="group" aria-label="Device skin">
+        <button class="skinbtn" data-skin-set="amber" aria-pressed="true"><span class="sw" style="background:linear-gradient(135deg,#100E0A 50%,#E8A33D 50%)"></span>Amber CRT</button>
+        <button class="skinbtn" data-skin-set="phosphor" aria-pressed="false"><span class="sw" style="background:linear-gradient(135deg,#040A05 50%,#8FE39B 50%)"></span>Phosphor</button>
+        <button class="skinbtn" data-skin-set="blueprint" aria-pressed="false"><span class="sw" style="background:linear-gradient(135deg,#E7EDF3 50%,#0B6FA4 50%)"></span>Blueprint</button>
+        <button class="skinbtn" data-skin-set="teletype" aria-pressed="false"><span class="sw" style="background:linear-gradient(135deg,#F4F1E8 50%,#B32517 50%)"></span>Teletype</button>
+        <button class="skinbtn" data-skin-set="hazard" aria-pressed="false"><span class="sw" style="background:linear-gradient(135deg,#0F1418 50%,#F5C518 50%)"></span>Hazard</button>
+      </div>
+      <div class="device" data-skin="amber">
+        <div class="statusbar">
+          <span>Y<b>147</b>.084 &middot; d112</span>
+          <span>SPD <b>8760&times;</b></span>
+          <span>PWR <b>780</b>kW</span>
+        </div>
+
+        <!-- ---------- SHIP ---------- -->
+        <section class="screen" id="s-ship">
+          <h2 class="scr-title">Ship status <span>10 facilities</span></h2>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Bridge</span><span class="vl">OK</span></button>
+          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Engineering</span><span class="vl">FAB SHED</span></button>
+          <button class="row" data-go="equipment"><span class="dot crit">○</span><span class="nm">Reactor / Power</span><span class="vl">AT RISK</span></button>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Life Support</span><span class="vl">OK</span></button>
+          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Hydroponics</span><span class="vl">DIMMED</span></button>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Medbay</span><span class="vl">OK</span></button>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Quarters</span><span class="vl">OK</span></button>
+          <button class="row" data-go="inventory"><span class="dot ok">●</span><span class="nm">Cargo Bay</span><span class="vl">OK</span></button>
+          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Drone Bay</span><span class="vl">STOWED</span></button>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Maintenance</span><span class="vl">OK</span></button>
+
+          <div class="sect">Signal feed &middot; warn+</div>
+          <div class="feed">
+            <button class="feedline" data-go="equipment"><span class="ts">14:32</span><span class="msg"><span class="crit">CRIT</span> Reactor Core entered AT_RISK &mdash; output 780kW vs 890kW baseline</span></button>
+            <button class="feedline" data-go="auto"><span class="ts">11:07</span><span class="msg"><span class="warn">WARN</span> Rule <span class="acc">WR-01</span> has not fired in 47 years</span></button>
+            <button class="feedline" data-go="inventory"><span class="ts">09:41</span><span class="msg"><span class="warn">WARN</span> Rare compounds stock-out projected within 90 days</span></button>
+            <button class="feedline" data-go="tasks"><span class="ts">08:15</span><span class="msg"><span class="warn">WARN</span> Service task unclaimed 1,847 days &mdash; no engineer awake</span></button>
+            <button class="feedline" data-go="astro"><span class="ts">04:02</span><span class="msg">Rod 47 seated &middot; 149 remaining</span></button>
+            <button class="feedline chatter" data-go="crew"><span class="ts">02:20</span><span class="msg">Okonkwo: &ldquo;third week of the same ration block.&rdquo;</span></button>
+          </div>
+          <div class="acts"><button class="act" data-go="tasks">Task board</button><button class="act" data-go="inventory">Inventory</button></div>
+        </section>
+
+        <!-- ---------- FACILITY ---------- -->
+        <section class="screen" id="s-facility" hidden>
+          <button class="backbtn" data-go="ship">&lsaquo; ship status</button>
+          <h2 class="scr-title">Hydroponics <span>◐ dimmed</span></h2>
+          <dl class="kv">
+            <dt>Power draw</dt><dd>85 kW <span class="faint">/ 135 rated</span></dd>
+            <dt>Crew present</dt><dd>1 &mdash; Adeyemi (Botanist)</dd>
+            <dt>Atmosphere</dt><dd class="ok">nominal</dd>
+          </dl>
+
+          <div class="sect">Derived signals</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">plantable</span><span class="vl">true</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">ripeCount</span><span class="vl">3</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">seedProjection</span><span class="vl">19 yr</span></div>
+
+          <div class="sect">Equipment &middot; 9 of 12 slots</div>
+          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 1</span><span class="vl">RIPE d6</span></button>
+          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 2</span><span class="vl">RIPE d4</span></button>
+          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 3</span><span class="vl">RIPE d1</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Grow Bed 4</span><span class="vl">GROW 22d</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Grow Bed 5</span><span class="vl">GROW 31d</span></button>
+          <button class="row" data-go="equipment"><span class="dot dim">·</span><span class="nm">Grow Bed 6</span><span class="vl">EMPTY</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Irrigation System</span><span class="vl">74%</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Seed Vault</span><span class="vl">passive</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">LifeSupportNode</span><span class="vl">61%</span></button>
+          <div class="note-inline">3 beds ripe at once &mdash; synchronised planting. One botanist.</div>
+        </section>
+
+        <!-- ---------- EQUIPMENT ---------- -->
+        <section class="screen" id="s-equipment" hidden>
+          <button class="backbtn" data-go="ship">&lsaquo; ship status</button>
+          <h2 class="scr-title">Reactor Core <span>high danger</span></h2>
+          <div class="row static"><span class="dot crit">○</span><span class="nm"><span class="crit">AT_RISK</span> &middot; RUNNING</span><span class="vl">38%</span></div>
+          <div style="margin:8px 0 2px" class="bar b-crit"><span class="fill">███████</span><span class="empty">░░░░░░░░░░░░░</span> <span class="dim">condition 38</span></div>
+          <div style="margin:2px 0 8px" class="bar"><span class="fill">██████████████</span><span class="empty">░░░░░░</span> <span class="dim">ceiling 71</span></div>
+          <dl class="kv">
+            <dt>Output</dt><dd>780 kW <span class="faint">/ 1000</span></dd>
+            <dt>Wear rate</dt><dd>0.011 /h <span class="faint">(age &times;1.7)</span></dd>
+            <dt>Last serviced</dt><dd>y141.2 &middot; 2,140 d</dd>
+            <dt>Fuel rods</dt><dd>149 <span class="faint">&asymp; 149 yr</span></dd>
+            <dt>Coolant</dt><dd class="ok">loop nominal</dd>
+            <dt>Repairs</dt><dd>29 &middot; ceiling &minus;29</dd>
+          </dl>
+          <div class="sect">Attached</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Reactor Coolant Upgrade</span><span class="vl">52%</span></div>
+          <div class="sect">Listeners &middot; 2 of 3</div>
+          <div class="rulecard"><pre>ON   self → state:atRisk
+DO   postTask("service", front)</pre><div class="meta">fired 34 &middot; oldest unclaimed 1,847 d</div></div>
+          <div class="acts">
+            <button class="act">Service now</button><button class="act">Add listener</button><button class="act danger">Scram</button>
+          </div>
+        </section>
+
+        <!-- ---------- CREW ---------- -->
+        <section class="screen" id="s-crew" hidden>
+          <h2 class="scr-title">Crew roster <span>6 awake / 194 cryo</span></h2>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Adeyemi &middot; Botanist</span><span class="vl">harvest</span></button>
+          <button class="row" data-go="crewmember"><span class="dot warn">◐</span><span class="nm">Okonkwo &middot; Technician</span><span class="vl">tired</span></button>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Vasquez &middot; Medic</span><span class="vl">idle</span></button>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Lindqvist &middot; Generalist</span><span class="vl">haul</span></button>
+          <button class="row" data-go="crewmember"><span class="dot warn">◐</span><span class="nm">Haddad &middot; Generalist</span><span class="vl">low morale</span></button>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Novak &middot; Generalist</span><span class="vl">idle</span></button>
+
+          <div class="sect">Colony pool &middot; role-years left</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineer</span><span class="vl">0 awake &middot; 11 left</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Pilot / Nav</span><span class="vl">0 awake &middot; 4 left</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Medic</span><span class="vl">1 awake &middot; 9 left</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Generalist</span><span class="vl">3 awake &middot; 61 left</span></div>
+          <div class="note-inline">4 pilots remain. Losing them ends asteroid harvesting.</div>
+          <dl class="kv" style="margin-top:12px">
+            <dt>Colonist-years spent</dt><dd>1,044 of 7,000</dd>
+            <dt>Mean colony age</dt><dd>+11.2 yr</dd>
+            <dt>Died awake</dt><dd class="crit">7</dd>
+          </dl>
+          <div class="acts"><button class="act">Unfreeze &hellip;</button><button class="act">Memorial</button></div>
+        </section>
+
+        <!-- ---------- CREW MEMBER ---------- -->
+        <section class="screen" id="s-crewmember" hidden>
+          <button class="backbtn" data-go="crew">&lsaquo; crew roster</button>
+          <h2 class="scr-title">Okonkwo, T. <span>Technician</span></h2>
+          <dl class="kv">
+            <dt>Awake since</dt><dd>y138 &middot; 9 yr</dd>
+            <dt>Age</dt><dd>44 <span class="faint">(woke at 35)</span></dd>
+            <dt>Cross-training</dt><dd>Engineer <span class="ok">62%</span></dd>
+          </dl>
+          <div class="sect">Condition</div>
+          <div class="bar b-ok" style="margin:3px 0"><span class="fill">██████████████</span><span class="empty">░░░░░░</span> <span class="dim">health 71</span></div>
+          <div class="bar b-crit" style="margin:3px 0"><span class="fill">█████</span><span class="empty">░░░░░░░░░░░░░░░</span> <span class="dim">sleep 26</span></div>
+          <div class="bar b-warn" style="margin:3px 0"><span class="fill">████████</span><span class="empty">░░░░░░░░░░░░</span> <span class="dim">morale 41</span></div>
+          <div class="bar b-ok" style="margin:3px 0"><span class="fill">████████████████</span><span class="empty">░░░░</span> <span class="dim">fed 82</span></div>
+          <div class="note-inline">Sleep 26 &mdash; will refuse high-danger work.</div>
+          <div class="sect">Queue</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Service &middot; Water Recycler</span><span class="vl">4h left</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Haul &middot; Grow Bed 3</span><span class="vl">queued</span></div>
+          <div class="sect">Close to</div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Vasquez &middot; Lindqvist</span><span class="vl">&nbsp;</span></div>
+          <div class="acts"><button class="act">Rest cycle</button><button class="act">Assign&hellip;</button><button class="act danger">Refreeze</button></div>
+        </section>
+
+        <!-- ---------- AUTOMATION ---------- -->
+        <section class="screen" id="s-auto" hidden>
+          <h2 class="scr-title">Automation <span>61 rules</span></h2>
+          <dl class="kv">
+            <dt>Hardware</dt><dd>Logic Core &middot; Scheduler</dd>
+            <dt>Telemetry Suite</dt><dd class="faint">not built</dd>
+          </dl>
+          <div class="sect">Flagged &middot; 3</div>
+          <div class="rulecard bad">
+            <pre>WR-01  [Water Recycler]
+ON   Inventory.water → removed
+WHEN limitUnder(500)
+DO   postTask("restock", front)</pre>
+            <div class="meta"><span class="crit">DEAD</span> &middot; last fired 47 yr ago</div>
+            <div class="note-inline">Source sensor at 22% &mdash; reads 900?, actual 300.</div>
+          </div>
+          <div class="rulecard bad">
+            <pre>LC-07  [LSN-Cargo]  A/B conflict
+A: ON self.temp limitUnder(15) DO turnOn
+B: ON self.temp limitOver(16)  DO turnOff</pre>
+            <div class="meta"><span class="crit">THRASH</span> &middot; fired 40,118 &middot; deadband 1°</div>
+          </div>
+          <div class="rulecard bad">
+            <pre>RC-01  [Reactor Core]
+ON   self → state:atRisk
+DO   postTask("service", front)</pre>
+            <div class="meta"><span class="warn">STALLED</span> &middot; fired 34 &middot; unclaimed 1,847 d</div>
+            <div class="note-inline">Rule is correct. Nobody is awake to claim it.</div>
+          </div>
+          <div class="sect">Healthy &middot; 58</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">HY-02 &middot; Grow Bed plant</span><span class="vl">×6</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">FB-01 &middot; seals standing order</span><span class="vl">411</span></div>
+          <div class="acts"><button class="act">New rule</button><button class="act">Cycle timeline</button></div>
+        </section>
+
+        <!-- ---------- MANUFACTURING ---------- -->
+        <section class="screen" id="s-mfg" hidden>
+          <h2 class="scr-title">Manufacturing <span>2 running</span></h2>
+          <div class="sect">Smelter &middot; 140 kW</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">SHED &mdash; no headroom</span><span class="vl">0 kW</span></div>
+          <div class="sect">Fabricator &middot; 100 kW</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Electronics ×12</span><span class="vl">62%</span></div>
+          <div class="bar b-ok" style="margin:3px 0"><span class="fill">████████████</span><span class="empty">░░░░░░░░</span> <span class="dim">74h left</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Queued &middot; Filters ×40</span><span class="vl">starved</span></div>
+          <div class="sect">Workbench &middot; 5 kW</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Seals ×20 (manual)</span><span class="vl">31%</span></div>
+          <div class="sect">Standing orders</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Seals</span><span class="vl">&lt;30 → 60</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Fertiliser</span><span class="vl">&lt;40 → 20</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Fuel rods</span><span class="vl">no rare cmp</span></div>
+          <div class="acts"><button class="act">Queue job</button><button class="act" data-go="inventory">Inventory</button></div>
+        </section>
+
+        <!-- ---------- NAVIGATION ---------- -->
+        <section class="screen" id="s-astro" hidden>
+          <h2 class="scr-title">Navigation <span>Act II</span></h2>
+          <div class="bar" style="margin:4px 0 8px"><span class="fill">███████████</span><span class="empty">░░░░░░░░░</span> <span class="dim">147 / 300 yr</span></div>
+          <dl class="kv">
+            <dt>Route</dt><dd>Standard survey</dd>
+            <dt>Phase</dt><dd>The Long Dark</dd>
+            <dt>Δv burns left</dt><dd>3 <span class="faint">of 3</span></dd>
+          </dl>
+          <div class="sect">Mission profile</div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">OBJ-118 &middot; C-type?</span><span class="vl">y153 &middot; 6 yr</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">OBJ-119 &middot; M-type?</span><span class="vl">y168 &middot; 21 yr</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">OBJ-120 &middot; unsurveyed</span><span class="vl">y171 &middot; 24 yr</span></div>
+          <div class="note-inline">Composition is a pre-launch estimate. Comms Array 44% &mdash; wide error bars.</div>
+          <div class="sect">Drone bay &middot; stowed</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">DRN-01 &middot; 02 &middot; 05</span><span class="vl">OFFLINE</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">DRN-03 &middot; 41%</span><span class="vl">OFFLINE</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">DRN-04 &middot; DRN-06</span><span class="vl">LOST y131</span></div>
+          <div class="note-inline">4 of 6 drones. Break-even needs 6.</div>
+        </section>
+
+        <!-- ---------- TASK BOARD ---------- -->
+        <section class="screen" id="s-tasks" hidden>
+          <button class="backbtn" data-go="ship">&lsaquo; ship status</button>
+          <h2 class="scr-title">Task board <span>14 unclaimed</span></h2>
+          <dl class="kv">
+            <dt>Oldest unclaimed</dt><dd class="crit">1,847 d</dd>
+            <dt>Snap-back at</dt><dd>40 d &middot; <span class="crit">tripped</span></dd>
+          </dl>
+          <div class="sect">Unclaimed &middot; no matching crew</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Service &middot; Reactor Core</span><span class="vl">Engineer</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Service &middot; O₂ Generator</span><span class="vl">Engineer</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Service &middot; Fabricator</span><span class="vl">Engineer</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Harvest &middot; Grow Bed 3</span><span class="vl">Botanist</span></div>
+          <div class="sect">In progress</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Service &middot; Water Recycler</span><span class="vl">Okonkwo</span></div>
+          <div class="bar b-ok" style="margin:3px 0"><span class="fill">███████████</span><span class="empty">░░░░░░░░░</span> <span class="dim">4h left</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Harvest &middot; Grow Bed 1</span><span class="vl">Adeyemi</span></div>
+          <div class="acts"><button class="act" data-go="crew">Wake engineer</button></div>
+        </section>
+
+        <!-- ---------- INVENTORY ---------- -->
+        <section class="screen" id="s-inventory" hidden>
+          <button class="backbtn" data-go="ship">&lsaquo; ship status</button>
+          <h2 class="scr-title">Inventory <span>Cargo Bay</span></h2>
+          <div class="sect">Raw &middot; cap 1,500</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Metal ore</span><span class="vl">612</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Water ice</span><span class="vl">388</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Rare elements</span><span class="vl">0</span></div>
+          <div class="sect">Refined &middot; cap 4,000</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Refined metal</span><span class="vl">1,204</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Water</span><span class="vl">900<span class="crit">?</span></span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Rare compounds</span><span class="vl">84</span></div>
+          <div class="bar b-crit" style="margin:3px 0"><span class="fill">██</span><span class="empty">██████████████████</span> <span class="dim">stock-out ~90 d</span></div>
+          <div class="sect">Components</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Electronics</span><span class="vl">41</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Metal parts</span><span class="vl">308</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Seals</span><span class="vl">96</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Medical supplies</span><span class="vl">18</span></div>
+          <div class="note-inline">Water reads 900? &mdash; sourced from a 22% sensor.</div>
+        </section>
+
+        <nav class="navbar">
+          <button data-go="ship" aria-current="true">SHIP</button>
+          <button data-go="crew">CREW</button>
+          <button data-go="auto">AUTO</button>
+          <button data-go="mfg">MFG</button>
+          <button data-go="astro">NAV</button>
+        </nav>
+      </div>
+      <p class="skincap" id="skincap"><b>Amber CRT.</b> IBM Plex Mono on warm charcoal. The saved baseline &mdash; industrial terminal, VT220 era, warm enough to sit with for hours.</p>
+    </div>
+
+    <!-- ================= NOTES ================= -->
+    <div class="notes">
+      <section>
+        <h2>Five treatments, one layout</h2>
+        <p>Every skin defines the same token set, so <strong>no screen markup changes between them</strong> &mdash; only colour, typeface and shadow. If a skin needs different markup to work, it isn&rsquo;t a skin, it&rsquo;s a redesign.</p>
+        <p>They&rsquo;re deliberately spread across two axes rather than being five palettes: <strong>retro vs modern</strong>, and <strong>screen vs paper</strong>. Two are dark and nostalgic, two are light and documentary, one is present-day plant software.</p>
+        <ul class="screenlist" style="margin-top:12px">
+          <li><button data-skin-set="amber"><span class="k">Amber</span>Retro screen &middot; warm, industrial, saved baseline</button></li>
+          <li><button data-skin-set="phosphor"><span class="k">Phosphor</span>Retro screen &middot; colder, older, more austere</button></li>
+          <li><button data-skin-set="blueprint"><span class="k">Blueprint</span>Paper &middot; engineering drawing, light</button></li>
+          <li><button data-skin-set="teletype"><span class="k">Teletype</span>Paper &middot; printed ship&rsquo;s log, near-monochrome</button></li>
+          <li><button data-skin-set="hazard"><span class="k">Hazard</span>Modern screen &middot; present-day SCADA</button></li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>What each one argues</h2>
+        <p><strong>Amber</strong> says the ship is old but cared for. Warm charcoal is easier to sit with over long sessions than pure black, and amber was the industrial standard for exactly that reason.</p>
+        <p><strong>Phosphor</strong> says the ship is older and colder than you are. Green is the obvious retro choice and the one to be most careful with &mdash; it earns its place here only because status colour still reads against it, since &ldquo;ok&rdquo; is simply the absence of alarm.</p>
+        <p><strong>Blueprint</strong> asks the real question: <em>does this game have to be dark?</em> §1 calls the tone &ldquo;asset management software in space&rdquo;, and asset management software is light. It reads as a document you consult rather than a screen you stare into &mdash; and it is the only skin that would be comfortable in daylight on a phone.</p>
+        <p><strong>Teletype</strong> is the most austere: a printed log, almost no colour, one red for alarm. It suits a game about a ship that outlives everyone aboard, and it makes the signal feed feel like a record rather than a stream. Hardest to read densely, though &mdash; watch the bars.</p>
+        <p><strong>Hazard</strong> drops the retro conceit entirely. Slate blue-grey with safety yellow, the way real plant control software looks now. The least romantic and the most legible, and the only one where the aesthetic isn&rsquo;t doing narrative work.</p>
+      </section>
+
+      <section>
+        <h2>Which I&rsquo;d take</h2>
+        <p class="callout"><strong>Amber for the game, Blueprint worth a genuine test.</strong></p>
+        <p>Amber holds the tone §1 asks for without tipping into pastiche, and warm dark is kinder over the long sessions the speed slider implies. But Blueprint is the one that might be <em>right</em> rather than expected &mdash; it is the only treatment that takes &ldquo;utilitarian asset management&rdquo; literally instead of reaching for a CRT, and mobile-first play happens in daylight far more often than the genre admits.</p>
+        <p>Phosphor is the one I&rsquo;d rule out first: it is the most likely to read as costume.</p>
+      </section>
+
+      <section>
+        <h2>Jump to a screen</h2>
+        <ul class="screenlist">
+          <li><button data-go="ship"><span class="k">SHIP</span>Ship status &mdash; facilities + signal feed</button></li>
+          <li><button data-go="facility"><span class="k">drill</span>Facility detail &mdash; Hydroponics</button></li>
+          <li><button data-go="equipment"><span class="k">drill</span>Equipment detail &mdash; Reactor Core</button></li>
+          <li><button data-go="crew"><span class="k">CREW</span>Crew roster + colony pool</button></li>
+          <li><button data-go="crewmember"><span class="k">drill</span>Crew member &mdash; Okonkwo</button></li>
+          <li><button data-go="auto"><span class="k">AUTO</span>Automation console</button></li>
+          <li><button data-go="mfg"><span class="k">MFG</span>Manufacturing queue</button></li>
+          <li><button data-go="astro"><span class="k">NAV</span>Navigation &amp; mission profile</button></li>
+          <li><button data-go="tasks"><span class="k">drill</span>Task board</button></li>
+          <li><button data-go="inventory"><span class="k">drill</span>Resource inventory</button></li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Five tabs, everything else drills</h2>
+        <p>§8 listed ten screens flat. Ten is too many for a mobile root, so five are tabs &mdash; <strong>Ship, Crew, Auto, Mfg, Nav</strong>, one per system the player actually manages &mdash; and the other five are reached by drilling into the thing they describe. Task board and Inventory hang off Ship; the three detail panes hang off their parent.</p>
+        <p>That keeps the promise §8 makes about the feed: <strong>every line is a link to its source</strong>. Tapping the reactor alert lands on Reactor Core, not on a filtered log.</p>
+      </section>
+
+      <section>
+        <h2>Status is the only colour</h2>
+        <p>The interface is monochrome amber. The single exception is state &mdash; <span style="color:var(--pg-accent)">●</span> ok, ◐ warn, ○ crit &mdash; so anything wrong is the only chromatic thing on screen and reads before you have parsed a word.</p>
+        <p>Colour never carries meaning alone: the glyph differs too, so the panes survive both a monochrome CRT reading and a colour-blind one.</p>
+      </section>
+
+      <section>
+        <h2>Degraded readings are marked, not hidden</h2>
+        <p class="callout">Inventory shows <code>Water 900?</code> and the automation console explains why: the source sensor is at 22%, and the true figure is nearer 300.</p>
+        <p>§5 says worn sensors lie rather than fail. The interface has to make that <em>discoverable without explaining it</em> &mdash; a trailing <code>?</code> on any value sourced from a degraded instrument, and nothing more. The player learns what it means once.</p>
+      </section>
+
+      <section>
+        <h2>The console shows symptoms, not rules</h2>
+        <p>With 61 rules, an alphabetical list is useless. The console opens on <strong>flagged</strong> &mdash; dead, thrashing, stalled &mdash; and pushes the 58 healthy rules below the fold.</p>
+        <p>The stalled one matters most: <code>fired 34 &middot; unclaimed 1,847 d</code>. Nothing is broken, the rule is correct, and no engineer has been awake for five years. That is a §3 problem wearing a §5 costume, and the console is the only place both halves are visible at once.</p>
+      </section>
+
+      <section>
+        <h2>Panes carry their own consequence</h2>
+        <p>Facility view shows three beds ripe simultaneously with one botanist &mdash; the synchronised-ripening trap from §5c, visible as a fact rather than a warning. Crew shows <strong>4 pilot role-years left</strong> beside two lost drones. Nav shows 4 of 6 drones against a break-even of 6.</p>
+        <p>None of these say &ldquo;you are in trouble&rdquo;. They put adjacent numbers next to each other and let the player do the arithmetic, which is the entire register of the game.</p>
+      </section>
+
+      <section>
+        <h2>Still open</h2>
+        <p>The speed slider and snap-back controls live in the status bar here as a readout only &mdash; where the control itself goes on a phone is unresolved. The cycle timeline that §5c calls for (six beds across 36 days, overlaps highlighted) is stubbed as a button, not designed.</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>Design mockup for <strong>plan.md §8</strong>. Figures are illustrative but internally consistent with the tuned economy &mdash; 780&nbsp;kW against an 890&nbsp;kW baseline, 149 rods, 84 rare compounds, 4 of 6 drones.</footer>
+</div>
+
+<script>
+(function(){
+  var screens = ["ship","facility","equipment","crew","crewmember","auto","mfg","astro","tasks","inventory"];
+  var tabs = {ship:"ship", crew:"crew", auto:"auto", mfg:"mfg", astro:"astro",
+              facility:"ship", equipment:"ship", tasks:"ship", inventory:"ship", crewmember:"crew"};
+  var navBtns = Array.prototype.slice.call(document.querySelectorAll(".navbar button"));
+
+  function go(name){
+    if (screens.indexOf(name) === -1) return;
+    screens.forEach(function(s){
+      var el = document.getElementById("s-" + s);
+      if (el) el.hidden = (s !== name);
+    });
+    var active = tabs[name];
+    navBtns.forEach(function(b){
+      b.setAttribute("aria-current", b.getAttribute("data-go") === active ? "true" : "false");
+    });
+    var scr = document.getElementById("s-" + name);
+    if (scr) scr.scrollTop = 0;
+  }
+
+  var caps = {
+    amber:    "<b>Amber CRT.</b> IBM Plex Mono on warm charcoal. The saved baseline &mdash; industrial terminal, VT220 era, warm enough to sit with for hours.",
+    phosphor: "<b>Phosphor.</b> The classic green, kept austere. Status still reads because &ldquo;ok&rdquo; is simply the absence of alarm &mdash; but it is the skin most at risk of reading as costume.",
+    blueprint:"<b>Blueprint.</b> Roboto Mono, navy on pale blue-grey. Takes &ldquo;asset management software in space&rdquo; literally: a document you consult, and the only skin comfortable in daylight.",
+    teletype: "<b>Teletype.</b> Courier Prime on paper stock, one red for alarm. The signal feed becomes a printed record rather than a stream. Watch the bars &mdash; density suffers.",
+    hazard:   "<b>Hazard.</b> JetBrains Mono, slate and safety yellow. How real plant software looks now. Least romantic, most legible, aesthetic doing no narrative work."
+  };
+  var device = document.querySelector(".device");
+  var cap = document.getElementById("skincap");
+  var skinBtns = Array.prototype.slice.call(document.querySelectorAll(".skinbar [data-skin-set]"));
+
+  function setSkin(name){
+    if (!caps[name]) return;
+    device.setAttribute("data-skin", name);
+    cap.innerHTML = caps[name];
+    skinBtns.forEach(function(b){
+      b.setAttribute("aria-pressed", b.getAttribute("data-skin-set") === name ? "true" : "false");
+    });
+  }
+
+  document.addEventListener("click", function(e){
+    var s = e.target.closest("[data-skin-set]");
+    if (s) { setSkin(s.getAttribute("data-skin-set")); return; }
+    var t = e.target.closest("[data-go]");
+    if (!t) return;
+    go(t.getAttribute("data-go"));
+  });
+})();
+</script>
