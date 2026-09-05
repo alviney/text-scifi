@@ -1,5 +1,5 @@
 import { type Rng, rng, chance } from "./rng.ts";
-import type { Asset, Policy, State } from "./types.ts";
+import type { Asset, Policy, Settings, State } from "./types.ts";
 import { DEFAULT_SETTINGS } from "./types.ts";
 import { buildAssets, assetName, RARE_COST, PART_COST, ELEC_COST } from "./catalogue.ts";
 import { buildSchedule, harvest } from "./encounters.ts";
@@ -10,7 +10,7 @@ import { CRANE_KW, HOLD, SHOP, capOf, daysOf, deposit, isBulk, land, loadOf, new
 import { BASELINE_KW, bus, emptyRoomSaving, reactorOutput, rodsPerDay } from "./power.ts";
 import { type Task, inheritedRules, playerRules, evaluate, reportedCondition } from "./rules.ts";
 import { newColony, tickColony, crewLabour } from "./colony.ts";
-import { newCrew, tickCrew, hasAwake, POOL, type Person } from "./crew.ts";
+import { newCrew, tickCrew, hasAwake, effort, onDuty, POOL, type Person } from "./crew.ts";
 import { emit } from "./signals.ts";
 import { apply } from "./commands.ts";
 
@@ -25,7 +25,7 @@ export function init(seed: number, actII = 40, p?: Policy): State {
     stores: emptyStores(), rooms: newRooms(), shipments: [],
     schedule: buildSchedule(r, actII), next: 0,
     gauges: { parts: 100, rods: 100, rareCmp: 100, drones: 100 }, colony: newColony(),
-    crew: newCrew(r), requests: [], memorial: [], pool: { ...POOL }, nextCrewId: 0,
+    crew: [], requests: [], memorial: [], pool: { ...POOL }, nextCrewId: 0, nextTaskId: 0,
     rules: [], board: [], signals: [], acked: 0, settings: { ...DEFAULT_SETTINGS },
     counters: { ruleFires: 0, staleTasks: 0, blindDays: 0, services: 0, replacements: 0,
                 faults: 0, encountersTaken: 0, encountersMissed: 0, rodsMade: 0,
@@ -40,21 +40,31 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   s.stores = s.rooms[SHOP];
   s.stores.parts = 60; s.stores.electronics = 40; s.stores.rareCmp = 60; s.stores.refMetal = 200;
   for (const room of Object.keys(s.rooms)) if (room !== SHOP) s.rooms[room].parts = 25;
-  // §5c: the ship never launches empty — the departure crew left standing rules
-  s.rules = inheritedRules(s.assets);
+  // §5c argues the ship should launch with standing rules as a curriculum. The
+  // game now starts with NONE: the opening phase is meant to be hands-on —
+  // wake someone, learn what the ship does, hand out every job — and automation
+  // is what the middle game is for. The balance harness still gets them, since
+  // it is measuring a fully-automated ship.
+  s.rules = p ? inheritedRules(s.assets) : [];
   // An autopilot (the balance harness) may pre-load the player's side of things.
   // A human client does the same through apply(), one command at a time.
   if (p) {
+    // A Policy means the balance harness: a fully-staffed, self-running ship.
     s.settings = { replaceAt: p.replaceAt, droneTarget: p.droneTarget,
                    botanistShare: p.botanistShare, prioritise: p.prioritise,
-                   shedEmptyRooms: true, autoRetire: true };
+                   shedEmptyRooms: true, autoRetire: true,
+                   crewSelfAssign: true, autoWake: true };
+    s.crew = newCrew(r);
+    for (const c of s.crew) s.pool[c.role]--;
+    s.nextCrewId = s.crew.length;
+    s.colony.awake = s.crew.length;
+    s.colony.frozen -= s.crew.length;
+    for (const c of s.crew) c.fitOn = 0;
     if (p.automate) s.rules.push(...playerRules(s.assets, p.serviceAt, p.replaceAt,
       p.criticalServiceAt, id => CRITICAL_ORDER[id] !== undefined));
   }
-  // The launch roster comes out of the same pools everyone else does.
-  for (const c of s.crew) s.pool[c.role]--;
-  s.nextCrewId = s.crew.length;
-  emit(s, "info", "Voyage", "DEPART", "Seedship under way. 300 years to target.");
+  emit(s, "info", "Voyage", "DEPART",
+       "Seedship under way. 200 asleep, nobody awake, 300 years to target.");
   return s;
 }
 
@@ -125,6 +135,62 @@ function replace(s: State, a: Asset): boolean {
   a.cond = 100; a.maxCond = 100; a.faulted = false; a.repairs = 0;
   s.counters.replacements++;
   emit(s, "info", a.room, "EQ-NEW", `${assetName(a.id)} replaced. Ceiling back to 100.`, a.id);
+  return true;
+}
+
+/** Can this job even be started today? A blocked job stays on the board getting
+ *  older, which is §4's point: nothing is broken and nothing is moving. */
+function canStart(s: State, task: Task, craneUp: boolean): boolean {
+  if (task.kind === "deliver") {
+    const what = task.what as MatKey;
+    if (isBulk(what) && !craneUp) return false;
+    return s.rooms[task.from!][what] > 0;
+  }
+  if (task.kind === "makeRod") return canMakeRod(s.stores);
+  if (task.kind === "makeDrone") return s.drones < s.settings.droneTarget && canMakeDrone(s.stores);
+  const a = s.assets.find(x => x.id === task.target);
+  if (!a) return false;
+  return a.faulted || a.cond < a.maxCond - 3;
+}
+
+/** The work is done — now do the thing. Returns false if it cannot be completed
+ *  for want of materials, in which case the job waits, finished but unfulfilled. */
+function finish(s: State, task: Task, p: Settings): boolean {
+  if (task.kind === "makeRod") {
+    if (!canMakeRod(s.stores)) return false;
+    makeRod(s.stores); s.rods++; s.counters.rodsMade++;
+    emit(s, "chatter", "Engineering", "FAB-ROD", "Fuel rod fabricated.");
+    return true;
+  }
+  if (task.kind === "makeDrone") {
+    if (s.drones >= p.droneTarget) return true;
+    if (!canMakeDrone(s.stores)) return false;
+    makeDrone(s.stores); s.drones++;
+    emit(s, "chatter", "Drone Bay", "FAB-DRN", `Drone built. Fleet at ${s.drones}.`);
+    return true;
+  }
+  if (task.kind === "deliver") {
+    const what = task.what as MatKey;
+    const qty = withdraw(s.rooms[task.from!], what, loadOf(what));
+    if (qty <= 0) return true;
+    s.shipments.push({ from: task.from!, to: task.to!, what, qty,
+                       left: s.day, eta: s.day + daysOf(what) });
+    return true;
+  }
+  const a = s.assets.find(x => x.id === task.target);
+  if (!a) return true;
+  if (!a.faulted && a.cond >= a.maxCond - 3) return true;
+  if (a.maxCond < p.replaceAt && replace(s, a)) return true;
+  // No parts yet. Keep patching it anyway: the ceiling is already written off,
+  // so there is nothing left to protect, and a high-wear asset in free-fall
+  // reaches zero long before the replacement arrives. Abandoning the reactor for
+  // one year at ageFactor 1.9 cost 182 colonists.
+  service(s, a);
+  // A sensor bolted to a machine gets checked while the machine is open, so
+  // routine repairs DO mitigate condition drift — for free, without the player
+  // ever deciding to. A gauge on a store has no such visit: nothing routine
+  // touches it, and its reading looks fine precisely because it reads high.
+  a.sensorCond = 100;
   return true;
 }
 
@@ -252,62 +318,39 @@ export function step(s: State): State {
          `${sh.qty.toFixed(0)} ${sh.what} delivered from ${sh.from}.`);
   }
 
-  // ---- maintenance, limited by crew labour ----
-  // Servicing only helps if there is wear to recover: an asset already at its
-  // ceiling gains nothing and still pays the refurbishment loss.
-  // The crew work the board, not the ship: a job nobody raised is a job nobody does.
-  // Crew capacity is people, not a constant. Lose them and the ship stops being repaired.
-  let jobs = crewLabour(s.crew, s.colony) * (1 - p.botanistShare);
+  // ---- work ----
+  // §3: crew are task queues. A job is a quantity of work with somebody's name
+  // against it, and until somebody's name is on it, it does not move. That is
+  // the opening phase of the game: nobody is awake, nothing is automated, and
+  // every job is one you handed out.
   s.board.sort((x, y) => x.priority - y.priority || x.raised - y.raised);
+  const hands = onDuty(s.crew, s.day);
+
+  // Standing order, off at the start. Turning it on is the first thing
+  // automation buys you — the crew stop waiting to be told.
+  if (p.crewSelfAssign) {
+    for (const person of hands) {
+      if (person.task && s.board.some(t => t.id === person.task)) continue;
+      const next = s.board.find(t => !t.assignee && canStart(s, t, craneUp));
+      if (!next) break;
+      next.assignee = person.id; person.task = next.id;
+    }
+  }
+
   const done: Task[] = [];
   for (const task of s.board) {
-    if (jobs <= 0) break;
-    if (task.kind === "makeRod") {
-      if (canMakeRod(s.stores)) {
-        makeRod(s.stores); s.rods++; s.counters.rodsMade++; done.push(task); jobs--;
-        emit(s, "chatter", "Engineering", "FAB-ROD", "Fuel rod fabricated.");
-      }
-      continue;
-    }
-    if (task.kind === "makeDrone") {
-      if (s.drones < p.droneTarget && canMakeDrone(s.stores)) {
-        makeDrone(s.stores); s.drones++; done.push(task); jobs--;
-        emit(s, "chatter", "Drone Bay", "FAB-DRN", `Drone built. Fleet at ${s.drones}.`);
-      }
-      else if (s.drones >= p.droneTarget) done.push(task);
-      continue;
-    }
-    if (task.kind === "deliver") {
-      const from = s.rooms[task.from!], what = task.what as MatKey;
-      // Bulk needs the crane, and the crane needs 30 kW. No power, no haul —
-      // the job stays on the board getting older, which is exactly the failure
-      // §4 wants visible: nothing is broken and nothing is moving.
-      if (isBulk(what) && !craneUp) continue;
-      const qty = withdraw(from, what, loadOf(what));
-      if (qty <= 0) { done.push(task); continue; }
-      s.shipments.push({ from: task.from!, to: task.to!, what, qty,
-                         left: s.day, eta: s.day + daysOf(what) });
-      done.push(task); jobs--;
-      continue;
-    }
-    const a = s.assets.find(x => x.id === task.target);
-    if (!a) { done.push(task); continue; }
-    // nothing left to recover, and not broken: drop it
-    if (!a.faulted && a.cond >= a.maxCond - 3) { done.push(task); continue; }
-    if (a.maxCond < p.replaceAt) {
-      if (replace(s, a)) { done.push(task); jobs--; continue; }
-      // No parts yet. Keep patching it anyway: the ceiling is already written
-      // off, so there is nothing left to protect, and a high-wear asset in
-      // free-fall reaches zero long before the replacement arrives. Abandoning
-      // the reactor for one year at ageFactor 1.9 cost 182 colonists.
-    }
-    service(s, a);
-    // A sensor bolted to a machine gets checked while the machine is open, so
-    // routine repairs DO mitigate condition drift — for free, without the player
-    // ever deciding to. A gauge on a store has no such visit: nothing routine
-    // touches it, and its reading looks fine precisely because it reads high.
-    a.sensorCond = 100;
-    done.push(task); jobs--;
+    const person = task.assignee ? s.crew.find(c => c.id === task.assignee) : undefined;
+    // Gone or frozen: the job goes back on the board. Merely still in the medbay:
+    // the job is theirs and waits for them. Clearing it here silently unassigned
+    // every job given to someone who had just been woken.
+    if (task.assignee && !person) { task.assignee = undefined; continue; }
+    if (!person || person.asleep) continue;
+    if (s.day < person.fitOn) continue;
+    if (!canStart(s, task, craneUp)) continue;   // blocked, and getting older
+    task.done += effort(person) * (1 - p.botanistShare);
+    if (task.done < task.work) continue;
+    if (finish(s, task, p)) { done.push(task); person.task = undefined; }
+    else { task.done = task.work; }             // held, waiting on materials
   }
   for (const t2 of done) s.board.splice(s.board.indexOf(t2), 1);
   s.counters.staleTasks += s.board.filter(t2 => s.day - t2.raised > 365).length > 0 ? 1 : 0;

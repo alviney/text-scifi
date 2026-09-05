@@ -59,6 +59,7 @@ export type State = {
   /** Monotonic. Deriving person ids from crew.length collided the moment anyone
    *  was frozen — the roster shrank and the next wake reused a live id. */
   nextCrewId: number;
+  nextTaskId: number;
   rules: import("./rules.ts").Rule[];
   board: import("./rules.ts").Task[];
   /** §8's feed. A bounded window, not a ledger — totals live in counters. */
@@ -90,11 +91,19 @@ export type Settings = {
   /** §3: put people back under when they ask, without waiting to be told.
    *  Off, and the roster ages out while you are looking at something else. */
   autoRetire: boolean;
+  /** Do the crew take work off the board themselves, or do you hand out every
+   *  job? Off at the start: the opening phase is meant to be manual, and
+   *  turning this on is the first thing automation buys you. */
+  crewSelfAssign: boolean;
+  /** Wake a replacement whenever the roster is short. Off for a player — §3
+   *  makes that a decision — and on for the balance harness, which is measuring
+   *  a fully-staffed, fully-automated ship. */
+  autoWake: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   replaceAt: 62, droneTarget: 6, botanistShare: 0.25, prioritise: true,
-  shedEmptyRooms: true, autoRetire: true,
+  shedEmptyRooms: true, autoRetire: true, crewSelfAssign: false, autoWake: false,
 };
 
 /** An autopilot: a scripted player, used by the balance harness.

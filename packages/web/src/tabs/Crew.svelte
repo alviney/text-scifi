@@ -8,15 +8,27 @@
   import type { State } from "../../../sim/src/types.ts";
   import type { Command } from "../../../sim/src/commands.ts";
   import { BANKS, PER_BANK, COLD_GRACE_DAYS } from "../../../sim/src/colony.ts";
-  import { ROSTER, ageFactor, RETIRE_AGE } from "../../../sim/src/crew.ts";
-  import { num, when } from "../lib/view.ts";
+  import { ROSTER, ageFactor, RETIRE_AGE, THAW_DAYS, type Role } from "../../../sim/src/crew.ts";
+  import { assetName, num, when } from "../lib/view.ts";
 
   let { ship, send }: { ship: State; send: (c: Command) => void } = $props();
   const c = $derived(ship.colony);
   const open = $derived(ship.requests.filter(r => !r.answered));
   const roles = $derived([...new Set(ROSTER)] as string[]);
   const awakeRoles = $derived(new Set(ship.crew.map(p => p.role)));
-  let tab = $state<"roster" | "banks" | "orders">("roster");
+  let tab = $state<"roster" | "jobs" | "banks" | "orders">("roster");
+  let waking = $state(false);
+  /** which job the player is handing out, if any */
+  let handing: string | null = $state(null);
+
+  const roleList = $derived([...new Set(ROSTER)] as Role[]);
+  const free = $derived(ship.crew.filter(p => !ship.board.some(t => t.assignee === p.id)));
+  const label = (t: { kind: string; target: string; what?: string; to?: string }) =>
+    t.kind === "service" ? `Service ${assetName(t.target)}`
+    : t.kind === "replace" ? `Replace ${assetName(t.target)}`
+    : t.kind === "deliver" ? `Carry ${t.what} to ${t.to}`
+    : t.kind === "makeRod" ? "Fabricate a fuel rod"
+    : "Build a drone";
 </script>
 
 <div class="scroll">
@@ -53,12 +65,34 @@
   {/if}
 
   <div class="tabs">
-    {#each [["roster","Roster"],["banks","Banks"],["orders","Standing orders"]] as [id, name]}
+    {#each [["roster","Roster"],["jobs",`Jobs${ship.board.length ? " " + ship.board.length : ""}`],["banks","Banks"],["orders","Orders"]] as [id, name]}
       <button class="t" aria-pressed={tab === id} onclick={() => tab = id as typeof tab}>{name}</button>
     {/each}
   </div>
 
   {#if tab === "roster"}
+    <!-- §3: the roster is an insurance premium. Nobody wakes themselves, and
+         every person you wake spends a colonist out of a small pool. -->
+    <div class="pad wake">
+      {#if waking}
+        <div class="label">Who do you want?</div>
+        {#each roleList as role}
+          <button class="role-btn" disabled={ship.pool[role] === 0}
+                  onclick={() => { send({ kind: "wake", role }); waking = false; }}>
+            <b>{role}</b>
+            <span>{ship.pool[role]} left in the bank</span>
+          </button>
+        {/each}
+        <button class="cancel" onclick={() => waking = false}>Not now</button>
+      {:else}
+        <button class="act" onclick={() => waking = true}>Wake somebody</button>
+        <div class="sentence faint">
+          They spend {THAW_DAYS} days in the Medbay before they can work, and every
+          year awake is a year of their life.
+        </div>
+      {/if}
+    </div>
+
     {#each ship.crew as p (p.id)}
       <div class="person">
         <div class="line1">
@@ -67,9 +101,19 @@
           <span class="age" class:warn={p.age > RETIRE_AGE}>{Math.floor(p.age)}</span>
         </div>
         <div class="line2 dim">
-          {p.traits.join(" · ")}
-          {#if p.closeTo.length}· close to {p.closeTo.length}{/if}
+          {#if ship.day < p.fitOn}
+            <span class="warn">In the Medbay — fit in {Math.ceil(p.fitOn - ship.day)} days</span>
+          {:else}
+            {@const job = ship.board.find(t => t.assignee === p.id)}
+            {#if job}
+              <span class="doing">{label(job)}</span>
+              <span class="faint">{Math.round((job.done / job.work) * 100)}%</span>
+            {:else}
+              <span class="faint">Idle — nothing assigned</span>
+            {/if}
+          {/if}
         </div>
+        <div class="line2 faint">{p.traits.join(" · ")}{#if p.closeTo.length} · close to {p.closeTo.length}{/if}</div>
         <div class="meters">
           <span class="m"><i style="width:{p.happiness}%" class:crit={p.happiness < 30}></i></span>
           <span class="m"><i style="width:{p.rest}%" class:warn={p.rest < 35}></i></span>
@@ -79,7 +123,9 @@
       </div>
     {/each}
     {#if ship.crew.length === 0}
-      <div class="pad sentence crit">Nobody is awake.</div>
+      <div class="pad sentence dim">
+        Nobody is awake. The ship is running itself, and running down.
+      </div>
     {/if}
 
     <!-- §3's real crew failure mode: the pools are small and unequal, and
@@ -108,6 +154,56 @@
             <span class="faint">{m.role} · {m.years}y served · {m.cause}</span>
           </div>
         {/each}
+      </div>
+    {/if}
+
+  {:else if tab === "jobs"}
+    <!-- §5b: the board. Jobs go down to the crew — and until you put a name on
+         one, it sits here getting older. -->
+    <div class="pad">
+      <div class="label">The board</div>
+      <div class="big">{ship.board.length} <span class="dim">
+        {ship.board.length === 1 ? "job" : "jobs"}</span></div>
+      <div class="sentence dim">
+        {ship.board.filter(t => !t.assignee).length} waiting for somebody ·
+        {free.length} idle
+      </div>
+    </div>
+    {#each ship.board as job (job.id)}
+      {@const who = ship.crew.find(p => p.id === job.assignee)}
+      <div class="job">
+        <div class="jline">
+          <span class="jname">{label(job)}</span>
+          <span class="faint">{when(job.raised, ship.day)}</span>
+        </div>
+        <div class="bar"><i style="width:{Math.min(100, (job.done / job.work) * 100)}%"></i></div>
+        {#if who}
+          <div class="jsub">
+            <span class="ok">{who.name}</span>
+            <button class="lnk" onclick={() => send({ kind: "unassign", task: job.id })}>take off</button>
+          </div>
+        {:else if handing === job.id}
+          <div class="hand">
+            {#each ship.crew as p}
+              <button class="pick" onclick={() => { send({ kind: "assign", task: job.id, person: p.id }); handing = null; }}>
+                {p.name.split(" ")[0]}
+              </button>
+            {/each}
+            <button class="lnk" onclick={() => handing = null}>cancel</button>
+          </div>
+        {:else}
+          <div class="jsub">
+            <span class="faint">nobody on it</span>
+            <button class="lnk" disabled={ship.crew.length === 0}
+                    onclick={() => handing = job.id}>give it to…</button>
+          </div>
+        {/if}
+      </div>
+    {/each}
+    {#if ship.board.length === 0}
+      <div class="pad sentence faint">
+        Nothing to do. Jobs come from you — open a facility, find something worn,
+        and raise one.
       </div>
     {/if}
 
@@ -156,6 +252,18 @@
                                   value: +(e.currentTarget as HTMLInputElement).value / 100 })} />
       <div class="sentence faint">
         Too little and the galley empties. Too much and nothing gets repaired or carried.
+      </div>
+
+      <label class="check">
+        <input type="checkbox" checked={ship.settings.crewSelfAssign}
+               onchange={e => send({ kind: "setting", key: "crewSelfAssign",
+                                     value: (e.currentTarget as HTMLInputElement).checked })} />
+        Let the crew take jobs off the board themselves
+      </label>
+      <div class="sentence faint">
+        Off, you hand out every job by name. On, anyone idle picks up the most
+        urgent thing waiting. This is the first piece of the ship you stop flying
+        by hand.
       </div>
 
       <label class="check">
@@ -210,6 +318,28 @@
   .m > i.warn { background: var(--warn); } .m > i.crit { background: var(--crit); }
   .pc { font-size: 10px; width: 32px; text-align: right; }
   .frz { font-size: 10px; color: var(--faint); text-decoration: underline; }
+
+  .wake { border-bottom: 1px solid var(--rule); }
+  .wake .act { display: block; width: 100%; border: 1px solid var(--accent);
+               color: var(--accent); padding: 9px; text-align: center; }
+  .role-btn { display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+              width: 100%; border: 1px solid var(--rule); padding: 8px 10px; margin-bottom: 5px; }
+  .role-btn:disabled { opacity: .35; }
+  .role-btn b { font-weight: 500; text-transform: capitalize; }
+  .role-btn span { color: var(--dim); font-size: 11px; }
+  .cancel { color: var(--dim); font-size: 11px; }
+  .doing { color: var(--ok); }
+
+  .job { padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+  .jline { display: flex; gap: 10px; align-items: baseline; }
+  .jname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .job .bar { margin: 5px 0 4px; }
+  .jsub { display: flex; gap: 10px; align-items: baseline; font-size: 11px; }
+  .jsub > :first-child { flex: 1; }
+  .lnk { color: var(--dim); text-decoration: underline; font-size: 10.5px; }
+  .lnk:disabled { opacity: .4; text-decoration: none; }
+  .hand { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
+  .pick { border: 1px solid var(--accent); color: var(--accent); padding: 3px 8px; font-size: 11px; }
 
   .pool { display: flex; gap: 10px; font-size: 11.5px; padding: 4px 0; border-bottom: 1px solid var(--rule); }
   .pool > :first-child { flex: 1; }

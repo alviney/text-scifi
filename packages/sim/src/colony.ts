@@ -34,8 +34,11 @@ export type Colony = {
   cold: number;
 };
 
+/** The ship departs with **nobody awake**. Two hundred people asleep, a
+ *  caretaker, and no hands. Waking the first person is the first thing the
+ *  player does, and it is meant to be a decision rather than a default. */
 export const newColony = (): Colony => ({
-  awake: CREW_TARGET, frozen: COLONISTS - CREW_TARGET, banks: BANKS,
+  awake: 0, frozen: COLONISTS, banks: BANKS,
   food: 400, fed: 100, air: 100, diedAwake: 0, diedFrozen: 0, cold: 0,
 });
 
@@ -108,28 +111,31 @@ export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
     c.frozen -= killed; c.diedFrozen += killed; c.banks = canPower; c.cold = 0;
   }
 
-  // ---- wake replacements, if there is anyone left and a medbay to do it in ----
-  const medbay = s.assets.find(a => a.id === "medstation")!;
-  if (c.awake < CREW_TARGET && c.frozen > 0 && !medbay.faulted && c.fed > 40 && c.air > 40) {
-    if (chance(r, 0.02)) {
-      // §3: whichever speciality the ship is missing is the one worth thawing —
-      // but only if any of that speciality are left. The pools are small and
-      // unequal, and running one dry is permanent.
-      const want = nextRole(s.crew, s.pool);
-      if (want) {
-        s.pool[want]--;
-        const p = makeDistinct(r, want, s.day, s.nextCrewId++, s.crew);
-        s.crew.push(p); c.awake++; c.frozen--;
-        emit(s, "info", "Medbay", "CRW-WAKE",
-             `${p.name} is out of cryo. ${p.role[0].toUpperCase() + p.role.slice(1)}, age ${Math.floor(p.age)}.`);
-        if (s.pool[want] === 0)
-          emit(s, "warn", "Medbay", "CRW-LAST",
-               `${p.name} was the last ${want} in the bank.`);
-      }
+  // Nobody wakes themselves. §3 makes the roster an insurance premium the player
+  // chooses to pay: waking someone costs colonist-years and days in the medbay,
+  // and the ship will happily coast with an empty crew while it falls apart.
+  //
+  // The balance harness is measuring a fully-staffed ship, so it sets autoWake
+  // and gets the old behaviour.
+  const medbay0 = s.assets.find(a => a.id === "medstation")!;
+  if (s.settings.autoWake && c.awake < CREW_TARGET && c.frozen > 0
+      && !medbay0.faulted && c.fed > 40 && c.air > 40 && chance(r, 0.02)) {
+    const want = nextRole(s.crew, s.pool);
+    if (want) {
+      s.pool[want]--;
+      const p = makeDistinct(r, want, s.day, s.nextCrewId++, s.crew);
+      s.crew.push(p); c.awake++; c.frozen--;
+      emit(s, "info", "Medbay", "CRW-WAKE",
+           `${p.name} is out of cryo. ${p.role[0].toUpperCase() + p.role.slice(1)}.`);
     }
   }
 
+
   // ---- §1 fail states ----
+  // An empty roster is no longer a loss on its own — the ship departs that way.
+  // It is a loss when there is nobody awake AND no way to wake anyone: either
+  // the banks are empty or the Med Station is broken.
+  const medbay = s.assets.find(a => a.id === "medstation")!;
   if (c.awake <= 0 && (c.frozen <= 0 || medbay.faulted)) s.dead = "crew lost";
   else if (c.frozen <= 0 && c.awake <= 0) s.dead = "colony lost";
 }

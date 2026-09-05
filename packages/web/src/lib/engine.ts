@@ -46,14 +46,8 @@ export class Engine {
   private lastPublish = 0;
   private raf = 0;
 
-  constructor(seed = 1, opts?: { inherited?: boolean; from?: State }) {
-    if (opts?.from) { this.state = opts.from; return; }
-    this.state = init(seed);
-    // The one question worth asking before a run: do you inherit the departure
-    // crew's automation, or start with a ship that watches nothing? Both are
-    // playable and they feel completely different, so it is a choice, not a
-    // default. (plan.md §5c argues for inheriting; this is how to find out.)
-    if (opts?.inherited === false) this.state.rules = [];
+  constructor(seed = 1, opts?: { from?: State }) {
+    this.state = opts?.from ?? init(seed);
   }
 
   subscribe(fn: Sub) {

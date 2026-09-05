@@ -36,6 +36,11 @@ export type Person = {
   /** day they were last woken, for "years served" */
   wokeOn: number;
   asleep: boolean;
+  /** §3: "unfreezing is expensive — the crew member spends a few days in medbay
+   *  recovering before they can work". Day they are fit for duty. */
+  fitOn: number;
+  /** the task they are on. One thing at a time. */
+  task?: string;
   /** they have asked to go back under and the player has not answered */
   asked: boolean;
 };
@@ -105,7 +110,7 @@ export function makePerson(r: Rng, role: Role, day: number, n: number): Person {
     skill: Math.round(range(r, 45, 85)),
     happiness: Math.round(range(r, 70, 95)),
     rest: 100, health: 100,
-    traits, closeTo: [], wokeOn: day, asleep: false, asked: false,
+    traits, closeTo: [], wokeOn: day, fitOn: day + THAW_DAYS, asleep: false, asked: false,
   };
 }
 
@@ -133,6 +138,8 @@ export function newCrew(r: Rng): Person[] {
 }
 
 export const awake = (crew: Person[]) => crew.filter(c => !c.asleep);
+export const onDuty = (crew: Person[], day: number) =>
+  crew.filter(c => !c.asleep && day >= c.fitOn && c.health > 20);
 export const years = (c: Person, day: number) => Math.floor((day - c.wokeOn) / 365);
 
 /** §3's stat table, made mechanical.
@@ -153,6 +160,9 @@ export function effort(c: Person): number {
  *  before they age out". Full strength to 60, then it goes. */
 export const ageFactor = (age: number) =>
   age <= 60 ? 1 : Math.max(0.15, 1 - (age - 60) / 30);
+
+/** §3: freezing is cheap and instant; the cost gate is on waking them up. */
+export const THAW_DAYS = 5;
 
 export const RETIRE_AGE = 65;
 export const END_AGE = 88;

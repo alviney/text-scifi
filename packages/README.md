@@ -495,6 +495,31 @@ it.
 each addition is work that the next addition throws away. The numbers below are from before the
 crew layer went in and should be treated as stale until the feature set stops moving.
 
+## ⚠ The balance harness is measuring the wrong game right now
+
+`run.ts`, `sweep.ts` and `validate.ts` still execute, and their output is **not currently
+meaningful**. Two changes put them out of scope on purpose:
+
+**The ship starts empty.** Nobody is awake, nothing is automated, and neither happens by
+itself — the opening phase of the game is meant to be hands-on. A `Policy` still gets the old
+launch roster and the old standing rules (`autoWake`, `crewSelfAssign`), so the harness has
+something to measure, but it is now measuring a configuration no player starts from.
+
+**Work takes time and takes a person.** §3 always said crew are task queues: *"tasks take time,
+a crew member can only do one thing at a time"*. The simulation used to ignore that and drain an
+abstract pool of crew-days, completing however many jobs the pool could pay for each day. Now a
+job is 2–5 crew-days of work with one name against it. That is a much slower ship — a steady
+policy goes from 47,589 services a voyage to 12,432 — and it is slower in a way that compounds:
+the board backs up, the O₂ generator waits its turn, and the crew die around year 15.
+
+Measured, the crew are not idling: **1.4 idle heads against 6.3 unassigned jobs**. The
+throughput is simply lower, because it is now real.
+
+That is a design question — how much work a person gets through, how many people you need awake,
+and where automation takes over — and it belongs to the phase structure being felt out in play,
+not to a sweep. **Do not tune against these numbers.** The harness comes back when the phases
+settle.
+
 ### Previously unresolved (kept for the record)
 
 A well-run ship still loses 182 of 192 colonists, and tracing it shows they die **in a single

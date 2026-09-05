@@ -19,11 +19,35 @@ export type Rule = {
   lastFired: number;                   // day, -1 for never
 };
 
+/** §3: "Crew members are task queues — the player schedules work onto them.
+ *  Tasks take time. A crew member can only do one thing at a time."
+ *
+ *  So a task is no longer an instant that a pool of abstract labour absorbs. It
+ *  is a quantity of work with somebody's name against it, and until somebody's
+ *  name is on it, it does not move. That is the whole opening phase of the game:
+ *  nobody is awake, nothing is automated, and every job is one you gave out. */
 export type Task = {
+  id: string;
   kind: Rule["action"]; target: string; raised: number; priority: number;
+  /** crew-days of work this needs */
+  work: number;
+  /** crew-days done so far */
+  done: number;
+  /** who is on it, if anyone */
+  assignee?: string;
   /** delivery jobs only: where from, where to, and what */
   from?: string; to?: string; what?: string;
 };
+
+/** How long each kind of job takes one person. Deliberately coarse — at one
+ *  game-day per 24 real seconds, two crew-days is about a minute of watching. */
+export const WORK: Record<Rule["action"], number> = {
+  service: 2, replace: 5, makeRod: 2, makeDrone: 4, deliver: 1,
+};
+
+export function newTask(s: State, t: Omit<Task, "id" | "work" | "done">): Task {
+  return { ...t, id: `t${s.nextTaskId++}`, work: WORK[t.kind], done: 0 };
+}
 
 /** §5: worn sensors do not fail, they LIE — and they read HIGH, so the rule
  *  watching for "below X" is never told the truth and quietly stops firing.
@@ -117,7 +141,7 @@ export function evaluate(s: State, rules: Rule[], board: Task[], priorityOf: (id
       if (board.some(t => t.target === a.id)) continue;  // already raised
       // §5: a broken thing goes to the FRONT of the queue, not the back
       const pri = a.faulted ? -1 : priorityOf(a.id);
-      board.push({ kind: "service", target: a.id, raised: s.day, priority: pri });
+      board.push(newTask(s, { kind: "service", target: a.id, raised: s.day, priority: pri }));
       r.fires++; r.lastFired = s.day;
     } else if (r.kind === "roomstock") {
       // §4: a room watching its OWN shelf. The material it wants lives somewhere
@@ -134,8 +158,8 @@ export function evaluate(s: State, rules: Rule[], board: Task[], priorityOf: (id
       if ((s.rooms[src]?.[key as keyof typeof s.stores] ?? 0) <= 0) continue;
       if (board.some(t => t.kind === "deliver" && t.to === room && t.what === key)) continue;
       if (s.shipments.some(x => x.to === room && x.what === key)) continue;
-      board.push({ kind: "deliver", target: `${room}:${key}`, raised: s.day, priority: 4,
-                   from: src, to: room, what: key });
+      board.push(newTask(s, { kind: "deliver", target: `${room}:${key}`, raised: s.day,
+                             priority: 4, from: src, to: room, what: key }));
       r.fires++; r.lastFired = s.day;
     } else {
       const key = r.watch.split(":")[1];
@@ -143,7 +167,7 @@ export function evaluate(s: State, rules: Rule[], board: Task[], priorityOf: (id
       const have = reportedStock(actual, s.gauges[key] ?? 100);   // <- the lie that has no backstop
       if (have >= r.threshold) continue;
       if (board.some(t => t.kind === r.action)) continue;
-      board.push({ kind: r.action, target: r.watch, raised: s.day, priority: 5 });
+      board.push(newTask(s, { kind: r.action, target: r.watch, raised: s.day, priority: 5 }));
       r.fires++; r.lastFired = s.day;
     }
   }

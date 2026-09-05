@@ -53,7 +53,7 @@
 <div class="shell" class:pre={!running}>
 {#if !running}
   <Start {saved}
-         onstart={o => { clear(); saved = null; begin(new Engine(o.seed, { inherited: o.inherited })); }}
+         onstart={o => { clear(); saved = null; begin(new Engine(o.seed)); }}
          oncontinue={() => { const st = load(); if (st) begin(new Engine(1, { from: st })); }} />
 {:else}
   <Ticker {ship} {snapped}

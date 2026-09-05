@@ -1,20 +1,17 @@
 <script lang="ts">
-  /** The one screen before the voyage. Two real questions and a seed.
+  /** The one screen before the voyage: a seed and a sentence.
    *
-   *  The automation toggle is here because it is genuinely undecided: plan.md
-   *  §5c argues the ship should launch with thirteen inherited rules as a
-   *  curriculum that teaches by going wrong slowly, but a ship that watches
-   *  nothing is a different game and might be a better one. Playing both is the
-   *  only way to find out, so it is a choice on the front screen rather than a
-   *  constant in the source. */
+   *  The automation toggle that used to live here is gone. Every voyage now
+   *  starts with no rules and nobody awake, because the opening phase is meant
+   *  to be hands-on — that is the thing being felt out, and offering a shortcut
+   *  past it on the front screen is how it would never get played. */
   let { saved, onstart, oncontinue }: {
     saved: { day: number; alive: number; at: number } | null;
-    onstart: (o: { seed: number; inherited: boolean }) => void;
+    onstart: (o: { seed: number }) => void;
     oncontinue: () => void;
   } = $props();
 
   let seed = $state(Math.floor(Math.random() * 9000) + 1000);
-  let inherited = $state(true);
 </script>
 
 <div class="start">
@@ -30,18 +27,10 @@
     </button>
   {/if}
 
-  <div class="opt">
-    <div class="label">The departure crew left you</div>
-    <div class="pick">
-      <button aria-pressed={inherited} onclick={() => inherited = true}>
-        <b>Standing rules</b>
-        <span>Fifteen automations, already running. Some of them are wrong.</span>
-      </button>
-      <button aria-pressed={!inherited} onclick={() => inherited = false}>
-        <b>Nothing</b>
-        <span>The ship watches itself. You write every rule, or none.</span>
-      </button>
-    </div>
+  <div class="brief">
+    <p>Two hundred colonists are asleep. Nobody is awake, nothing is automated,
+       and the ship has three hundred years of wear ahead of it.</p>
+    <p>Wake someone. Everything else follows from that.</p>
   </div>
 
   <div class="opt">
@@ -50,7 +39,7 @@
     <div class="hint">Same seed, same three hundred years — asteroids, faults and all.</div>
   </div>
 
-  <button class="go" onclick={() => onstart({ seed, inherited })}>Get under way</button>
+  <button class="go" onclick={() => onstart({ seed })}>Get under way</button>
 </div>
 
 <style>
@@ -60,11 +49,8 @@
   h1 { margin: 2px 0 4px; font-size: 30px; letter-spacing: .16em; font-weight: 500; color: var(--accent); }
   .sub { color: var(--dim); font-size: 12px; }
   .opt { margin-bottom: 20px; }
-  .pick { display: grid; gap: 6px; margin-top: 6px; }
-  .pick button { border: 1px solid var(--rule); padding: 9px 11px; text-align: left; display: grid; gap: 2px; }
-  .pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--panel); }
-  .pick b { font-weight: 500; }
-  .pick span { color: var(--dim); font-size: 11px; }
+  .brief { margin-bottom: 22px; color: var(--dim); }
+  .brief p { margin: 0 0 8px; max-width: 42ch; }
   input { font: inherit; background: var(--panel2); color: var(--text);
           border: 1px solid var(--rule); padding: 5px 8px; width: 120px; margin-top: 4px; }
   .hint { color: var(--faint); font-size: 11px; margin-top: 4px; }

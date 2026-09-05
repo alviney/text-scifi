@@ -4,10 +4,11 @@
  *  point is not ceremony: a command is serialisable, so a save plus a command
  *  log reproduces any bug exactly (§2's determinism rule), and a second client
  *  only has to build these objects — it never reaches into the model. */
-import type { Rule } from "./rules.ts";
+import { newTask, type Rule } from "./rules.ts";
 import type { Settings, State } from "./types.ts";
 import { emit } from "./signals.ts";
-import type { Person } from "./crew.ts";
+import { makeDistinct, THAW_DAYS, type Person, type Role } from "./crew.ts";
+import type { Rng } from "./rng.ts";
 
 /** §3: "Freezing is cheap and instant — rotate crew freely, the cost gate is on
  *  waking them up." They go back alive, just older, and their skill goes with
@@ -39,13 +40,18 @@ export type Command =
   /** §5b: answer a request that came UP from the crew */
   | { kind: "answer"; request: string; grant: boolean }
   /** §3: freezing is cheap and instant. This is the rotation valve. */
-  | { kind: "freeze"; person: string };
+  | { kind: "freeze"; person: string }
+  /** §3: waking someone is the expensive half, and the first thing you do. */
+  | { kind: "wake"; role: Role }
+  /** §3: crew are task queues. Put a name on a job. */
+  | { kind: "assign"; task: string; person: string }
+  | { kind: "unassign"; task: string };
 
 export function apply(s: State, c: Command): State {
   switch (c.kind) {
     case "raise": {
       if (s.board.some(t => t.target === c.target && t.kind === c.action)) break;
-      s.board.push({ kind: c.action, target: c.target, raised: s.day, priority: 0 });
+      s.board.push(newTask(s, { kind: c.action, target: c.target, raised: s.day, priority: 0 }));
       break;
     }
     case "cancel": {
@@ -100,6 +106,43 @@ export function apply(s: State, c: Command): State {
     case "freeze": {
       const who = s.crew.find(x => x.id === c.person);
       if (who) freeze(s, who);
+      break;
+    }
+    case "wake": {
+      // §3: the cost gate is on waking, not freezing. It spends a colonist out
+      // of a small and unequal pool, and they are no use for a few days while
+      // the Medbay brings them round.
+      const medbay = s.assets.find(a => a.id === "medstation")!;
+      if (medbay.faulted || s.pool[c.role] <= 0 || s.colony.frozen <= 0) break;
+      s.pool[c.role]--;
+      // Thread the state's own RNG rather than reaching for a fresh one:
+      // ARCHITECTURE §2's non-negotiable is that a save plus a command log
+      // replays exactly, and a command that rolls dice off-stream breaks that.
+      const r: Rng = { s: s.rngState };
+      const p = makeDistinct(r, c.role, s.day, s.nextCrewId++, s.crew);
+      s.rngState = r.s;
+      s.crew.push(p);
+      s.colony.frozen--; s.colony.awake = s.crew.length;
+      emit(s, "info", "Medbay", "CRW-WAKE",
+           `${p.name} is out of cryo. ${p.role[0].toUpperCase() + p.role.slice(1)}, age ${
+             Math.floor(p.age)}. Fit for duty in ${THAW_DAYS} days.`);
+      break;
+    }
+    case "assign": {
+      const task = s.board.find(t => t.id === c.task);
+      const who = s.crew.find(x => x.id === c.person);
+      if (!task || !who || who.asleep) break;
+      // One thing at a time (§3). Taking a new job drops the old one.
+      for (const t of s.board) if (t.assignee === who.id) t.assignee = undefined;
+      task.assignee = who.id; who.task = task.id;
+      break;
+    }
+    case "unassign": {
+      const task = s.board.find(t => t.id === c.task);
+      if (!task) break;
+      const who = s.crew.find(x => x.id === task.assignee);
+      if (who) who.task = undefined;
+      task.assignee = undefined;
       break;
     }
   }
