@@ -48,6 +48,17 @@ A held badge is also kept separate from the room's status dot. The Cargo Bay rea
 holding blocked ore, because its *equipment* is fine — the block is a logistics problem, and
 collapsing the two would make the status dot mean two different things.
 
+### Motion means two different things, and they must not be confused
+
+- A **drifting background** means *time passing* — the Voyage starfield, the Rules activity trace.
+- A **discrete marker travelling** means *a specific thing moving* — a delivery crossing the ship
+  on the Rooms cutaway.
+
+An earlier Rules hero drew chain activity as a dot travelling along each lane, which collided
+with the Rooms delivery marker: the same mark meant cargo in transit on one screen and an
+abstraction on the next, so the lanes read as transfers rather than rules firing. The trace is
+now a scrolling time axis (90 days, newest at the right), which cannot be misread as a journey.
+
 ### The ticker
 
 One feed item at the top of **every** screen, always. New items replace the old one, so

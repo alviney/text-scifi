@@ -220,23 +220,26 @@ h1{
 .pod.awake{background:var(--d-accent);opacity:1}
 .pod.lost{background:none;box-shadow:inset 0 0 0 1px var(--d-faint);opacity:.3}
 
-/* ---- RULES hero: the automation heartbeat ---- */
-.pulsebox{margin:-10px -10px 12px;padding:14px 10px 11px;border-bottom:1px solid var(--d-rule);
-  display:flex;flex-direction:column;gap:9px}
-.lane{display:flex;align-items:center;gap:8px;font-size:9.5px;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--d-faint)}
-.lane .ln{flex:none;width:5.6em;text-align:right}
-.trace{position:relative;flex:1;min-width:0;height:11px}
-.trace::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--d-rule)}
-.trace i{position:absolute;top:50%;transform:translate(-50%,-50%);width:5px;height:5px;
-  border-radius:50%;background:var(--d-ok);animation:run 5s linear infinite}
-@keyframes run{from{left:0%}to{left:100%}}
-@media (prefers-reduced-motion:reduce){.trace i{animation:none;left:46%}}
+/* ---- RULES hero: activity over time, NOT movement through space ----
+   Motion vocabulary is deliberate and split:
+     drifting background (starfield, this trace) = time passing
+     a discrete marker travelling (Rooms delivery) = a specific thing moving
+   Using the second for automation was the bug — it read as transit. */
+.pulsebox{margin:-10px -10px 12px;padding:12px 10px 10px;border-bottom:1px solid var(--d-rule)}
+.axis{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--d-faint);margin-bottom:6px}
+.lane{display:flex;align-items:center;gap:7px;font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--d-faint);margin-bottom:1px}
+.lane .ln{flex:none;width:4.9em;text-align:right}
+.trace{position:relative;flex:1;min-width:0;height:14px;overflow:hidden}
+.trace pre{position:absolute;top:0;left:0;margin:0;font-family:inherit;font-size:12px;
+  line-height:14px;white-space:pre;color:var(--d-ok);animation:scroll 26s linear infinite}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.trace pre{animation:none}}
+.lane.slow .trace pre{animation-duration:44s}
 .lane.dead .ln{color:var(--d-crit)}
-.lane.dead .trace::before{background:repeating-linear-gradient(90deg,var(--d-rule) 0 3px,transparent 3px 6px)}
-.lane.dead .trace i{animation:none;background:var(--d-crit);left:34%}
-.lane.dead .brk{position:absolute;left:34%;top:50%;transform:translate(-50%,-50%);
-  color:var(--d-crit);font-size:11px;line-height:1}
+.lane.dead .trace pre{color:var(--d-faint);animation-duration:26s}
+.lane .stop{flex:none;color:var(--d-crit);font-size:9px;letter-spacing:.04em}
 
 /* ---- vital signs: the one legitimate home for density ---- */
 .vital{border-bottom:1px solid var(--d-rule);padding:11px 0 10px}
@@ -769,13 +772,14 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         <!-- ---------- AUTOMATION ---------- -->
         <section class="screen" id="s-auto" hidden>
           <div class="pulsebox" aria-hidden="true">
-            <div class="lane"><span class="ln">food</span><span class="trace"><i style="animation-duration:4.2s"></i></span></div>
-            <div class="lane"><span class="ln">filters</span><span class="trace"><i style="animation-duration:6.5s;animation-delay:-2s"></i></span></div>
-            <div class="lane"><span class="ln">seals</span><span class="trace"><i style="animation-duration:8s;animation-delay:-5s"></i></span></div>
-            <div class="lane"><span class="ln">water</span><span class="trace"><i style="animation-duration:11s;animation-delay:-3s"></i></span></div>
-            <div class="lane dead"><span class="ln">ore</span><span class="trace"><i></i><span class="brk">&#10005;</span></span></div>
+            <div class="axis"><span>chain activity &middot; last 90 days</span><span>now &#9656;</span></div>
+            <div class="lane "><span class="ln">food</span><span class="trace"><pre>▁▁▂▁▁▁▁▂▁▁▁▂▁▁▁▁▂▁▁▁▂▁▁▁▁▂▁▁▁▁▁▂▁▁▁▁▂▁▁▁▂▁▁▁▁▂▁▁▁▂▁▁▁▁▂▁▁▁</pre></span></div>
+            <div class="lane "><span class="ln">filters</span><span class="trace"><pre>▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁</pre></span></div>
+            <div class="lane slow"><span class="ln">seals</span><span class="trace"><pre>▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁</pre></span></div>
+            <div class="lane slow"><span class="ln">water</span><span class="trace"><pre>▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁</pre></span></div>
+            <div class="lane dead"><span class="ln">ore</span><span class="trace"><pre>▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁</pre></span><span class="stop">&#10005; 11d</span></div>
           </div>
-          <p class="quiet" style="margin:-4px 0 10px">Five chains running. The ore chain stopped moving eleven days ago.</p>
+          <p class="quiet" style="margin:-4px 0 10px">Each mark is a chain doing something. Food runs every few days, water every few months. <span class="crit">The ore chain has done nothing for eleven days.</span></p>
           <h2 class="scr-title">Automation <span>61 rules</span></h2>
           <p class="lead">Three rules need attention.</p>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
@@ -1065,10 +1069,12 @@ svc  ^  ^   ^  ^   ^  ^</pre>
       </section>
 
       <section>
-        <h2>Rules: the automation heartbeat</h2>
-        <p>Five lanes, one per chain, each with a pulse running its length as the chain fires. Different periods, so the traces drift in and out of step the way a real plant does &mdash; food every few days, water every few months.</p>
-        <p>The ore lane is <strong>flatlined</strong>: dashed trace, stalled pulse, and a break marker where it stopped. That reads as wrong before you have identified a single word on the screen.</p>
-        <p>A list of 61 rules can tell you one is broken. It cannot tell you the ship&rsquo;s automation has a <em>rhythm</em>, or that one part of it has stopped beating. That is what this adds, and it is the closest the interface gets to saying the quiet thing out loud: you are not looking at the ship&rsquo;s controls. <strong>You are looking at yourself.</strong></p>
+        <h2>Rules: chain activity over time</h2>
+        <p>Five lanes, one per chain, and the horizontal axis is <strong>time</strong> &mdash; ninety days of history scrolling leftward, newest at the right. Each mark is that chain doing something. Food fires every few days, water every few months, and the shapes differ because the ship&rsquo;s systems genuinely run at different tempos.</p>
+        <p>The ore lane is <strong>flat</strong>, and has been for eleven days. That reads as wrong before a single word on the screen has been identified.</p>
+        <p class="callout">An earlier version drew this as a dot travelling along each lane. That was a bug: <strong>the same mark meant a delivery in transit on Rooms and an abstraction here</strong>, so the lanes read as cargo moving rather than rules firing.</p>
+        <p>The motion vocabulary is now split, and the split is the rule: a <em>drifting background</em> means <strong>time passing</strong> (the starfield, this trace), and a <em>discrete marker travelling</em> means <strong>a specific thing moving</strong> (a delivery crossing the ship). Two vocabularies, each used for one job.</p>
+        <p>A list of 61 rules can say one is broken. It cannot say the automation has a rhythm, or that part of it has stopped beating &mdash; which is the closest this interface gets to the quiet thing: you are not looking at the ship&rsquo;s controls. <strong>You are looking at yourself.</strong></p>
       </section>
 
       <section>
