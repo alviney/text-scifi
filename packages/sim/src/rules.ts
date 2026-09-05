@@ -39,8 +39,20 @@ export function inheritedRules(assets: Asset[]): Rule[] {
     ({ id, watch, kind, threshold, action, inherited, fires: 0, lastFired: -1 });
 
   return [
-    // the single maintenance rule aboard, on the thing that kills you fastest
-    mk("RC-01", "reactor", "condition", 40, "service"),
+    // The single maintenance rule aboard, on the thing that kills you fastest.
+    //
+    // This sat at 40 and made the game unwinnable by default. Reactor output
+    // crosses the 890 kW baseline at condition 49, and the reactor sheds a
+    // point every six days — so a rule that waits for 40 leaves the ship
+    // underpowered for ~58 days on every single cycle, against the cryo banks'
+    // 21-day thermal grace. Touching nothing, the first bank went dark on day
+    // 317 and 100 colonists were dead inside fifteen months.
+    //
+    // §5c wants the inherited rules to be a curriculum that "teaches by going
+    // wrong slowly". 55 is the lowest value that is not a death sentence: it is
+    // still the worst threshold in the viable 55-65 band, so there is something
+    // left for the player to improve, and now they live long enough to find it.
+    mk("RC-01", "reactor", "condition", 55, "service"),
     // production and supply
     mk("FB-01", "stores:drones", "stock", 6, "makeDrone"),   // keep the fleet up
     mk("FU-01", "stores:rods", "stock", 60, "makeRod"),

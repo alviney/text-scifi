@@ -94,6 +94,17 @@ Not React: §2 requires a render loop that interpolates progress bars and animat
 *independently* of the simulation tick. A virtual DOM diffing text-dense panes on every frame is
 the wrong shape of work. Svelte compiles to direct DOM updates and ships a smaller bundle.
 
+**Built.** `packages/web` is a Svelte 5 client over the real simulation — see its README.
+Two things worth recording from doing it:
+
+- The core had to be made playable first. `step(state, policy)` took an object that made every
+  decision the player should be making, so there was literally nothing to click. It now reads
+  `state.settings` and `state.rules`, and `apply(state, command)` — promised in §2 above and
+  previously unimplemented — is the only way anything changes.
+- **The balance suite worked as the acceptance test for that refactor**, which is the same job
+  §5 gives it for a future native port. Every outcome across 140 playthroughs was identical
+  afterwards. That is the argument for the split, demonstrated rather than asserted.
+
 **The render strategy matters more than the framework.** Do not re-render on tick:
 
 - Structure renders when its data actually changes.
@@ -101,6 +112,10 @@ the wrong shape of work. Svelte compiles to direct DOM updates and ships a small
   transforms and `requestAnimationFrame`, reading interpolated values.
 - At 8,760× the sim ticks 146×/second and the UI still paints 60fps of smooth motion, because
   the two are not coupled.
+
+Measured in the built client: the simulation steps up to 1,200 game-days a second while the UI
+publishes at 12 Hz and paints at 60. Three orders of magnitude apart, and neither notices the
+other.
 
 Styling: hand-written CSS with the token structure already proven in
 `design/seedship-console.html` — light DOM, no component library. A CLI aesthetic wants full

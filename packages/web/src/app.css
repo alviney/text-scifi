@@ -1,0 +1,78 @@
+/* Tokens lifted from design/seedship-console.html. design/README's skin rule:
+   every skin defines the SAME token set, so no markup changes between them.
+   If a skin needs different markup it is a redesign, not a skin. */
+:root, [data-skin="amber"] {
+  --bg:#100E0A; --panel:#181510; --panel2:#201C14; --rule:#2E2820;
+  --text:#E4D8C0; --dim:#8B8069; --faint:#59503F;
+  --accent:#E8A33D; --ok:#7DA35E; --warn:#E0B84E; --crit:#D0553F;
+  --font:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+[data-skin="phosphor"] {
+  --bg:#040A05; --panel:#09130B; --panel2:#0E1C11; --rule:#1A3220;
+  --text:#8FE39B; --dim:#4E8C58; --faint:#2C5334;
+  --accent:#C4FFCF; --ok:#5FBF6E; --warn:#E4C63F; --crit:#FF6B52;
+}
+[data-skin="blueprint"] {
+  --bg:#E7EDF3; --panel:#DCE5ED; --panel2:#CFDAE5; --rule:#A6BACB;
+  --text:#13314C; --dim:#4D6E8B; --faint:#8BA3B7;
+  --accent:#0B6FA4; --ok:#2C7A57; --warn:#9A6410; --crit:#B03A2E;
+  --font:"Roboto Mono", ui-monospace, monospace;
+}
+[data-skin="hazard"] {
+  --bg:#0F1418; --panel:#161D23; --panel2:#1C252D; --rule:#2B3841;
+  --text:#DCE6ED; --dim:#8296A5; --faint:#4F6070;
+  --accent:#F5C518; --ok:#4CAF6A; --warn:#F0A828; --crit:#E2513C;
+  --font:"JetBrains Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size: 13px; line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+#app { height: 100%; }
+
+/* The whole app is one column that never scrolls horizontally. The mockup's
+   overflow bug came from grid-template-columns:1fr, whose implicit min-width is
+   auto — minmax(0,1fr) everywhere is the fix, kept here from the start. */
+.shell {
+  /* Both axes need minmax(0,...). A grid item's implicit min-width is AUTO, so a
+     bare `1fr` column lets content push wider than the container — that is the
+     exact bug that made the mockup scroll sideways on a phone, and hiding the
+     overflow only masks it. */
+  display: grid; grid-template-rows: auto auto minmax(0,1fr) auto;
+  grid-template-columns: minmax(0,1fr);
+  height: 100dvh; max-width: 560px; margin: 0 auto;
+  background: var(--bg); border-inline: 1px solid var(--rule);
+}
+.scroll { overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+           min-width: 0; overflow-wrap: anywhere; }
+
+.ok { color: var(--ok); } .warn { color: var(--warn); } .crit { color: var(--crit); }
+.dim { color: var(--dim); } .faint { color: var(--faint); } .accent { color: var(--accent); }
+
+.pad { padding: 10px 12px; }
+.hr { border-top: 1px solid var(--rule); }
+.label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+.big { font-size: 19px; letter-spacing: -.01em; }
+.sentence { color: var(--text); margin: 2px 0 8px; }
+
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.row {
+  display: grid; grid-template-columns: 14px minmax(0,1fr) auto; gap: 10px;
+  align-items: baseline; width: 100%; text-align: left;
+  padding: 9px 12px; border-bottom: 1px solid var(--rule);
+}
+.row:hover { background: var(--panel); }
+.row .sub { grid-column: 2 / -1; color: var(--dim); font-size: 11px; margin-top: -2px; }
+
+.bar { height: 4px; background: var(--panel2); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); }
+
+.chip {
+  border: 1px solid var(--rule); padding: 3px 8px; font-size: 11px;
+  color: var(--dim); background: var(--panel);
+}
+.chip[aria-pressed="true"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }

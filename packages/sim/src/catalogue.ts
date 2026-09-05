@@ -54,3 +54,27 @@ export const RARE_COST: Record<Complexity, number> = { low: 0, med: 0, high: 2 }
 /** Metal parts and electronics per replacement. */
 export const PART_COST: Record<Complexity, number> = { low: 6, med: 10, high: 16 };
 export const ELEC_COST: Record<Complexity, number> = { low: 2, med: 5, high: 12 };
+
+/** Player-facing names. design/README: the spec notation is a specification,
+ *  not an interface — nothing in the game says "o2gen". */
+export const NAMES: Record<string, string> = {
+  nav: "Nav Computer", comms: "Comms Array", fabricator: "Fabricator", smelter: "Smelter",
+  workbench: "Workbench", reactor: "Reactor Core", powerdist: "Power Distribution",
+  battery: "Battery Bank", rtg: "RTG Bank", auxarray: "Aux Array Control",
+  o2gen: "Oxygen Generator", water: "Water Reclaimer", atmo: "Atmosphere Processor",
+  irrigation: "Irrigation Loop", cryo: "Cryo Control", medstation: "Med Station",
+  scanner: "Body Scanner", dispenser: "Food Dispenser", recterm: "Rec Terminal",
+  crane: "Cargo Crane", launcher: "Drone Launcher", dronefab: "Drone Fabricator",
+  clamp: "Docking Clamp", hullpanel: "Hull Access Panel", doors: "Pressure Doors",
+  conduits: "Utility Conduits",
+};
+
+export function assetName(id: string): string {
+  if (NAMES[id]) return NAMES[id];
+  if (id.startsWith("lsn")) return `Life Support Node ${id.slice(3)}`;
+  if (id.startsWith("bed")) return `Grow Bed ${id.slice(3)}`;
+  return id;
+}
+
+/** The ten addresses in §4. "node" is not a room — the nodes are distributed. */
+export const ROOM_OF = (id: string, room: string) => (room === "node" ? "Life Support" : room);

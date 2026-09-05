@@ -42,11 +42,43 @@ export type State = {
   colony: import("./colony.ts").Colony;
   rules: import("./rules.ts").Rule[];
   board: import("./rules.ts").Task[];
+  /** §8's feed. A bounded window, not a ledger — totals live in counters. */
+  signals: import("./signals.ts").Signal[];
+  /** day of the last acknowledgement — §2's snap-back releases on this */
+  acked: number;
+  /** was the ship short of power yesterday? edge detection for the feed */
+  brownout?: boolean;
+  /** Standing orders the player sets. Part of the state because they are part
+   *  of the save, and because a second client must not have to be taught them. */
+  settings: Settings;
   counters: Counters;
   dead: string | null;   // reason, if the run ended early
 };
 
-/** How the player plays. Stands in for the rule engine in this pass. */
+/** What the player leaves standing between decisions. Everything here is set by
+ *  a command and read by step() — no client-side knob reaches into the sim. */
+export type Settings = {
+  /** replace an asset once its ceiling ("best after repair") falls below this */
+  replaceAt: number;
+  /** how many drones the crew keep flying */
+  droneTarget: number;
+  /** share of crew effort on hydroponics rather than repairs */
+  botanistShare: number;
+  /** work the systems everything depends on first? */
+  prioritise: boolean;
+};
+
+export const DEFAULT_SETTINGS: Settings = {
+  replaceAt: 62, droneTarget: 6, botanistShare: 0.25, prioritise: true,
+};
+
+/** An autopilot: a scripted player, used by the balance harness.
+ *
+ *  This used to be an argument to step(), which meant the simulation made every
+ *  decision the player should be making — fine for measuring balance, useless as
+ *  a game, because there was nothing left to click. step() now reads Settings
+ *  and Rules out of the state, and this drives those through apply() like any
+ *  other client would. The harness is now a client, not a special case. */
 export type Policy = {
   name: string;
   /** service an asset once condition falls below this */

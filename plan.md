@@ -535,22 +535,37 @@ confirms it, and the shape matters more than the peak:
 **The optimum is 55–65, peaking at 60**, and it is a *plateau, not a knife edge* — 55, 60 and
 65 all land on 190 survivors. That is the shape we want: a player who reasons "keep things
 above about sixty" is playing well, and does not have to find an exact number to avoid being
-punished. The full range is worth 90 colonists, so the decision matters; the flat top means
-getting it roughly right is enough.
+punished.
 
-Two different mechanisms bracket it.
+Two different mechanisms bracket it, and they are not symmetrical.
 
-**Below 45 — output, not failure.** The obvious reading is that late servicing kills through
-faults, and faults do collapse across that range (906 at threshold 20 down to 19 at 40). But
-survivors do not move at all: 100 lost at 20, and still 100 lost at 40 with faults essentially
-eliminated. Brownout sits at 33–34% throughout. What kills the colony is that reactor output
-scales with condition, so a ship kept permanently in the thirties runs a third of the voyage
-short of power and the cryo banks pay for it.
+**Below 45 — output, not failure, and it is one asset.** The obvious reading is that late
+servicing kills through faults, and faults do collapse across that range (906 at threshold 20
+down to 19 at 40). But survivors do not move at all: 100 lost at 20, and still 100 lost at 40
+with faults essentially eliminated. Brownout sits at 33–34% throughout. What kills the colony
+is that reactor output *scales with condition*, so a ship kept permanently in the thirties runs
+a third of the voyage short of power and the cryo banks pay for it.
 
 > **The reactor doesn't have to break to kill you. It just has to be worn.**
 
-That is a better failure mode than the one we assumed, because it is legible: the player can
-watch output sag without a single alarm firing.
+**That penalty belongs entirely to the reactor.** Playing the prototype revealed that the whole
+low end of this table was measuring one asset. Re-running the sweep with the reactor protected
+by its own rule at 55 — and *nothing else changed* — moves every threshold from 20 to 65 onto
+the same 190 survivors, and drops brownout from 33% to 4%:
+
+| Service at | 20 | 30 | 40 | 50 | 60 | 70 | 85 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Survivors, reactor at 40 | 100 | 100 | 100 | 145 | 190 | 160 | 150 |
+| Survivors, reactor at 55 | **190** | **190** | **190** | **190** | 190 | 160 | 150 |
+
+The high end is untouched, because that failure has nothing to do with the reactor. So the
+honest statement is: **service the reactor above 55 and the rest of the ship's threshold barely
+matters until you start over-servicing.** The spread across the range falls from 90 colonists to
+40 once the reactor is covered.
+
+This is a good property, not a flaw. It gives the game a genuine hierarchy — one machine whose
+threshold is worth more than the other forty-one combined — and it means the first thing a
+player learns is also the most valuable thing they will ever learn.
 
 **Above 70 — overhead, not wear.** Total ceiling erosion tracks total wear, so servicing early
 does not waste much *per visit* — but the small fixed cost is charged per visit, and visits
@@ -571,13 +586,19 @@ than everything else. Tested, and it does nothing:
 | critical 70, rest 55 | 190 | 62 | 41,596 |
 
 Every arm reaches the same 190 survivors, and uniform 60 gets there with the best end condition
-and the fewest services. The hypothesis was wrong, and the reason is the *awaiting replacement*
-rule above: once an asset is never abandoned, the critical path is already protected, and
-servicing it earlier only spends labour that the rest of the ship then goes without.
+and the fewest services.
+
+This looks like it contradicts the reactor result above, and it does not — the two together say
+something sharper than either alone. **Differentiation only pays where the base threshold leaves
+the reactor exposed.** At a base of 45–55 the reactor is already above the ~49 line where output
+crosses the baseline, so raising it further buys nothing. At a base of 20–40 it is not, and
+protecting it alone is worth 90 colonists. There is a cliff, not a gradient, and it sits at the
+reactor's output curve rather than anywhere in the maintenance model.
 
 **Design consequence:** don't build per-asset service thresholds into the automation UI. One
-ship-wide number is not a simplification — it is the better policy, and it keeps the player's
-first automation rule to a single slider.
+ship-wide number is not a simplification — above ~50 it is the better policy, and it keeps the
+player's first automation rule to a single slider. The reactor gets its protection from the
+inherited rule the ship launches with (§5c), which is where a new player needs it.
 
 #### Degradation rate
 
@@ -1179,6 +1200,23 @@ venting themselves later, and the interlock lesson is theirs to learn rather tha
 Rule 12 is the single maintenance rule aboard, on the one asset that kills you fastest. It is
 there as a **worked example to copy** — the shape of the thing the player must now do 45 more
 times.
+
+> **Its threshold has to be at least 55, and this is not a free choice.**
+>
+> The prototype was first played with rule 12 set to service the reactor at condition 40, on
+> the reasoning that an inadequate inherited rule is the point. It is not survivable. Reactor
+> output crosses the 890 kW baseline at condition **49**, and the reactor sheds a point every
+> six days — so a rule that waits for 40 leaves the ship underpowered for about **58 days on
+> every cycle**, against the cryo banks' 21-day thermal grace. Touching nothing, the first bank
+> went dark on **day 317** and 100 colonists were dead inside fifteen months.
+>
+> That is not "goes wrong slowly", it is a game that is lost before the player has learned what
+> a rule is. 55 is the lowest value that is not a death sentence, and it is still the worst
+> threshold in the viable 55–65 band — so there is something left to improve, and the player
+> now lives long enough to find it.
+>
+> The general principle is worth stating: **an inherited rule may be suboptimal, but it must
+> not be fatal.** The curriculum only teaches if the student survives the first lesson.
 
 <!-- TODO: Should the inherited rules carry authorship in the UI ("set by Marchetti, y0")?
      Cheap, and it makes them feel like a legacy rather than a default. -->
@@ -2587,6 +2625,13 @@ These features would use an LLM to replace/supplement the text bank with dynamic
    for X game-hours" — and it gives the flavour text bank (§10) a natural home: chatter is
    what you read at 1× and never see at 8,760×, which makes slowing down feel *different*
    rather than just slower.
+
+   **Built, and it was needed.** The prototype's feed at speed is wall-to-wall `EQ-SVC`
+   chatter — a well-run ship services something most days, so the interesting lines are buried
+   by definition. Each speed on the ladder now carries a floor (`1×` everything, `2×`/`6×` info
+   and up, fast-forward warnings only, full tilt criticals only), and the ticker's `+n` badge
+   still counts what was suppressed so nothing goes missing silently. Reading the feed at 1×
+   and at full speed are now genuinely different activities, which was the goal.
 
 9. **Solar panels don't work in interstellar space.**
    §6 originally had "solar panels can be manufactured to supplement". Between stars there is

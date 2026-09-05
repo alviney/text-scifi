@@ -231,6 +231,100 @@ spends labour the rest of the ship then goes without. `Policy.criticalServiceAt`
 types as an experiment knob, but **the game should ship one ship-wide threshold** — that is not
 a simplification, it is the better policy.
 
+## The prototype UI, and what playing it found
+
+`packages/web/` is a Svelte client wired to the real simulation — no mock data anywhere. Getting
+there needed one structural change first.
+
+### The core was an autopilot, not a game
+
+`step(state, policy)` took a `Policy` object that made every decision the player should be
+making: when to service, when to replace, how many drones to keep, how to split crew effort.
+Fine for measuring balance, useless as a game — there was nothing left to click.
+
+So `step(state)` now reads `state.settings` and `state.rules`, and `apply(state, command)`
+(promised by ARCHITECTURE §2, previously unimplemented) is how anything changes them. The
+balance harness became a client like any other: it pre-loads settings and rules at `init` and
+otherwise drives the same path the UI does.
+
+**The acceptance test for the refactor was the balance suite**, exactly as ARCHITECTURE §5
+proposes for a future port. Re-running the 140-playthrough sweep: every survivor count, end
+condition, replacement count and brownout figure is **identical**. Service and fault counts move
+by at most 5 in 130,000, from a one-day shift in when gauge calibration happens.
+
+The core also now emits **signals** — `[LVL][FAC][CODE] message` records, bounded to a 240-entry
+window so the save stays small. Counters remain the thing the balance suite reads.
+
+### Finding: the game was unwinnable by default
+
+Nobody had ever run the *starting* configuration. Every harness arm either installed player
+rules at 55–60 (fine) or disabled automation entirely (dies, as designed). The actual opening —
+three inherited rules and nothing else — had never been simulated.
+
+```
+day  273 y0.7  reactor  53  out  929 kW  banks 8  frozen 192
+day  364 y1.0  reactor  37  out  772 kW  banks 6  frozen 142   <- 50 dead
+day  455 y1.2  reactor  92  out 1000 kW  banks 4  frozen  92   <- 50 more
+```
+
+Reactor output crosses the 890 kW baseline at condition **49**, and the reactor sheds a point
+every six days. The inherited rule waited for **40**, so the ship sat underpowered for ~58 days
+on every cycle against a 21-day thermal grace. First bank dark on day 317; 100 colonists dead
+inside fifteen months; everyone dead by year 8.
+
+Raising that one threshold to 55 moves the first loss from year 0.9 to year 3.9 and keeps all
+eight banks lit through the early game. Written back into §5c as a principle: **an inherited
+rule may be suboptimal, but it must not be fatal.**
+
+### Finding: the low end of the service sweep was one asset
+
+That fix has a consequence for last session's tuning, and it is the more interesting result.
+
+| Service at | 20 | 30 | 40 | 50 | 60 | 70 | 85 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Survivors, reactor rule at 40 | 100 | 100 | 100 | 145 | 190 | 160 | 150 |
+| Survivors, reactor rule at 55 | **190** | **190** | **190** | **190** | 190 | 160 | 150 |
+| Brownout, reactor rule at 55 | 5% | 4% | 5% | 5% | 5% | 6% | 12% |
+
+With the reactor protected and *nothing else changed*, every threshold from 20 to 65 is worth
+the same 190 survivors, and brownout falls from 33% to 4%. The spread across the range drops
+from 90 colonists to 40. The high end is untouched, because over-servicing has nothing to do
+with the reactor.
+
+So "below 45 the ship browns out" was true but badly attributed. It was never the ship — it was
+one machine, and the other forty-one could be neglected to 20 without costing a life. That
+sharpens the design rather than damaging it: there is a real hierarchy, and the first thing the
+player learns is the most valuable thing they will ever learn.
+
+It also resolves the apparent contradiction with last session's "differentiated thresholds don't
+help". Both are true: differentiation pays only where the base threshold leaves the reactor
+below its output cliff at ~49. Above that, nothing. It is a cliff, not a gradient.
+
+### Finding: food banks forever
+
+At year 61 a well-run ship is holding **41,247 meals**. Six beds at 25% botanist effort produce
+~25.8/day against 8 crew eating 24/day, and the surplus compounds for three centuries with no
+spoilage and no cap. §6's ~2% margin is real at the margin but irrelevant in the aggregate:
+**once the beds work, famine is unreachable.** The harness only ever produced starvation by
+cutting botanist effort to 12%.
+
+Not fixed — a galley capacity or a spoilage rate are both plausible and it is a design call.
+
+### Interface bugs the screenshots caught
+
+- **Horizontal overflow, again, on the other axis.** The mockup's fix was `minmax(0,1fr)` on
+  grid *columns*; the client had it on rows and a bare implicit column, so content pushed
+  past a 390px viewport and text clipped mid-word. Both axes need it. Verified clean at 320
+  and 390.
+- **The ticker's tap was overloaded** — one handler meaning both "open the feed" and
+  "acknowledge this alert", which made acknowledging unreachable while the feed was open. ACK
+  is its own button now.
+- **The fuel readout lied.** It read `counters.deficitDays`, a cumulative counter, so a ship
+  at full output with 259 rods in hand was told it was burning too fast. Replaced with a
+  projection from the current burn.
+- **`state` is not a usable variable name in Svelte 5** — the compiler read `$state()` as a
+  store subscription on a variable called `state` and the app died on load.
+
 ### Previously unresolved (kept for the record)
 
 A well-run ship still loses 182 of 192 colonists, and tracing it shows they die **in a single
