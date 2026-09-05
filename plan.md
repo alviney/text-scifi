@@ -1257,16 +1257,40 @@ mid-game squeeze — no separate escalation system needed.
 #### Fuel
 
 The reactor burns **fuel rods**, measured in *rod-years*: one rod = one year at nominal
-(1,000 kW) output, **scaling with actual delivered load**. Draw less, burn slower.
+(1,000 kW) output. The ship departs with **320 rods** against a 300-year journey.
 
-- Ship departs with **320 rods**.
-- Baseline load (below) is ~0.89 nominal → ~360 years of burn against a 300-year journey.
-  A **~20% margin**, and no more.
-- More rods can be fabricated from **rare compounds** — the scarcest asteroid yield (§6).
+Burn depends on two things, and the second one is the point:
 
-So power is *not free even when you have headroom*. Running the smelter around the clock
-doesn't just risk a brownout, it spends journey margin. Every rod inserted is a signal-feed
-event and a natural milestone marker for §10 ("*rod 47 seated — 273 remaining*").
+```
+rods/year = (delivered kW / 1000) ÷ efficiency
+efficiency = 0.65 + 0.35 × (condition / 100)
+```
+
+**A worn reactor is weaker *and* thirstier.** Heat transfer degrades, more energy leaves as
+waste, and it takes more fuel to deliver each kilowatt.
+
+That second term fixes a perverse incentive. Burn scaled to delivered power alone means a
+failing reactor burns *less* fuel — 0.89 rod/yr healthy against 0.70 at 30% condition — so
+neglect extended your range. With efficiency in the formula, neglect costs fuel instead:
+
+| Reactor kept at | Rods needed over 300 years | Against 320 |
+|-----------------|---------------------------:|-------------|
+| ~80% | 287 | 33 spare |
+| ~60% | 310 | 10 spare |
+| **~40%** | **338** | **short by 18** |
+| ~30% | 354 | short by 34 |
+
+So **fuel is not a separate resource to manage — it is a consequence of maintenance.** Keep the
+reactor serviced and 320 rods is comfortable. Let it slide and you arrive out of fuel, having
+watched a number tick down for two centuries without understanding why it was falling faster
+than it should.
+
+Power is also *not free even when you have headroom*: running the smelter around the clock
+spends journey margin. More rods can be fabricated from **rare compounds** (12 each, §7) —
+which is the escape hatch, and it costs the scarcest thing on the ship.
+
+Every rod inserted is a signal-feed event and a natural milestone marker for §10
+("*rod 47 seated — 273 remaining*").
 
 #### Load table
 

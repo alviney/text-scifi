@@ -497,9 +497,10 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
 
           <div class="sect">Fuel</div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Rods left</span><span class="vl">149</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Burning</span><span class="vl">1 per 15 months</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Enough for</span><span class="vl">190 years</span></div>
-          <p class="quiet">153 years to go, so fuel is not the problem. Burn faster and that changes.</p>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Burning</span><span class="vl">1 per 12 months</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Enough for</span><span class="vl">150 years</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Still to travel</span><span class="vl">153 years</span></div>
+          <p class="quiet">Three years short. <span class="crit">The reactor is burning more per kilowatt than it should</span> because of how worn it is &mdash; service it and the rate comes back down. Leave it and the gap widens every year.</p>
 
           <div class="sect">Reactor</div>
           <div class="row static"><span class="dot crit">○</span><span class="nm">Failing</span><span class="vl">780 kW</span></div>
@@ -1112,7 +1113,10 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         <h2>Voyage carries the story</h2>
         <p>A progress bar says where you are. This says <em>what it cost to get there</em>: <em>&ldquo;Behind you: 38 rocks taken, 6 missed, 7 people dead. Ahead: 153 years.&rdquo;</em></p>
         <p>Two scales, because 300 years and the next decade are different questions. The whole voyage puts the Long Dark in front of you as a long stretch of nothing, which is honest. The thirty-year lane is the one you act on &mdash; and the hollow diamond is an object nobody surveyed before launch, so its composition is unknown rather than merely uncertain.</p>
-        <p>Fuel sits here because it is a property of the journey, not of a room. It reads as reassurance at year 147 &mdash; 190 years of margin against 153 to go &mdash; which is the truth. Fuel is not this ship&rsquo;s problem. Rare compounds are.</p>
+        <p>Fuel sits here because it belongs to the journey rather than to a room &mdash; and it stopped being reassurance once the burn model was corrected.</p>
+        <p class="callout">A worn reactor is weaker <em>and</em> thirstier. Fuel is not a separate resource to manage; it is <strong>a consequence of maintenance</strong>.</p>
+        <p>The earlier model scaled burn to delivered power alone, which meant a failing reactor burned <em>less</em> fuel &mdash; neglect extended your range. With efficiency in the formula it costs you instead: 287 rods over the journey if the reactor is kept near 80%, 338 if it is allowed to sit at 40%, against 320 aboard.</p>
+        <p>Which is why this panel now reads <strong>150 years of fuel against 153 to travel</strong>. Three years short, at year 147, with 153 still to go &mdash; and the number was falling faster than it should have been for a century without ever saying so.</p>
       </section>
 
       <section>
