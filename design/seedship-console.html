@@ -561,6 +561,12 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Cargo bay heater</span><span class="vl">Fighting itself</span></button>
           <button class="row" data-go="rule"><span class="dot warn">◐</span><span class="nm">Service the reactor</span><span class="vl">Waiting 5 yrs</span></button>
+          <div class="sect">Left by the departure crew &middot; 13</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">7 deliveries between rooms</span><span class="vl">working</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Replant a bed when empty</span><span class="vl">beds in phase</span></div>
+          <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">never runs</span></button>
+          <p class="quiet">These were written for eight crew and instruments that still worked. None of them cover maintenance &mdash; that was always going to be your job.</p>
+
           <div class="sect">A chain that works</div>
           <p class="quiet">Three rules, each one simple, feeding each other:</p>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Life Support: filters low</span><span class="vl">fetch 40</span></div>
@@ -578,8 +584,9 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <button class="backbtn" data-go="auto">&lsaquo; automation</button>
           <h2 class="scr-title">Restock water <span class="crit">○</span></h2>
           <p class="sentence">When water drops below 500, add a job to restock it.</p>
+          <p class="quiet" style="margin:0 0 10px">Set before launch, year 0. Never edited.</p>
           <p class="lead">This has never run. <span class="q">The water gauge says there are 900 units. There are really about 300.</span></p>
-          <p class="quiet">The gauge is worn out, so the rule is never told the truth. The rule itself is fine.</p>
+          <p class="quiet">The gauge is worn out, so the rule is never told the truth. The rule itself is fine &mdash; it has just been listening to a liar for forty-seven years.</p>
           <div class="menu">
             <button>Service the gauge<span class="g">&rsaquo;</span></button>
             <button data-go="newrule">Change this rule<span class="g">&rsaquo;</span></button>
@@ -797,6 +804,14 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         <p>There is no ship-wide pool. Consumables live in the room that uses them, and <strong>nothing moves unless somebody carries it</strong> &mdash; which means a delivery job, which means it can be automated, which means it can jam.</p>
         <p>It costs about 11% more jobs across the voyage and 0.07% of the crew&rsquo;s time, so it spends the idle roster §3 identified rather than overloading it. It also gives the Cargo Bay and the Loading Crane something to do, and makes a vented room&rsquo;s contents a real loss.</p>
         <p>Mostly it buys chains. The Rules tab shows a three-deep one, jammed at the bottom: Life Support wants filters, Engineering makes filters, Engineering needs ore &mdash; and the ore is sitting in the Cargo Bay because nobody picked up the delivery. Three simple rules, all correct, and the smelter has been idle eleven days. <strong>The room reporting the problem is not the room that has it.</strong></p>
+      </section>
+
+      <section>
+        <h2>You inherit thirteen rules</h2>
+        <p>The ship launches with standing rules the departure crew left behind &mdash; seven room-to-room deliveries, three production orders, a fire alarm, a reactor service job, and a water restock. Enough that it runs itself on day one, with the entire maintenance layer conspicuously absent.</p>
+        <p class="callout">Nothing in the set is badly written. It comes apart because <strong>the ship changes and the rules cannot.</strong></p>
+        <p>They can only use tier-0 conditions, because there is no Logic Core or Scheduler aboard at launch &mdash; so every one is a single threshold with no guard and no sense of time. Thresholds sized for eight crew drift wrong as the roster shrinks. The grow beds launch already out of phase, so &ldquo;replant when empty&rdquo; holds a working stagger for forty years and then collapses the first time a planting is missed. And around year 100 a worn gauge quietly kills the water rule &mdash; which is the one on this device, still listening to a liar at year 147.</p>
+        <p>That is the tutorial: working examples to read on hour one, and four decades of slow, legible failure after that. It answers most of Open Question 4 without a tutorial mode existing.</p>
       </section>
 
       <section>

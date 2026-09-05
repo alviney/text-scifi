@@ -970,6 +970,69 @@ alternation expressed as two rules.
 
 ---
 
+### The rules you start with
+
+The ship does not launch empty. The departure crew left **13 standing rules** behind — enough
+that it runs itself on day one, with the whole maintenance layer conspicuously absent.
+
+Two constraints shape the set, and both are diegetic:
+
+- **They can only use tier-0 listeners.** No Logic Core, no Scheduler aboard at launch (§7), so
+  every inherited rule is a single condition with no guard and no sense of time.
+- **They were written for a full ship** — eight crew, Act I abundance, and instruments that
+  still told the truth.
+
+| # | Rule | What it does |
+|---|------|--------------|
+| **Deliveries** | | |
+| 1 | Food to Quarters | Quarters food below 40 → fetch 60 from Hydroponics |
+| 2 | Filters to Life Support | below 10 → fetch 40 from Engineering |
+| 3 | Water to Hydroponics | below 200 → fetch 400 from Life Support |
+| 4 | Fertiliser to Hydroponics | below 20 → fetch 40 from Engineering |
+| 5 | Ore to Engineering | below 100 → fetch 300 from Cargo Bay |
+| 6 | Seals to Maintenance | below 10 → fetch 20 from Engineering |
+| 7 | Medicine to Medbay | below 10 → fetch 20 from Engineering |
+| **Production** | | |
+| 8 | Make filters | Engineering stock below 20 → make 60 |
+| 9 | Make seals | below 30 → make 60 |
+| 10 | Replant a bed | Bed empty → post a planting job |
+| **Safety and upkeep** | | |
+| 11 | Fire | Alarm → raise the alert, post a response job. **Does not vent.** |
+| 12 | Reactor service | Reactor starts failing → post a repair job, top of the list |
+| 13 | Water restock | Life Support water below 500 → post a restock job |
+
+#### The set is the tutorial, because it goes wrong slowly
+
+Nothing here is badly written. It all works on day one. It comes apart because **the ship
+changes and the rules cannot**, and each failure teaches one thing at the moment it bites:
+
+| When | What happens | What it teaches |
+|------|--------------|-----------------|
+| Hour one | Everything runs | What a rule looks like, by reading working ones |
+| ~y10-40 | Thresholds sized for eight crew are wrong for five | Rules are yours to maintain, not furniture |
+| **~y40** | **A famine interrupts planting; beds fall into phase and food goes boom-bust** | Pipelining — and you need the Scheduler Module |
+| ~y100 | A worn gauge kills rule 13 silently | Instruments lie (§5) |
+| Always | **None of the 46 assets have a maintenance rule** | The core loop is yours to build |
+
+The grow beds deserve the detail, because it is the best of these. The ship launches with its
+six beds **already out of phase** — planted on different days before departure — so rule 10
+*preserves* a working stagger indefinitely. It only collapses when a planting is missed for
+want of fertiliser: two beds sync, then three, and the phase never recovers on its own.
+
+So the player gets forty good years, one bad harvest, and a permanent boom-bust they have to
+diagnose. The trap is inherited; the fix (§5c, phase offsets) has to be earned.
+
+Rule 11 is deliberately the **safe, slow** version — it raises the alarm rather than venting,
+because venting needs an occupancy guard and the Logic Core to express it. The player adds
+venting themselves later, and the interlock lesson is theirs to learn rather than inherited.
+
+Rule 12 is the single maintenance rule aboard, on the one asset that kills you fastest. It is
+there as a **worked example to copy** — the shape of the thing the player must now do 45 more
+times.
+
+<!-- TODO: Should the inherited rules carry authorship in the UI ("set by Marchetti, y0")?
+     Cheap, and it makes them feel like a legacy rather than a default. -->
+
 ### Failure gallery
 
 What the Automation Console exists to surface.
@@ -2233,9 +2296,17 @@ These features would use an LLM to replace/supplement the text bank with dynamic
 2. **Procedural generation** — Are asteroid encounters, equipment failures, crew events randomised?
 3. **Frame jacking risk** — What can go wrong if you frame jack too early? Cascade failures?
 4. **Tutorial / onboarding** — How does the player learn the systems?
-   *Partly answered:* §7's automation-console unlock ladder stages the complexity — the
-   player meets one automation concept at a time, in an order the economy sets, rather than
-   facing the full console on hour one. Doesn't cover the rest of the game's systems.
+   **Largely answered, by two mechanisms and no tutorial:**
+   - §7's unlock ladder stages the automation console's complexity, so the player meets one
+     concept at a time in an order the economy sets.
+   - §5c's **13 inherited rules** are a curriculum that teaches by going wrong slowly: working
+     examples to read on hour one, thresholds that drift as the crew shrinks, a grow-bed phase
+     collapse around year 40 that demands pipelining, and a rule silently killed by a worn
+     gauge around year 100.
+
+   What neither covers: the first hour. The player still has to be shown what a facility, a
+   job and the speed control *are*. That is a smaller problem than teaching the systems, and
+   probably a handful of feed messages rather than a tutorial mode.
 5. **Sound** — Any ambient audio, or purely visual?
 6. **Crew backstories** — Pre-written or generated? How deep?
 
