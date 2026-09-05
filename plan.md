@@ -354,15 +354,21 @@ If a node fails → that room becomes dangerous. If the ship-wide O₂ generator
 
 ### Buffers and Backpressure
 
-Every producing asset has a small **input buffer** and **output buffer**, separate from ship
-stores (the abstract global pool held in the Cargo Bay).
+**There is no ship-wide inventory.** Every room keeps its own stores, and **nothing moves
+between rooms unless a crew member carries it** — which means a *delivery job*, which means it
+can be automated, and which means it can jam.
 
 ```
-ship stores ──► input buffer ──► [ ASSET ] ──► output buffer ──► ship stores
-                                                                  (haul task)
+room stores ──► input buffer ──► [ ASSET ] ──► output buffer ──► room stores
+     ▲                                                                │
+     └──────────── delivery job (crew) ◄──── another room's stores ◄───┘
 ```
 
-Only one transport hop exists, and it's a crew task, so it's automatable — but it can **jam**:
+Costed: ~1,480 delivery jobs across the voyage, about **11% more work** than the maintenance
+load, taking ~0.07% of crew capacity. It spends the idle roster §3 identified rather than
+overloading it, and it finally gives the Cargo Bay and the Loading Crane a job.
+
+Transport is a crew task, so it's automatable — but it can **jam**:
 
 - **Output buffer full** → the asset cannot start its next cycle. It stalls, silently, at full
   health, with nothing broken.
@@ -374,6 +380,25 @@ upstream, and the asset reporting the problem is not the asset that has it.
 
 Backpressure is the single most important property for §5c's chained automations — without it,
 production lines are just lists.
+
+**Per-room stores are what make chains deep.** A consumable now has to be *made* somewhere and
+*carried* somewhere else, so a single need spans rooms:
+
+```
+Life Support: filters low   → delivery job: fetch filters from Engineering
+Engineering:  filters low   → make 60 filters
+Engineering:  metal ore low → delivery job: fetch ore from Cargo Bay
+```
+
+Three rules, each trivially simple, and the chain is three deep. Jam the bottom one — nobody
+picks up the ore delivery — and the smelter idles, the filters are never made, and Life Support
+starves. Every rule fired correctly.
+
+> **The room reporting the problem is not the room that has it.**
+
+Other consequences worth keeping: a vented or lost room takes its stores with it, and the
+storage caps in §6b now apply *per room* rather than to one global pool, which is a tighter
+constraint and makes Cargo Bay overflow a genuine bottleneck during Act I.
 
 ### Equipment Degradation
 - Active equipment degrades over time (per game-hour). Passive does not.
@@ -724,7 +749,21 @@ This is the same mechanism as the facility per-child slot templates above.
 
 ## 5b. Task Board
 
-The bridge between automated systems and human crew.
+The bridge between automated systems and human crew — and it runs **both ways**.
+
+> **Jobs go down to the crew. Requests come back up.**
+
+Same object, opposite direction. Crew post requests to the player: *put me back in cryo*
+(§3 withdrawal), *don't roster me with Novak again* (§3 relationships), *I won't do that repair
+on no sleep* (§10 refusal), *let me train under the engineer* (§3 cross-training), and
+*somebody should look at the water recycler* — crew noticing what the automation missed.
+
+**The player can decline any request, and declining costs morale.** That gives happiness the
+mechanical teeth §3's stat table asked for and never got, and it delivers §10's crew-agency
+design in v1 without needing an LLM: a request is just a task pointed the other way.
+
+Ignored requests are kept on the record. *"Vasquez flagged the water gauge, four years ago"*
+is a much better way to learn that instruments lie than an alert would have been.
 
 - Equipment automations (or the player directly) **post tasks** to the task board.
 - Crew members with an empty personal queue **pick tasks from the board**.

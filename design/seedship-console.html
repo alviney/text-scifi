@@ -112,7 +112,7 @@ h1{
 .screen{flex:1;overflow-y:auto;padding:12px 12px 18px}
 .screen[hidden]{display:none!important}
 .navbar{
-  display:grid;grid-template-columns:repeat(3,1fr);flex:none;
+  display:grid;grid-template-columns:repeat(4,1fr);flex:none;
   border-top:1px solid var(--d-rule);background:var(--d-panel);
 }
 .navbar button{
@@ -428,9 +428,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
           <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Drone Bay</span><span class="vl">Stowed</span></button>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Maintenance</span><span class="vl">OK</span></button>
           <div class="menu">
-            <button data-go="auto">Automation<span class="c">&nbsp;&middot; 3 need attention</span><span class="g">&rsaquo;</span></button>
-            <button data-go="tasks">Jobs<span class="c">&nbsp;&middot; 14 waiting</span><span class="g">&rsaquo;</span></button>
-            <button data-go="inventory">Stores<span class="g">&rsaquo;</span></button>
+            <button data-go="inventory">Where everything is<span class="g">&rsaquo;</span></button>
           </div>
         </section>
 
@@ -448,7 +446,15 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
           <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Irrigation</span><span class="vl">OK</span></button>
           <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Seed Vault</span><span class="vl">OK</span></button>
           <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Air</span><span class="vl">OK</span></button>
+
+          <div class="sect">Stores in this room</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Seeds</span><span class="vl">240</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Fertiliser</span><span class="vl">18 &middot; 3 weeks</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Water</span><span class="vl">610</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Food, picked</span><span class="vl">155</span></div>
+          <p class="quiet">Fertiliser is made in Engineering. Someone has to carry it here &mdash; there&rsquo;s a standing rule for that, and it&rsquo;s working.</p>
           <div class="menu">
+            <button data-go="tasks">Deliveries coming here<span class="c">&nbsp;&middot; 1</span><span class="g">&rsaquo;</span></button>
             <button data-go="equipdetails">Details<span class="g">&rsaquo;</span></button>
           </div>
         </section>
@@ -502,6 +508,8 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Novak</span><span class="vl">Free</span></button>
           <p class="lead" style="margin-top:14px">No engineer and no pilot is awake. <span class="q">Repairs are piling up, and you can&rsquo;t send drones.</span></p>
           <div class="menu">
+            <button data-go="tasks">Jobs<span class="c">&nbsp;&middot; 14 waiting, 3 nobody can do</span><span class="g">&rsaquo;</span></button>
+            <button data-go="requests">Requests<span class="c">&nbsp;&middot; 2 from the crew</span><span class="g">&rsaquo;</span></button>
             <button>Wake someone<span class="g">&rsaquo;</span></button>
             <button data-go="colony">The colony<span class="g">&rsaquo;</span></button>
           </div>
@@ -553,6 +561,12 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Cargo bay heater</span><span class="vl">Fighting itself</span></button>
           <button class="row" data-go="rule"><span class="dot warn">◐</span><span class="nm">Service the reactor</span><span class="vl">Waiting 5 yrs</span></button>
+          <div class="sect">A chain that works</div>
+          <p class="quiet">Three rules, each one simple, feeding each other:</p>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Life Support: filters low</span><span class="vl">fetch 40</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Engineering: filters low</span><span class="vl">make 60</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineering: ore low</span><span class="vl">fetch from Cargo</span></div>
+          <p class="quiet">The last one is jammed &mdash; nobody has picked up the delivery, so the smelter is idle and the whole chain has stopped behind it.</p>
           <div class="menu">
             <button>Rules that are working<span class="c">&nbsp;&middot; 58</span><span class="g">&rsaquo;</span></button>
             <button data-go="newrule">Write a new rule<span class="g">&rsaquo;</span></button>
@@ -621,42 +635,79 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <div class="menu"><button>Details<span class="g">&rsaquo;</span></button></div>
         </section>
 
+        <!-- ---------- REQUESTS (the board, running upward) ---------- -->
+        <section class="screen" id="s-requests" hidden>
+          <button class="backbtn" data-go="crew">&lsaquo; crew</button>
+          <h2 class="scr-title">Requests <span>2 waiting</span></h2>
+          <p class="lead">Jobs go down to the crew. Requests come back up.</p>
+
+          <div class="sect">Okonkwo</div>
+          <p class="lead" style="margin-bottom:6px">&ldquo;Put me back in the freezer. I&rsquo;ve been up nine years and I&rsquo;m done.&rdquo;</p>
+          <p class="quiet">He&rsquo;s your only technician, and two thirds of the way to being an engineer. Say no and he&rsquo;ll stay &mdash; unhappier, and slower.</p>
+          <div class="acts"><button class="act">Let him sleep</button><button class="act danger">Ask him to stay</button></div>
+
+          <div class="sect">Haddad</div>
+          <p class="lead" style="margin-bottom:6px">&ldquo;Don&rsquo;t put me on shift with Novak again.&rdquo;</p>
+          <p class="quiet">No reason given. Ignoring it costs them both a little every time they work together.</p>
+          <div class="acts"><button class="act">Keep them apart</button><button class="act danger">Ignore it</button></div>
+
+          <div class="sect">Earlier</div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Adeyemi asked to train Lindqvist</span><span class="vl">agreed</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Vasquez flagged the water gauge</span><span class="vl">ignored</span></div>
+          <p class="quiet">Vasquez was right about the gauge, four years ago.</p>
+        </section>
+
         <!-- ---------- JOBS ---------- -->
         <section class="screen" id="s-tasks" hidden>
-          <button class="backbtn" data-go="facilities">&lsaquo; facilities</button>
+          <button class="backbtn" data-go="crew">&lsaquo; crew</button>
           <h2 class="scr-title">Jobs <span>14 waiting</span></h2>
           <p class="lead">Nobody aboard can do three of these.</p>
           <div class="sect">Waiting for an engineer</div>
           <div class="row static"><span class="dot crit">○</span><span class="nm">Service the reactor</span><span class="vl">5 yrs</span></div>
           <div class="row static"><span class="dot crit">○</span><span class="nm">Service the air maker</span><span class="vl">3 yrs</span></div>
           <div class="row static"><span class="dot crit">○</span><span class="nm">Service the fabricator</span><span class="vl">1 yr</span></div>
+          <div class="sect">Moving things about</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Filters &rarr; Life Support</span><span class="vl">2 days</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Metal ore &rarr; Engineering</span><span class="vl">11 days</span></div>
+          <p class="quiet">The smelter has been idle eleven days waiting for ore that&rsquo;s sitting in the Cargo Bay.</p>
           <div class="sect">Being done now</div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Okonkwo &middot; water recycler</span><span class="vl">4h</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Adeyemi &middot; picking crops</span><span class="vl">2h</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Lindqvist &middot; hauling seals</span><span class="vl">1h</span></div>
           <div class="menu"><button data-go="crew">Wake an engineer<span class="g">&rsaquo;</span></button></div>
         </section>
 
-        <!-- ---------- STORES ---------- -->
+        <!-- ---------- WHERE EVERYTHING IS ---------- -->
         <section class="screen" id="s-inventory" hidden>
-          <button class="backbtn" data-go="facilities">&lsaquo; facilities</button>
-          <h2 class="scr-title">Stores</h2>
-          <div class="sect">Running out</div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Rare compounds</span><span class="vl">84 &middot; ~90 days</span></div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">Electronics</span><span class="vl">41</span></div>
-          <p class="quiet">Rare compounds make electronics, medicine and fuel rods. Nothing else does. The next place to find more is six years away.</p>
-          <div class="sect">Plenty</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Refined metal</span><span class="vl">1,204</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Metal parts</span><span class="vl">308</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Seals</span><span class="vl">96</span></div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">Water</span><span class="vl">900<span class="crit">?</span></span></div>
+          <button class="backbtn" data-go="facilities">&lsaquo; rooms</button>
+          <h2 class="scr-title">Where everything is</h2>
+          <p class="lead">Every room keeps its own stores. <span class="q">Nothing moves between rooms unless somebody carries it.</span></p>
+
+          <div class="sect">Rare compounds &middot; 84 left</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineering</span><span class="vl">84</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Everywhere else</span><span class="vl">none</span></div>
+          <p class="quiet">Runs out in about 90 days. The next place to find more is six years away.</p>
+
+          <div class="sect">Metal ore &middot; 612 left</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Cargo Bay</span><span class="vl">612</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineering</span><span class="vl">0 &mdash; smelter idle</span></div>
+          <p class="quiet">It&rsquo;s all in the wrong room. A delivery job has been waiting eleven days.</p>
+
+          <div class="sect">Filters &middot; 62 left</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Engineering</span><span class="vl">48</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Life Support</span><span class="vl">9 &middot; 2 weeks</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Maintenance</span><span class="vl">5</span></div>
+
+          <div class="sect">Water &middot; 900<span class="crit">?</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Life Support</span><span class="vl">900<span class="crit">?</span></span></div>
           <p class="quiet">The <span class="crit">?</span> means a worn gauge is reporting this. Don&rsquo;t trust it.</p>
-          <div class="menu"><button>Everything else<span class="g">&rsaquo;</span></button></div>
+          <div class="menu"><button data-go="auto">Delivery rules<span class="c">&nbsp;&middot; 9</span><span class="g">&rsaquo;</span></button></div>
         </section>
 
         <nav class="navbar">
           <button data-go="voyage" aria-current="true">VOYAGE</button>
-          <button data-go="facilities">FACILITIES</button>
+          <button data-go="facilities">ROOMS</button>
           <button data-go="crew">CREW</button>
+          <button data-go="auto">RULES</button>
         </nav>
       </div>
       <p class="skincap" id="skincap"><b>Amber CRT.</b> IBM Plex Mono on warm charcoal. The saved baseline &mdash; industrial terminal, VT220 era, warm enough to sit with for hours.</p>
@@ -710,26 +761,42 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         <ul class="screenlist">
           <li><button data-go="voyage"><span class="k">VOYAGE</span>The journey &mdash; where you are, what&rsquo;s ahead, fuel</button></li>
           <li><button data-go="feedfull"><span class="k">expand</span>Full feed &mdash; from the ticker</button></li>
-          <li><button data-go="facilities"><span class="k">FACILITIES</span>The ten rooms</button></li>
+          <li><button data-go="facilities"><span class="k">ROOMS</span>The ten rooms</button></li>
           <li><button data-go="facility"><span class="k">drill</span>Hydroponics</button></li>
           <li><button data-go="equipment"><span class="k">drill</span>Reactor Core</button></li>
           <li><button data-go="equipdetails"><span class="k">opt-in</span>Details &mdash; the numbers, on demand</button></li>
           <li><button data-go="mfg"><span class="k">drill</span>Engineering &mdash; the workshop</button></li>
-          <li><button data-go="auto"><span class="k">drill</span>Automation &mdash; three rules need attention</button></li>
+          <li><button data-go="auto"><span class="k">RULES</span>Automation &mdash; three need attention</button></li>
           <li><button data-go="rule"><span class="k">drill</span>One rule &mdash; Restock water</button></li>
           <li><button data-go="newrule"><span class="k">drill</span>Rule builder &mdash; sentence-shaped</button></li>
-          <li><button data-go="tasks"><span class="k">drill</span>Jobs</button></li>
-          <li><button data-go="inventory"><span class="k">drill</span>Stores</button></li>
           <li><button data-go="crew"><span class="k">CREW</span>Crew roster</button></li>
           <li><button data-go="crewmember"><span class="k">drill</span>Okonkwo</button></li>
+          <li><button data-go="tasks"><span class="k">drill</span>Jobs &mdash; including deliveries</button></li>
+          <li><button data-go="requests"><span class="k">drill</span>Requests &mdash; the board running upward</button></li>
+          <li><button data-go="inventory"><span class="k">drill</span>Where everything is</button></li>
           <li><button data-go="colony"><span class="k">opt-in</span>The colony &mdash; who is left</button></li>
         </ul>
       </section>
 
       <section>
-        <h2>Three tabs, and a ticker above everything</h2>
-        <p>Five tabs mixed two organising ideas &mdash; some were <em>places</em> (Workshop is Engineering) and some were <em>lenses</em>. That gave two routes to the same object, which is what made navigation feel complicated even when each screen was simple.</p>
-        <p>Now: <strong>Voyage</strong> is where the ship is going, <strong>Facilities</strong> is everything with an address, <strong>Crew</strong> is everyone aboard. The Workshop and Automation lost their tabs and are found where they live &mdash; Engineering, and the equipment a rule is attached to &mdash; with Automation also reachable from the Facilities root, since &ldquo;which of my rules is broken&rdquo; is a real question.</p>
+        <h2>Four tabs, one per thing the game is about</h2>
+        <p><strong>Voyage</strong> is where the ship is going. <strong>Rooms</strong> is its body. <strong>Crew</strong> is the people. <strong>Rules</strong> is your own mind &mdash; you are the ship&rsquo;s AI, and automation is literally you.</p>
+        <p>Rules earned a tab despite attaching to equipment, because §5 made facilities and systems rule-holders too. A rule can live at any level of the hierarchy, so &ldquo;which of mine is broken&rdquo; genuinely has no single address. Moving it out, along with Jobs, leaves Rooms clean: ten rooms and nothing else.</p>
+      </section>
+
+      <section>
+        <h2>Jobs belong to the crew, and the board runs both ways</h2>
+        <p>Jobs are work <em>people</em> do, and the board&rsquo;s failure is always &ldquo;nobody can do this&rdquo; &mdash; a crew problem wearing a facility costume. It sits under Crew now.</p>
+        <p class="callout">Jobs go down to the crew. <strong>Requests come back up.</strong></p>
+        <p>Same object, opposite direction, and it gives §3&rsquo;s withdrawal and §10&rsquo;s crew agency a home in v1 with no LLM needed. Okonkwo asks to go back in the freezer. Haddad won&rsquo;t work with Novak. Adeyemi asks to train someone. You can say no to any of it &mdash; and saying no costs morale, which finally gives happiness the mechanical teeth §3 asked for and never got.</p>
+        <p>The best line on that screen is the quiet one: <em>&ldquo;Vasquez was right about the gauge, four years ago.&rdquo;</em> Crew notice things your automation missed, and ignoring them has a record.</p>
+      </section>
+
+      <section>
+        <h2>Every room keeps its own stores</h2>
+        <p>There is no ship-wide pool. Consumables live in the room that uses them, and <strong>nothing moves unless somebody carries it</strong> &mdash; which means a delivery job, which means it can be automated, which means it can jam.</p>
+        <p>It costs about 11% more jobs across the voyage and 0.07% of the crew&rsquo;s time, so it spends the idle roster §3 identified rather than overloading it. It also gives the Cargo Bay and the Loading Crane something to do, and makes a vented room&rsquo;s contents a real loss.</p>
+        <p>Mostly it buys chains. The Rules tab shows a three-deep one, jammed at the bottom: Life Support wants filters, Engineering makes filters, Engineering needs ore &mdash; and the ore is sitting in the Cargo Bay because nobody picked up the delivery. Three simple rules, all correct, and the smelter has been idle eleven days. <strong>The room reporting the problem is not the room that has it.</strong></p>
       </section>
 
       <section>
@@ -783,12 +850,12 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
 <script>
 (function(){
-  var screens = ["voyage","feedfull","facilities","facility","equipment","equipdetails","crew","colony","crewmember","auto","rule","newrule","mfg","tasks","inventory"];
+  var screens = ["voyage","feedfull","facilities","facility","equipment","equipdetails","crew","colony","crewmember","requests","auto","rule","newrule","mfg","tasks","inventory"];
   var tabs = {voyage:"voyage", feedfull:"voyage",
               facilities:"facilities", facility:"facilities", equipment:"facilities",
-              equipdetails:"facilities", mfg:"facilities", auto:"facilities",
-              rule:"facilities", newrule:"facilities", tasks:"facilities", inventory:"facilities",
-              crew:"crew", colony:"crew", crewmember:"crew"};
+              equipdetails:"facilities", mfg:"facilities", inventory:"facilities",
+              crew:"crew", colony:"crew", crewmember:"crew", tasks:"crew", requests:"crew",
+              auto:"auto", rule:"auto", newrule:"auto"};
   var navBtns = Array.prototype.slice.call(document.querySelectorAll(".navbar button"));
 
   function go(name){
