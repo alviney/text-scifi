@@ -196,6 +196,40 @@ h1{
 .act:hover{border-color:var(--d-accent);color:var(--d-accent)}
 .act.danger:hover{border-color:var(--d-crit);color:var(--d-crit)}
 
+/* lead sentence: every pane opens with words, not numbers */
+.lead{font-size:13.5px;line-height:1.55;color:var(--d-text);margin:2px 0 12px;max-width:34ch}
+.lead .q{color:var(--d-dim)}
+.quiet{font-size:12px;color:var(--d-dim);margin:10px 0 0;max-width:34ch;line-height:1.5}
+.bigbar{font-size:13px;letter-spacing:-.5px;margin:10px 0 4px;white-space:nowrap}
+.pct{font-size:12px;color:var(--d-dim);margin:0 0 12px}
+
+/* CLI-styled menu: the only affordance at the bottom of a pane */
+.menu{display:flex;flex-direction:column;margin-top:14px;border-top:1px solid var(--d-rule)}
+.menu button{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;font-family:inherit;
+  font-size:12.5px;color:var(--d-text);background:none;border:none;
+  border-bottom:1px solid var(--d-rule);padding:9px 2px;cursor:pointer;
+}
+.menu button:hover{background:var(--d-panel2);color:var(--d-accent)}
+.menu button .g{margin-left:auto;color:var(--d-faint)}
+.menu button .c{color:var(--d-dim);font-size:11.5px}
+
+/* rule sentence */
+.sentence{
+  border-left:2px solid var(--d-accent);padding:2px 0 2px 10px;margin:2px 0 12px;
+  font-size:13px;line-height:1.5;max-width:32ch;
+}
+/* rule builder */
+.build{display:flex;flex-direction:column;gap:5px;margin:4px 0 12px}
+.build .lb{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--d-faint);margin-top:6px}
+.pick{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-family:inherit;font-size:12.5px;color:var(--d-text);width:100%;text-align:left;
+  background:var(--d-panel2);border:1px solid var(--d-rule);border-radius:2px;
+  padding:7px 9px;cursor:pointer;
+}
+.pick:hover{border-color:var(--d-accent)}
+.pick .g{color:var(--d-faint);font-size:10px}
 /* rule card in automation console */
 .rulecard{border:1px solid var(--d-rule);border-radius:3px;padding:8px;margin-bottom:8px;background:var(--d-panel)}
 .rulecard.bad{border-color:#4A2B22}
@@ -242,7 +276,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
   <header class="masthead">
     <div class="eyebrow">Seedship &middot; §8 interface design</div>
     <h1>Seedship Console</h1>
-    <p class="standfirst">Ten mobile panes for the ship-management game, in the CLI idiom §8 calls for. The device is live &mdash; tap facilities, feed lines and equipment to drill in. State shown is <strong>year 147</strong>, mid&#8209;Long&#8209;Dark: reactor degraded, rare compounds running out, no pilot awake. Swap the skin above the device &mdash; the layout never changes, only the treatment.</p>
+    <p class="standfirst">Ten mobile panes for the ship-management game, in the CLI idiom §8 calls for. The device is live &mdash; tap facilities, feed lines and equipment to drill in. Each level answers one question, in a sentence before a number. State shown is <strong>year 147</strong>, mid&#8209;Long&#8209;Dark: the reactor is failing, rare compounds are running out, and no engineer is awake. Swap the skin above the device &mdash; the layout never changes, only the treatment.</p>
   </header>
   <div class="rule"></div>
 
@@ -263,245 +297,252 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
           <span>PWR <b>780</b>kW</span>
         </div>
 
-        <!-- ---------- SHIP ---------- -->
+        <!-- ---------- SHIP (calibration point: unchanged density) ---------- -->
         <section class="screen" id="s-ship">
-          <h2 class="scr-title">Ship status <span>10 facilities</span></h2>
+          <h2 class="scr-title">Ship <span>year 147</span></h2>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Bridge</span><span class="vl">OK</span></button>
-          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Engineering</span><span class="vl">FAB SHED</span></button>
-          <button class="row" data-go="equipment"><span class="dot crit">○</span><span class="nm">Reactor / Power</span><span class="vl">AT RISK</span></button>
+          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Engineering</span><span class="vl">Powered down</span></button>
+          <button class="row" data-go="equipment"><span class="dot crit">○</span><span class="nm">Reactor</span><span class="vl">Failing</span></button>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Life Support</span><span class="vl">OK</span></button>
-          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Hydroponics</span><span class="vl">DIMMED</span></button>
+          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Hydroponics</span><span class="vl">Crops ready</span></button>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Medbay</span><span class="vl">OK</span></button>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Quarters</span><span class="vl">OK</span></button>
           <button class="row" data-go="inventory"><span class="dot ok">●</span><span class="nm">Cargo Bay</span><span class="vl">OK</span></button>
-          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Drone Bay</span><span class="vl">STOWED</span></button>
+          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Drone Bay</span><span class="vl">Stowed</span></button>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Maintenance</span><span class="vl">OK</span></button>
 
-          <div class="sect">Signal feed &middot; warn+</div>
+          <div class="sect">What's happening</div>
           <div class="feed">
-            <button class="feedline" data-go="equipment"><span class="ts">14:32</span><span class="msg"><span class="crit">CRIT</span> Reactor Core entered AT_RISK &mdash; output 780kW vs 890kW baseline</span></button>
-            <button class="feedline" data-go="auto"><span class="ts">11:07</span><span class="msg"><span class="warn">WARN</span> Rule <span class="acc">WR-01</span> has not fired in 47 years</span></button>
-            <button class="feedline" data-go="inventory"><span class="ts">09:41</span><span class="msg"><span class="warn">WARN</span> Rare compounds stock-out projected within 90 days</span></button>
-            <button class="feedline" data-go="tasks"><span class="ts">08:15</span><span class="msg"><span class="warn">WARN</span> Service task unclaimed 1,847 days &mdash; no engineer awake</span></button>
-            <button class="feedline" data-go="astro"><span class="ts">04:02</span><span class="msg">Rod 47 seated &middot; 149 remaining</span></button>
+            <button class="feedline" data-go="equipment"><span class="ts">14:32</span><span class="msg"><span class="crit">●</span> The reactor is failing. It can&rsquo;t make enough power.</span></button>
+            <button class="feedline" data-go="rule"><span class="ts">11:07</span><span class="msg"><span class="warn">●</span> The water restock rule hasn&rsquo;t run in 47 years.</span></button>
+            <button class="feedline" data-go="inventory"><span class="ts">09:41</span><span class="msg"><span class="warn">●</span> Rare compounds run out in about 90 days.</span></button>
+            <button class="feedline" data-go="tasks"><span class="ts">08:15</span><span class="msg"><span class="warn">●</span> A repair job has waited five years. No engineer is awake.</span></button>
+            <button class="feedline" data-go="astro"><span class="ts">04:02</span><span class="msg">Fuel rod 47 loaded. 149 left.</span></button>
             <button class="feedline chatter" data-go="crew"><span class="ts">02:20</span><span class="msg">Okonkwo: &ldquo;third week of the same ration block.&rdquo;</span></button>
           </div>
-          <div class="acts"><button class="act" data-go="tasks">Task board</button><button class="act" data-go="inventory">Inventory</button></div>
+          <div class="menu">
+            <button data-go="tasks">Jobs<span class="c">&nbsp;&middot; 14 waiting</span><span class="g">&rsaquo;</span></button>
+            <button data-go="inventory">Stores<span class="g">&rsaquo;</span></button>
+          </div>
         </section>
 
         <!-- ---------- FACILITY ---------- -->
         <section class="screen" id="s-facility" hidden>
-          <button class="backbtn" data-go="ship">&lsaquo; ship status</button>
-          <h2 class="scr-title">Hydroponics <span>◐ dimmed</span></h2>
-          <dl class="kv">
-            <dt>Power draw</dt><dd>85 kW <span class="faint">/ 135 rated</span></dd>
-            <dt>Crew present</dt><dd>1 &mdash; Adeyemi (Botanist)</dd>
-            <dt>Atmosphere</dt><dd class="ok">nominal</dd>
-          </dl>
-
-          <div class="sect">Derived signals</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">plantable</span><span class="vl">true</span></div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">ripeCount</span><span class="vl">3</span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">seedProjection</span><span class="vl">19 yr</span></div>
-
-          <div class="sect">Equipment &middot; 9 of 12 slots</div>
-          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 1</span><span class="vl">RIPE d6</span></button>
-          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 2</span><span class="vl">RIPE d4</span></button>
-          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 3</span><span class="vl">RIPE d1</span></button>
-          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Grow Bed 4</span><span class="vl">GROW 22d</span></button>
-          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Grow Bed 5</span><span class="vl">GROW 31d</span></button>
-          <button class="row" data-go="equipment"><span class="dot dim">·</span><span class="nm">Grow Bed 6</span><span class="vl">EMPTY</span></button>
-          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Irrigation System</span><span class="vl">74%</span></button>
-          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Seed Vault</span><span class="vl">passive</span></button>
-          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">LifeSupportNode</span><span class="vl">61%</span></button>
-          <div class="note-inline">3 beds ripe at once &mdash; synchronised planting. One botanist.</div>
+          <button class="backbtn" data-go="ship">&lsaquo; ship</button>
+          <h2 class="scr-title">Hydroponics <span class="warn">◐</span></h2>
+          <p class="lead">Three crops are ready to pick, and only one botanist is awake to pick them.</p>
+          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 1</span><span class="vl">Ready</span></button>
+          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 2</span><span class="vl">Ready</span></button>
+          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 3</span><span class="vl">Ready</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Grow Bed 4</span><span class="vl">Growing</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Grow Bed 5</span><span class="vl">Growing</span></button>
+          <button class="row" data-go="equipment"><span class="dot dim">·</span><span class="nm">Grow Bed 6</span><span class="vl">Empty</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Irrigation</span><span class="vl">OK</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Seed Vault</span><span class="vl">OK</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Air</span><span class="vl">OK</span></button>
+          <div class="menu">
+            <button data-go="equipdetails">Details<span class="g">&rsaquo;</span></button>
+          </div>
         </section>
 
         <!-- ---------- EQUIPMENT ---------- -->
         <section class="screen" id="s-equipment" hidden>
-          <button class="backbtn" data-go="ship">&lsaquo; ship status</button>
-          <h2 class="scr-title">Reactor Core <span>high danger</span></h2>
-          <div class="row static"><span class="dot crit">○</span><span class="nm"><span class="crit">AT_RISK</span> &middot; RUNNING</span><span class="vl">38%</span></div>
-          <div style="margin:8px 0 2px" class="bar b-crit"><span class="fill">███████</span><span class="empty">░░░░░░░░░░░░░</span> <span class="dim">condition 38</span></div>
-          <div style="margin:2px 0 8px" class="bar"><span class="fill">██████████████</span><span class="empty">░░░░░░</span> <span class="dim">ceiling 71</span></div>
-          <dl class="kv">
-            <dt>Output</dt><dd>780 kW <span class="faint">/ 1000</span></dd>
-            <dt>Wear rate</dt><dd>0.011 /h <span class="faint">(age &times;1.7)</span></dd>
-            <dt>Last serviced</dt><dd>y141.2 &middot; 2,140 d</dd>
-            <dt>Fuel rods</dt><dd>149 <span class="faint">&asymp; 149 yr</span></dd>
-            <dt>Coolant</dt><dd class="ok">loop nominal</dd>
-            <dt>Repairs</dt><dd>29 &middot; ceiling &minus;29</dd>
-          </dl>
-          <div class="sect">Attached</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Reactor Coolant Upgrade</span><span class="vl">52%</span></div>
-          <div class="sect">Listeners &middot; 2 of 3</div>
-          <div class="rulecard"><pre>ON   self → state:atRisk
-DO   postTask("service", front)</pre><div class="meta">fired 34 &middot; oldest unclaimed 1,847 d</div></div>
-          <div class="acts">
-            <button class="act">Service now</button><button class="act">Add listener</button><button class="act danger">Scram</button>
+          <button class="backbtn" data-go="ship">&lsaquo; ship</button>
+          <h2 class="scr-title">Reactor Core <span class="crit">○</span></h2>
+          <p class="lead">Failing. It hasn&rsquo;t been serviced in six years.</p>
+          <div class="bigbar b-crit"><span class="fill">███████</span><span class="empty">░░░░░░░░░░░░░</span></div>
+          <p class="pct">38% &mdash; getting worse</p>
+          <p class="lead">It&rsquo;s making <b>780 kW</b>. <span class="q">The ship needs 890 kW, so some things are switched off.</span></p>
+          <div class="menu">
+            <button>Service it now<span class="g">&rsaquo;</span></button>
+            <button data-go="rule">Automation<span class="c">&nbsp;&middot; 1 rule</span><span class="g">&rsaquo;</span></button>
+            <button data-go="equipdetails">Details<span class="g">&rsaquo;</span></button>
           </div>
+        </section>
+
+        <!-- ---------- EQUIPMENT DETAILS (opt-in numbers) ---------- -->
+        <section class="screen" id="s-equipdetails" hidden>
+          <button class="backbtn" data-go="equipment">&lsaquo; reactor core</button>
+          <h2 class="scr-title">Details <span>reactor core</span></h2>
+          <dl class="kv">
+            <dt>Condition</dt><dd>38%</dd>
+            <dt>Best after repair</dt><dd>71%</dd>
+            <dt>Wearing</dt><dd>0.011 /hr</dd>
+            <dt>Last serviced</dt><dd>6 years ago</dd>
+            <dt>Times repaired</dt><dd>29</dd>
+            <dt>Power made</dt><dd>780 kW</dd>
+            <dt>Fuel rods</dt><dd>149</dd>
+            <dt>Coolant</dt><dd class="ok">OK</dd>
+            <dt>Fitted</dt><dd>Coolant upgrade</dd>
+            <dt>Danger to work on</dt><dd class="crit">High</dd>
+          </dl>
+          <div class="sect">Condition over time</div>
+          <pre style="font-family:inherit;font-size:11px;margin:0;color:var(--d-dim);white-space:pre">100 ▇▇▇▆▆▆▅▅▅▄▄▃▃▂▂▁
+    y87           y147
+svc  ^  ^   ^  ^   ^  ^</pre>
+          <p class="quiet">Every repair lowers the best it can be brought back to. After 29 repairs it can no longer be fixed above 71%.</p>
         </section>
 
         <!-- ---------- CREW ---------- -->
         <section class="screen" id="s-crew" hidden>
-          <h2 class="scr-title">Crew roster <span>6 awake / 194 cryo</span></h2>
-          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Adeyemi &middot; Botanist</span><span class="vl">harvest</span></button>
-          <button class="row" data-go="crewmember"><span class="dot warn">◐</span><span class="nm">Okonkwo &middot; Technician</span><span class="vl">tired</span></button>
-          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Vasquez &middot; Medic</span><span class="vl">idle</span></button>
-          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Lindqvist &middot; Generalist</span><span class="vl">haul</span></button>
-          <button class="row" data-go="crewmember"><span class="dot warn">◐</span><span class="nm">Haddad &middot; Generalist</span><span class="vl">low morale</span></button>
-          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Novak &middot; Generalist</span><span class="vl">idle</span></button>
+          <h2 class="scr-title">Crew <span>6 awake &middot; 194 asleep</span></h2>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Adeyemi</span><span class="vl">Picking crops</span></button>
+          <button class="row" data-go="crewmember"><span class="dot warn">◐</span><span class="nm">Okonkwo</span><span class="vl">Exhausted</span></button>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Vasquez</span><span class="vl">Free</span></button>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Lindqvist</span><span class="vl">Hauling</span></button>
+          <button class="row" data-go="crewmember"><span class="dot warn">◐</span><span class="nm">Haddad</span><span class="vl">Unhappy</span></button>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Novak</span><span class="vl">Free</span></button>
+          <p class="lead" style="margin-top:14px">No engineer and no pilot is awake. <span class="q">Repairs are piling up, and you can&rsquo;t send drones.</span></p>
+          <div class="menu">
+            <button>Wake someone<span class="g">&rsaquo;</span></button>
+            <button data-go="colony">The colony<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
 
-          <div class="sect">Colony pool &middot; role-years left</div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineer</span><span class="vl">0 awake &middot; 11 left</span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Pilot / Nav</span><span class="vl">0 awake &middot; 4 left</span></div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">Medic</span><span class="vl">1 awake &middot; 9 left</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Generalist</span><span class="vl">3 awake &middot; 61 left</span></div>
-          <div class="note-inline">4 pilots remain. Losing them ends asteroid harvesting.</div>
-          <dl class="kv" style="margin-top:12px">
-            <dt>Colonist-years spent</dt><dd>1,044 of 7,000</dd>
-            <dt>Mean colony age</dt><dd>+11.2 yr</dd>
+        <!-- ---------- COLONY (opt-in numbers) ---------- -->
+        <section class="screen" id="s-colony" hidden>
+          <button class="backbtn" data-go="crew">&lsaquo; crew</button>
+          <h2 class="scr-title">The colony <span>200 aboard</span></h2>
+          <p class="lead">Everyone you wake spends years of their life awake. Those years don&rsquo;t come back.</p>
+          <div class="sect">Who is left, and for how long</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineers</span><span class="vl">11 working years</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Pilots</span><span class="vl">4 working years</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Medics</span><span class="vl">9 working years</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Botanists</span><span class="vl">22 working years</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Everyone else</span><span class="vl">61 working years</span></div>
+          <p class="quiet">Four years of pilot left. When that runs out, nobody can fly a drone again.</p>
+          <div class="sect">The cost so far</div>
+          <dl class="kv">
+            <dt>Years spent awake</dt><dd>1,044</dd>
+            <dt>Colony is older by</dt><dd>11.2 years</dd>
             <dt>Died awake</dt><dd class="crit">7</dd>
           </dl>
-          <div class="acts"><button class="act">Unfreeze &hellip;</button><button class="act">Memorial</button></div>
         </section>
 
         <!-- ---------- CREW MEMBER ---------- -->
         <section class="screen" id="s-crewmember" hidden>
-          <button class="backbtn" data-go="crew">&lsaquo; crew roster</button>
-          <h2 class="scr-title">Okonkwo, T. <span>Technician</span></h2>
-          <dl class="kv">
-            <dt>Awake since</dt><dd>y138 &middot; 9 yr</dd>
-            <dt>Age</dt><dd>44 <span class="faint">(woke at 35)</span></dd>
-            <dt>Cross-training</dt><dd>Engineer <span class="ok">62%</span></dd>
-          </dl>
-          <div class="sect">Condition</div>
-          <div class="bar b-ok" style="margin:3px 0"><span class="fill">██████████████</span><span class="empty">░░░░░░</span> <span class="dim">health 71</span></div>
-          <div class="bar b-crit" style="margin:3px 0"><span class="fill">█████</span><span class="empty">░░░░░░░░░░░░░░░</span> <span class="dim">sleep 26</span></div>
-          <div class="bar b-warn" style="margin:3px 0"><span class="fill">████████</span><span class="empty">░░░░░░░░░░░░</span> <span class="dim">morale 41</span></div>
-          <div class="bar b-ok" style="margin:3px 0"><span class="fill">████████████████</span><span class="empty">░░░░</span> <span class="dim">fed 82</span></div>
-          <div class="note-inline">Sleep 26 &mdash; will refuse high-danger work.</div>
-          <div class="sect">Queue</div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">Service &middot; Water Recycler</span><span class="vl">4h left</span></div>
-          <div class="row static"><span class="dot dim">·</span><span class="nm">Haul &middot; Grow Bed 3</span><span class="vl">queued</span></div>
-          <div class="sect">Close to</div>
-          <div class="row static"><span class="dot dim">·</span><span class="nm">Vasquez &middot; Lindqvist</span><span class="vl">&nbsp;</span></div>
-          <div class="acts"><button class="act">Rest cycle</button><button class="act">Assign&hellip;</button><button class="act danger">Refreeze</button></div>
+          <button class="backbtn" data-go="crew">&lsaquo; crew</button>
+          <h2 class="scr-title">Okonkwo <span>Technician &middot; 44</span></h2>
+          <p class="lead">Exhausted. <span class="q">He&rsquo;ll refuse anything dangerous until he&rsquo;s slept.</span></p>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Health</span><span class="vl">Fine</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Rest</span><span class="vl">Exhausted</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Mood</span><span class="vl">Low</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Fed</span><span class="vl">Fine</span></div>
+          <p class="quiet">Awake nine years. Learning to be an engineer &mdash; about two thirds of the way there.</p>
+          <div class="sect">Doing now</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Servicing the water recycler</span><span class="vl">4h</span></div>
+          <div class="menu">
+            <button>Send him to rest<span class="g">&rsaquo;</span></button>
+            <button>Give him a job<span class="g">&rsaquo;</span></button>
+            <button>Put him back to sleep<span class="g">&rsaquo;</span></button>
+          </div>
         </section>
 
         <!-- ---------- AUTOMATION ---------- -->
         <section class="screen" id="s-auto" hidden>
           <h2 class="scr-title">Automation <span>61 rules</span></h2>
-          <dl class="kv">
-            <dt>Hardware</dt><dd>Logic Core &middot; Scheduler</dd>
-            <dt>Telemetry Suite</dt><dd class="faint">not built</dd>
-          </dl>
-          <div class="sect">Flagged &middot; 3</div>
-          <div class="rulecard bad">
-            <pre>WR-01  [Water Recycler]
-ON   Inventory.water → removed
-WHEN limitUnder(500)
-DO   postTask("restock", front)</pre>
-            <div class="meta"><span class="crit">DEAD</span> &middot; last fired 47 yr ago</div>
-            <div class="note-inline">Source sensor at 22% &mdash; reads 900?, actual 300.</div>
+          <p class="lead">Three rules need attention.</p>
+          <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
+          <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Cargo bay heater</span><span class="vl">Fighting itself</span></button>
+          <button class="row" data-go="rule"><span class="dot warn">◐</span><span class="nm">Service the reactor</span><span class="vl">Waiting 5 yrs</span></button>
+          <div class="menu">
+            <button>Rules that are working<span class="c">&nbsp;&middot; 58</span><span class="g">&rsaquo;</span></button>
+            <button data-go="newrule">Write a new rule<span class="g">&rsaquo;</span></button>
           </div>
-          <div class="rulecard bad">
-            <pre>LC-07  [LSN-Cargo]  A/B conflict
-A: ON self.temp limitUnder(15) DO turnOn
-B: ON self.temp limitOver(16)  DO turnOff</pre>
-            <div class="meta"><span class="crit">THRASH</span> &middot; fired 40,118 &middot; deadband 1°</div>
+        </section>
+
+        <!-- ---------- ONE RULE ---------- -->
+        <section class="screen" id="s-rule" hidden>
+          <button class="backbtn" data-go="auto">&lsaquo; automation</button>
+          <h2 class="scr-title">Restock water <span class="crit">○</span></h2>
+          <p class="sentence">When water drops below 500, add a job to restock it.</p>
+          <p class="lead">This has never run. <span class="q">The water gauge says there are 900 units. There are really about 300.</span></p>
+          <p class="quiet">The gauge is worn out, so the rule is never told the truth. The rule itself is fine.</p>
+          <div class="menu">
+            <button>Service the gauge<span class="g">&rsaquo;</span></button>
+            <button data-go="newrule">Change this rule<span class="g">&rsaquo;</span></button>
+            <button>Turn it off<span class="g">&rsaquo;</span></button>
           </div>
-          <div class="rulecard bad">
-            <pre>RC-01  [Reactor Core]
-ON   self → state:atRisk
-DO   postTask("service", front)</pre>
-            <div class="meta"><span class="warn">STALLED</span> &middot; fired 34 &middot; unclaimed 1,847 d</div>
-            <div class="note-inline">Rule is correct. Nobody is awake to claim it.</div>
+        </section>
+
+        <!-- ---------- RULE BUILDER ---------- -->
+        <section class="screen" id="s-newrule" hidden>
+          <button class="backbtn" data-go="auto">&lsaquo; automation</button>
+          <h2 class="scr-title">New rule</h2>
+          <div class="build">
+            <div class="lb">When</div>
+            <button class="pick">Water<span class="g">▾</span></button>
+            <button class="pick">drops below<span class="g">▾</span></button>
+            <button class="pick">500<span class="g">▾</span></button>
+            <div class="lb">Then</div>
+            <button class="pick">Add a job<span class="g">▾</span></button>
+            <button class="pick">Restock water<span class="g">▾</span></button>
+            <button class="pick">at the top of the list<span class="g">▾</span></button>
           </div>
-          <div class="sect">Healthy &middot; 58</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">HY-02 &middot; Grow Bed plant</span><span class="vl">×6</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">FB-01 &middot; seals standing order</span><span class="vl">411</span></div>
-          <div class="acts"><button class="act">New rule</button><button class="act">Cycle timeline</button></div>
+          <p class="sentence">When water drops below 500, add a job to restock it, at the top of the list.</p>
+          <p class="quiet">You pick the words. The rule reads back as a sentence, so you can check it means what you meant.</p>
+          <div class="menu"><button>Save<span class="g">&rsaquo;</span></button></div>
         </section>
 
         <!-- ---------- MANUFACTURING ---------- -->
         <section class="screen" id="s-mfg" hidden>
-          <h2 class="scr-title">Manufacturing <span>2 running</span></h2>
-          <div class="sect">Smelter &middot; 140 kW</div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">SHED &mdash; no headroom</span><span class="vl">0 kW</span></div>
-          <div class="sect">Fabricator &middot; 100 kW</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Electronics ×12</span><span class="vl">62%</span></div>
-          <div class="bar b-ok" style="margin:3px 0"><span class="fill">████████████</span><span class="empty">░░░░░░░░</span> <span class="dim">74h left</span></div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">Queued &middot; Filters ×40</span><span class="vl">starved</span></div>
-          <div class="sect">Workbench &middot; 5 kW</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Seals ×20 (manual)</span><span class="vl">31%</span></div>
-          <div class="sect">Standing orders</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Seals</span><span class="vl">&lt;30 → 60</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Fertiliser</span><span class="vl">&lt;40 → 20</span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Fuel rods</span><span class="vl">no rare cmp</span></div>
-          <div class="acts"><button class="act">Queue job</button><button class="act" data-go="inventory">Inventory</button></div>
+          <h2 class="scr-title">Workshop</h2>
+          <p class="lead">Making electronics. <span class="q">About three days left.</span></p>
+          <div class="bigbar b-ok"><span class="fill">████████████</span><span class="empty">░░░░░░░░</span></div>
+          <p class="pct">62%</p>
+          <div class="sect">Waiting</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Filters ×40</span><span class="vl">No materials</span></div>
+          <p class="lead" style="margin-top:14px">There isn&rsquo;t enough power to run the smelter. <span class="q">Switch something off first.</span></p>
+          <div class="menu">
+            <button>Standing orders<span class="c">&nbsp;&middot; 3</span><span class="g">&rsaquo;</span></button>
+            <button>Make something<span class="g">&rsaquo;</span></button>
+          </div>
         </section>
 
         <!-- ---------- NAVIGATION ---------- -->
         <section class="screen" id="s-astro" hidden>
-          <h2 class="scr-title">Navigation <span>Act II</span></h2>
-          <div class="bar" style="margin:4px 0 8px"><span class="fill">███████████</span><span class="empty">░░░░░░░░░</span> <span class="dim">147 / 300 yr</span></div>
-          <dl class="kv">
-            <dt>Route</dt><dd>Standard survey</dd>
-            <dt>Phase</dt><dd>The Long Dark</dd>
-            <dt>Δv burns left</dt><dd>3 <span class="faint">of 3</span></dd>
-          </dl>
-          <div class="sect">Mission profile</div>
-          <div class="row static"><span class="dot dim">·</span><span class="nm">OBJ-118 &middot; C-type?</span><span class="vl">y153 &middot; 6 yr</span></div>
-          <div class="row static"><span class="dot dim">·</span><span class="nm">OBJ-119 &middot; M-type?</span><span class="vl">y168 &middot; 21 yr</span></div>
-          <div class="row static"><span class="dot dim">·</span><span class="nm">OBJ-120 &middot; unsurveyed</span><span class="vl">y171 &middot; 24 yr</span></div>
-          <div class="note-inline">Composition is a pre-launch estimate. Comms Array 44% &mdash; wide error bars.</div>
-          <div class="sect">Drone bay &middot; stowed</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">DRN-01 &middot; 02 &middot; 05</span><span class="vl">OFFLINE</span></div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">DRN-03 &middot; 41%</span><span class="vl">OFFLINE</span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">DRN-04 &middot; DRN-06</span><span class="vl">LOST y131</span></div>
-          <div class="note-inline">4 of 6 drones. Break-even needs 6.</div>
+          <h2 class="scr-title">Voyage <span>year 147 of 300</span></h2>
+          <div class="bigbar"><span class="fill">███████████</span><span class="empty">░░░░░░░░░</span></div>
+          <p class="lead">Nothing within reach for six years. <span class="q">This is the long stretch between stars.</span></p>
+          <div class="sect">Coming up</div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Something icy</span><span class="vl">6 years</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Probably metal</span><span class="vl">21 years</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Never surveyed</span><span class="vl">24 years</span></div>
+          <p class="quiet">These were charted before launch. What they&rsquo;re actually made of is a guess until a drone gets there.</p>
+          <p class="lead" style="margin-top:12px">Four drones left. <span class="q">You need six to keep up with what the ship uses.</span></p>
+          <div class="menu"><button>Details<span class="g">&rsaquo;</span></button></div>
         </section>
 
-        <!-- ---------- TASK BOARD ---------- -->
+        <!-- ---------- JOBS ---------- -->
         <section class="screen" id="s-tasks" hidden>
-          <button class="backbtn" data-go="ship">&lsaquo; ship status</button>
-          <h2 class="scr-title">Task board <span>14 unclaimed</span></h2>
-          <dl class="kv">
-            <dt>Oldest unclaimed</dt><dd class="crit">1,847 d</dd>
-            <dt>Snap-back at</dt><dd>40 d &middot; <span class="crit">tripped</span></dd>
-          </dl>
-          <div class="sect">Unclaimed &middot; no matching crew</div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Service &middot; Reactor Core</span><span class="vl">Engineer</span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Service &middot; O₂ Generator</span><span class="vl">Engineer</span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Service &middot; Fabricator</span><span class="vl">Engineer</span></div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">Harvest &middot; Grow Bed 3</span><span class="vl">Botanist</span></div>
-          <div class="sect">In progress</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Service &middot; Water Recycler</span><span class="vl">Okonkwo</span></div>
-          <div class="bar b-ok" style="margin:3px 0"><span class="fill">███████████</span><span class="empty">░░░░░░░░░</span> <span class="dim">4h left</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Harvest &middot; Grow Bed 1</span><span class="vl">Adeyemi</span></div>
-          <div class="acts"><button class="act" data-go="crew">Wake engineer</button></div>
+          <button class="backbtn" data-go="ship">&lsaquo; ship</button>
+          <h2 class="scr-title">Jobs <span>14 waiting</span></h2>
+          <p class="lead">Nobody aboard can do three of these.</p>
+          <div class="sect">Waiting for an engineer</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Service the reactor</span><span class="vl">5 yrs</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Service the air maker</span><span class="vl">3 yrs</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Service the fabricator</span><span class="vl">1 yr</span></div>
+          <div class="sect">Being done now</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Okonkwo &middot; water recycler</span><span class="vl">4h</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Adeyemi &middot; picking crops</span><span class="vl">2h</span></div>
+          <div class="menu"><button data-go="crew">Wake an engineer<span class="g">&rsaquo;</span></button></div>
         </section>
 
-        <!-- ---------- INVENTORY ---------- -->
+        <!-- ---------- STORES ---------- -->
         <section class="screen" id="s-inventory" hidden>
-          <button class="backbtn" data-go="ship">&lsaquo; ship status</button>
-          <h2 class="scr-title">Inventory <span>Cargo Bay</span></h2>
-          <div class="sect">Raw &middot; cap 1,500</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Metal ore</span><span class="vl">612</span></div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Water ice</span><span class="vl">388</span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Rare elements</span><span class="vl">0</span></div>
-          <div class="sect">Refined &middot; cap 4,000</div>
-          <div class="row static"><span class="dot ok">●</span><span class="nm">Refined metal</span><span class="vl">1,204</span></div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">Water</span><span class="vl">900<span class="crit">?</span></span></div>
-          <div class="row static"><span class="dot crit">○</span><span class="nm">Rare compounds</span><span class="vl">84</span></div>
-          <div class="bar b-crit" style="margin:3px 0"><span class="fill">██</span><span class="empty">██████████████████</span> <span class="dim">stock-out ~90 d</span></div>
-          <div class="sect">Components</div>
+          <button class="backbtn" data-go="ship">&lsaquo; ship</button>
+          <h2 class="scr-title">Stores</h2>
+          <div class="sect">Running out</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Rare compounds</span><span class="vl">84 &middot; ~90 days</span></div>
           <div class="row static"><span class="dot warn">◐</span><span class="nm">Electronics</span><span class="vl">41</span></div>
+          <p class="quiet">Rare compounds make electronics, medicine and fuel rods. Nothing else does. The next place to find more is six years away.</p>
+          <div class="sect">Plenty</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Refined metal</span><span class="vl">1,204</span></div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Metal parts</span><span class="vl">308</span></div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">Seals</span><span class="vl">96</span></div>
-          <div class="row static"><span class="dot warn">◐</span><span class="nm">Medical supplies</span><span class="vl">18</span></div>
-          <div class="note-inline">Water reads 900? &mdash; sourced from a 22% sensor.</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Water</span><span class="vl">900<span class="crit">?</span></span></div>
+          <p class="quiet">The <span class="crit">?</span> means a worn gauge is reporting this. Don&rsquo;t trust it.</p>
+          <div class="menu"><button>Everything else<span class="g">&rsaquo;</span></button></div>
         </section>
 
         <nav class="navbar">
@@ -518,32 +559,44 @@ DO   postTask("service", front)</pre>
     <!-- ================= NOTES ================= -->
     <div class="notes">
       <section>
-        <h2>Five treatments, one layout</h2>
-        <p>Every skin defines the same token set, so <strong>no screen markup changes between them</strong> &mdash; only colour, typeface and shadow. If a skin needs different markup to work, it isn&rsquo;t a skin, it&rsquo;s a redesign.</p>
-        <p>They&rsquo;re deliberately spread across two axes rather than being five palettes: <strong>retro vs modern</strong>, and <strong>screen vs paper</strong>. Two are dark and nostalgic, two are light and documentary, one is present-day plant software.</p>
-        <ul class="screenlist" style="margin-top:12px">
-          <li><button data-skin-set="amber"><span class="k">Amber</span>Retro screen &middot; warm, industrial, saved baseline</button></li>
-          <li><button data-skin-set="phosphor"><span class="k">Phosphor</span>Retro screen &middot; colder, older, more austere</button></li>
-          <li><button data-skin-set="blueprint"><span class="k">Blueprint</span>Paper &middot; engineering drawing, light</button></li>
-          <li><button data-skin-set="teletype"><span class="k">Teletype</span>Paper &middot; printed ship&rsquo;s log, near-monochrome</button></li>
-          <li><button data-skin-set="hazard"><span class="k">Hazard</span>Modern screen &middot; present-day SCADA</button></li>
-        </ul>
+        <h2>One question per level</h2>
+        <p>Ship status is the calibration point &mdash; it earns its density because it answers exactly one thing: <em>what needs me?</em> Every level below it now answers one question too, and answers it <strong>in a sentence before it shows a number</strong>.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin:12px 0">
+          <tr><td style="padding:5px 10px 5px 0;color:var(--pg-dim);white-space:nowrap">Ship</td><td style="padding:5px 0">What needs me?</td></tr>
+          <tr><td style="padding:5px 10px 5px 0;color:var(--pg-dim);white-space:nowrap">Facility</td><td style="padding:5px 0">What&rsquo;s wrong in here?</td></tr>
+          <tr><td style="padding:5px 10px 5px 0;color:var(--pg-dim);white-space:nowrap">Equipment</td><td style="padding:5px 0">What do I do about it?</td></tr>
+          <tr><td style="padding:5px 10px 5px 0;color:var(--pg-accent);white-space:nowrap">Details</td><td style="padding:5px 0">Show me the numbers &mdash; opt-in, never on the way past</td></tr>
+        </table>
+        <p>Equipment used to open with twelve figures. It now opens with <em>&ldquo;Failing. It hasn&rsquo;t been serviced in six years&rdquo;</em>, one bar, and the two numbers that decide anything &mdash; 780&nbsp;kW made against 890&nbsp;kW needed. The wear rate, repair count, fuel, coolant and ageing history all moved one tap away.</p>
+        <p class="callout">Nothing was deleted. It was <strong>moved off the path</strong> &mdash; which is what lets a complex system feel simple to walk through.</p>
       </section>
 
       <section>
-        <h2>What each one argues</h2>
-        <p><strong>Amber</strong> says the ship is old but cared for. Warm charcoal is easier to sit with over long sessions than pure black, and amber was the industrial standard for exactly that reason.</p>
-        <p><strong>Phosphor</strong> says the ship is older and colder than you are. Green is the obvious retro choice and the one to be most careful with &mdash; it earns its place here only because status colour still reads against it, since &ldquo;ok&rdquo; is simply the absence of alarm.</p>
-        <p><strong>Blueprint</strong> asks the real question: <em>does this game have to be dark?</em> §1 calls the tone &ldquo;asset management software in space&rdquo;, and asset management software is light. It reads as a document you consult rather than a screen you stare into &mdash; and it is the only skin that would be comfortable in daylight on a phone.</p>
-        <p><strong>Teletype</strong> is the most austere: a printed log, almost no colour, one red for alarm. It suits a game about a ship that outlives everyone aboard, and it makes the signal feed feel like a record rather than a stream. Hardest to read densely, though &mdash; watch the bars.</p>
-        <p><strong>Hazard</strong> drops the retro conceit entirely. Slate blue-grey with safety yellow, the way real plant control software looks now. The least romantic and the most legible, and the only one where the aesthetic isn&rsquo;t doing narrative work.</p>
+        <h2>Rules are sentences, not code</h2>
+        <p>The notation in <code>plan.md</code> §5c is a <strong>specification, not an interface</strong>. Players never see <code>limitUnder(500)</code> or <code>postTask("service", front)</code>.</p>
+        <p>They see a rule named <em>Restock water</em> that reads: <em>&ldquo;When water drops below 500, add a job to restock it.&rdquo;</em> They build it by picking each underlined phrase from a menu, and the sentence reassembles itself as they go &mdash; so you can check it means what you meant before saving.</p>
+        <p>The diagnostics got the same treatment. <code>DEAD &middot; last fired 47y</code> became <em>&ldquo;Never runs&rdquo;</em>, and the explanation is a plain sentence: <em>the gauge says 900, there are really about 300, so the rule is never told the truth.</em> <code>THRASH</code> became <em>&ldquo;Fighting itself&rdquo;</em>. <code>STALLED</code> became <em>&ldquo;Waiting 5 years&rdquo;</em>.</p>
       </section>
 
       <section>
-        <h2>Which I&rsquo;d take</h2>
-        <p class="callout"><strong>Amber for the game, Blueprint worth a genuine test.</strong></p>
-        <p>Amber holds the tone §1 asks for without tipping into pastiche, and warm dark is kinder over the long sessions the speed slider implies. But Blueprint is the one that might be <em>right</em> rather than expected &mdash; it is the only treatment that takes &ldquo;utilitarian asset management&rdquo; literally instead of reaching for a CRT, and mobile-first play happens in daylight far more often than the genre admits.</p>
-        <p>Phosphor is the one I&rsquo;d rule out first: it is the most likely to read as costume.</p>
+        <h2>Words that changed</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">AT_RISK</td><td>Failing</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">SHED</td><td>Powered down</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">maxCondition</td><td>Best after repair</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">unclaimed 1,847d</td><td>Waiting 5 years</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">role-years</td><td>Working years left</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">M-type (est.)</td><td>Probably metal</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">Manufacturing</td><td>Workshop</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">Task board</td><td>Jobs</td></tr>
+        </table>
+        <p style="margin-top:10px">The one piece of notation kept is the trailing <code>?</code> on a reading from a worn gauge &mdash; because it is a mark, not a word, and the Stores pane explains it once in plain English.</p>
+      </section>
+
+      <section>
+        <h2>Where numbers survived</h2>
+        <p>A number stays on the path only when it <em>is</em> the decision. <strong>780 kW against 890 kW needed</strong> stays, because that gap is the whole problem. <strong>Four working years of pilot left</strong> stays, because it is the countdown to losing drones forever. <strong>84 rare compounds, 90 days</strong> stays.</p>
+        <p>Condition percentages, wear rates and repair counts do not &mdash; a bar and the words &ldquo;getting worse&rdquo; carry the same decision, and the exact figures are one tap away for anyone who wants them.</p>
       </section>
 
       <section>
@@ -551,10 +604,14 @@ DO   postTask("service", front)</pre>
         <ul class="screenlist">
           <li><button data-go="ship"><span class="k">SHIP</span>Ship status &mdash; facilities + signal feed</button></li>
           <li><button data-go="facility"><span class="k">drill</span>Facility detail &mdash; Hydroponics</button></li>
-          <li><button data-go="equipment"><span class="k">drill</span>Equipment detail &mdash; Reactor Core</button></li>
+          <li><button data-go="equipment"><span class="k">drill</span>Equipment &mdash; Reactor Core</button></li>
+          <li><button data-go="equipdetails"><span class="k">opt-in</span>Details &mdash; the numbers, on demand</button></li>
           <li><button data-go="crew"><span class="k">CREW</span>Crew roster + colony pool</button></li>
           <li><button data-go="crewmember"><span class="k">drill</span>Crew member &mdash; Okonkwo</button></li>
-          <li><button data-go="auto"><span class="k">AUTO</span>Automation console</button></li>
+          <li><button data-go="colony"><span class="k">opt-in</span>The colony &mdash; who is left</button></li>
+          <li><button data-go="auto"><span class="k">AUTO</span>Automation &mdash; three rules need attention</button></li>
+          <li><button data-go="rule"><span class="k">drill</span>One rule &mdash; Restock water</button></li>
+          <li><button data-go="newrule"><span class="k">drill</span>Rule builder &mdash; sentence-shaped</button></li>
           <li><button data-go="mfg"><span class="k">MFG</span>Manufacturing queue</button></li>
           <li><button data-go="astro"><span class="k">NAV</span>Navigation &amp; mission profile</button></li>
           <li><button data-go="tasks"><span class="k">drill</span>Task board</button></li>
@@ -604,9 +661,10 @@ DO   postTask("service", front)</pre>
 
 <script>
 (function(){
-  var screens = ["ship","facility","equipment","crew","crewmember","auto","mfg","astro","tasks","inventory"];
+  var screens = ["ship","facility","equipment","equipdetails","crew","colony","crewmember","auto","rule","newrule","mfg","astro","tasks","inventory"];
   var tabs = {ship:"ship", crew:"crew", auto:"auto", mfg:"mfg", astro:"astro",
-              facility:"ship", equipment:"ship", tasks:"ship", inventory:"ship", crewmember:"crew"};
+              facility:"ship", equipment:"ship", equipdetails:"ship", tasks:"ship",
+              inventory:"ship", crewmember:"crew", colony:"crew", rule:"auto", newrule:"auto"};
   var navBtns = Array.prototype.slice.call(document.querySelectorAll(".navbar button"));
 
   function go(name){
