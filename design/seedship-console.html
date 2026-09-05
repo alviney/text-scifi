@@ -230,7 +230,9 @@ h1{
   text-transform:uppercase;color:var(--d-faint);margin-bottom:6px}
 .lane{display:flex;align-items:center;gap:7px;font-size:9.5px;letter-spacing:.08em;
   text-transform:uppercase;color:var(--d-faint);margin-bottom:1px}
-.lane .ln{flex:none;width:4.9em;text-align:right}
+.lane .ln{flex:none;width:5.4em;text-align:right}
+.lane .ct{flex:none;width:2.2em;text-align:right;font-variant-numeric:tabular-nums;color:var(--d-dim)}
+.lane.dead .ct{color:var(--d-crit)}
 .trace{position:relative;flex:1;min-width:0;height:14px;overflow:hidden}
 .trace pre{position:absolute;top:0;left:0;margin:0;font-family:inherit;font-size:12px;
   line-height:14px;white-space:pre;color:var(--d-ok);animation:scroll 26s linear infinite}
@@ -772,14 +774,14 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         <!-- ---------- AUTOMATION ---------- -->
         <section class="screen" id="s-auto" hidden>
           <div class="pulsebox" aria-hidden="true">
-            <div class="axis"><span>chain activity &middot; last 90 days</span><span>now &#9656;</span></div>
-            <div class="lane "><span class="ln">food</span><span class="trace"><pre>▁▁▂▁▁▁▁▂▁▁▁▂▁▁▁▁▂▁▁▁▂▁▁▁▁▂▁▁▁▁▁▂▁▁▁▁▂▁▁▁▂▁▁▁▁▂▁▁▁▂▁▁▁▁▂▁▁▁</pre></span></div>
-            <div class="lane "><span class="ln">filters</span><span class="trace"><pre>▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁</pre></span></div>
-            <div class="lane slow"><span class="ln">seals</span><span class="trace"><pre>▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁</pre></span></div>
-            <div class="lane slow"><span class="ln">water</span><span class="trace"><pre>▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁</pre></span></div>
-            <div class="lane dead"><span class="ln">ore</span><span class="trace"><pre>▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁</pre></span><span class="stop">&#10005; 11d</span></div>
+            <div class="axis"><span>what your rules have been doing</span><span>90 days &#9656;</span></div>
+            <div class="lane "><span class="ln">fetching</span><span class="trace"><pre>▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁</pre></span><span class="ct">34</span></div>
+            <div class="lane "><span class="ln">switching</span><span class="trace"><pre>▁▂▁▂▂▁▁▂▁▂▁▂▂▁▂▁▁▂▁▂▁▂▂▁▂▁▁▂▁▁▂▁▂▂▁▁▂▁▂▁▂▂▁▂▁▁▂▁▂▁▂▂▁▂▁▁▂▁</pre></span><span class="ct">61</span></div>
+            <div class="lane slow"><span class="ln">making</span><span class="trace"><pre>▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁</pre></span><span class="ct">8</span></div>
+            <div class="lane slow"><span class="ln">warning</span><span class="trace"><pre>▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁</pre></span><span class="ct">3</span></div>
+            <div class="lane dead"><span class="ln">fixing</span><span class="trace"><pre>▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁</pre></span><span class="ct">0</span></div>
           </div>
-          <p class="quiet" style="margin:-4px 0 10px">Each mark is a chain doing something. Food runs every few days, water every few months. <span class="crit">The ore chain has done nothing for eleven days.</span></p>
+          <p class="quiet" style="margin:-4px 0 10px">Fetching, switching things on and off, queueing work, raising alerts. <span class="crit">Nothing has been set up to fix anything</span> &mdash; every repair on this ship still waits for you to notice it.</p>
           <h2 class="scr-title">Automation <span>61 rules</span></h2>
           <p class="lead">Three rules need attention.</p>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
@@ -1069,12 +1071,12 @@ svc  ^  ^   ^  ^   ^  ^</pre>
       </section>
 
       <section>
-        <h2>Rules: chain activity over time</h2>
-        <p>Five lanes, one per chain, and the horizontal axis is <strong>time</strong> &mdash; ninety days of history scrolling leftward, newest at the right. Each mark is that chain doing something. Food fires every few days, water every few months, and the shapes differ because the ship&rsquo;s systems genuinely run at different tempos.</p>
-        <p>The ore lane is <strong>flat</strong>, and has been for eleven days. That reads as wrong before a single word on the screen has been identified.</p>
-        <p class="callout">An earlier version drew this as a dot travelling along each lane. That was a bug: <strong>the same mark meant a delivery in transit on Rooms and an abstraction here</strong>, so the lanes read as cargo moving rather than rules firing.</p>
-        <p>The motion vocabulary is now split, and the split is the rule: a <em>drifting background</em> means <strong>time passing</strong> (the starfield, this trace), and a <em>discrete marker travelling</em> means <strong>a specific thing moving</strong> (a delivery crossing the ship). Two vocabularies, each used for one job.</p>
-        <p>A list of 61 rules can say one is broken. It cannot say the automation has a rhythm, or that part of it has stopped beating &mdash; which is the closest this interface gets to the quiet thing: you are not looking at the ship&rsquo;s controls. <strong>You are looking at yourself.</strong></p>
+        <h2>Rules: what your automations have been doing</h2>
+        <p>An earlier version put one lane per consumable &mdash; food, filters, water, ore. That was wrong at the concept level, not the copy level: it quietly claimed <strong>every automation is logistics</strong>. They aren&rsquo;t. Rules switch equipment off, reorder power priority, queue manufacturing, raise repair jobs and write their own alerts.</p>
+        <p class="callout">Group by <strong>what a rule does</strong>, not what it touches. Verbs, not materials.</p>
+        <p>Five lanes: <code>fetching</code>, <code>switching</code>, <code>making</code>, <code>warning</code>, <code>fixing</code>. Ninety days of history scrolling leftward, a count at the right, and each mark is one firing. The tempos differ honestly &mdash; switching fires constantly because the ship is short of power, warning almost never.</p>
+        <p>And the payload is the last lane. <strong><code>fixing &nbsp;0</code></strong> &mdash; flat, for ninety days. Not because a rule broke, but because <em>the player never wrote one</em>. The ship ships with a single repair rule (§5c) and forty-five assets without. Every repair still waits for a human to notice it.</p>
+        <p>That is a far better thing for this screen to say than which chain is jammed. A list of 61 rules can tell you one is broken; only this can tell you what you have <strong>never automated at all</strong>.</p>
       </section>
 
       <section>

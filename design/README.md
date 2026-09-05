@@ -48,6 +48,21 @@ A held badge is also kept separate from the room's status dot. The Cargo Bay rea
 holding blocked ore, because its *equipment* is fine — the block is a logistics problem, and
 collapsing the two would make the status dot mean two different things.
 
+### Group by what a rule does, not what it touches
+
+The Rules hero first showed one lane per consumable (food, filters, water, ore). That was wrong
+at the concept level rather than the copy level: it quietly claimed **every automation is
+logistics**. Rules also switch equipment off, reorder power priority, queue manufacturing, raise
+repair jobs and write their own alerts.
+
+Lanes are now verbs — `fetching` `switching` `making` `warning` `fixing` — with a firing count
+at the right. The payload is the last one: **`fixing 0`**, flat for ninety days, not because a
+rule broke but because the player never wrote one. The ship ships with a single repair rule
+(§5c) and forty-five assets without.
+
+A list of 61 rules can say one is broken. Only this can say what has **never been automated at
+all**.
+
 ### Motion means two different things, and they must not be confused
 
 - A **drifting background** means *time passing* — the Voyage starfield, the Rules activity trace.
