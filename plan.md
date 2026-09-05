@@ -2096,6 +2096,50 @@ A countable, visible resource that only ever spends the ending.
 
 ---
 
+### Surveying: what you know, and what it costs to know more
+
+Built in the prototype, and it turned the Voyage tab from a readout into
+something with a decision in it.
+
+Every object ahead carries a **size** of its own — averaging 1.0 within its act, so the act
+still sets the act's yield — and the hero draws each one at a diameter set by its *estimated*
+haul. A big rock coming is legible without reading a number, which is the whole reason the
+markers are there.
+
+**What the ship can tell you has two sources, and they behave differently.**
+
+| Source | Costs | Behaves like |
+|--------|-------|--------------|
+| Proximity | nothing, arrives on its own | slow, certain, out of your hands |
+| A survey | one game-hour of the Comms Array | immediate, repeatable, yours to spend |
+
+```
+confidence = 0.15 + 0.55 × nearness + 0.18 × scans     capped at 0.97
+```
+
+Neither reaches certainty alone. **The cap matters**: an instrument that reports an exact
+figure is lying, and *"2,607 to 2,607 units"* reads as a bug rather than as knowledge. There is
+always a range.
+
+Each object also carries a fixed **bias** — the direction its estimate is wrong in, drawn once
+when the route is built. Without it the reading would jitter every time the screen redrew;
+with it, surveying visibly *converges* on the truth, which is what a survey should feel like.
+
+**The rescan is a button the player presses, and that is deliberate.** It is the first thing in
+the game that is a pure decision: nothing forces it, nothing schedules it, and the only cost is
+an hour and the attention it took to notice the rock. It fires a signal when it completes, so
+the answer arrives in the feed like everything else rather than by the number silently changing.
+
+Two consequences worth keeping:
+
+- **The Comms Array finally matters.** It is 20 kW and `sheddable` in §6's load table, which
+  made it the most disposable thing on the ship. Break it or shed it and you go blind to what
+  is ahead — a real cost for the cheapest saving on the bus.
+- **A one-hour action does not fit a daily tick.** The simulation steps in days, so the survey
+  resolves against the client's interpolated fractional day through a separate `tickShort()`.
+  That is not a second clock: ARCHITECTURE §2 already says the client owns real time and the
+  core knows only ticks. The tick is simply finer than a day here.
+
 ## 7. Manufacturing
 
 **Manufacturing is the ship's only closed loop.** Every other system drains — equipment

@@ -7,6 +7,7 @@
 import { newTask, type Rule } from "./rules.ts";
 import type { Settings, State } from "./types.ts";
 import { emit } from "./signals.ts";
+import { SCAN_HOURS, worthScanning } from "./encounters.ts";
 import { makeDistinct, THAW_DAYS, type Person, type Role } from "./crew.ts";
 import type { Rng } from "./rng.ts";
 
@@ -45,7 +46,9 @@ export type Command =
   | { kind: "wake"; role: Role }
   /** §3: crew are task queues. Put a name on a job. */
   | { kind: "assign"; task: string; person: string }
-  | { kind: "unassign"; task: string };
+  | { kind: "unassign"; task: string }
+  /** §6b: look harder at something ahead. One game-hour of the array's time. */
+  | { kind: "rescan"; enc: number };
 
 export function apply(s: State, c: Command): State {
   switch (c.kind) {
@@ -135,6 +138,25 @@ export function apply(s: State, c: Command): State {
       // One thing at a time (§3). Taking a new job drops the old one.
       for (const t of s.board) if (t.assignee === who.id) t.assignee = undefined;
       task.assignee = who.id; who.task = task.id;
+      break;
+    }
+    case "rescan": {
+      const enc = s.schedule.find(e => e.id === c.enc);
+      if (!enc || enc.year <= s.day / 365) break;          // already behind us
+      if (s.scans.some(x => x.enc === c.enc)) break;       // already looking
+      if (!worthScanning(enc, s.day / 365)) {
+        emit(s, "chatter", "Bridge", "NAV-SCAN",
+             "Nothing more to learn about that one from here.");
+        break;
+      }
+      const comms = s.assets.find(a => a.id === "comms")!;
+      if (comms.faulted) {
+        emit(s, "warn", "Bridge", "NAV-BLIND", "The Comms Array is down. Nothing to scan with.");
+        break;
+      }
+      s.scans.push({ enc: c.enc, doneAt: s.day + SCAN_HOURS / 24 });
+      emit(s, "chatter", "Bridge", "NAV-SCAN", `Surveying the object ${
+        Math.round(enc.year - s.day / 365)} years out.`);
       break;
     }
     case "unassign": {

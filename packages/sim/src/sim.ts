@@ -2,7 +2,7 @@ import { type Rng, rng, chance } from "./rng.ts";
 import type { Asset, Policy, Settings, State } from "./types.ts";
 import { DEFAULT_SETTINGS } from "./types.ts";
 import { buildAssets, assetName, RARE_COST, PART_COST, ELEC_COST } from "./catalogue.ts";
-import { buildSchedule, harvest } from "./encounters.ts";
+import { buildSchedule, harvest, classReading, confidence, trueMass } from "./encounters.ts";
 import { emptyStores, refine, makeParts, canMakeRod, makeRod, canMakeDrone, makeDrone,
          RARE_RESERVE, ELEC_TARGET } from "./economy.ts";
 import { CRANE_KW, HOLD, SHOP, capOf, daysOf, deposit, isBulk, land, loadOf, newRooms,
@@ -23,7 +23,7 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   const s: State = {
     day: 0, rngState: 0, assets: buildAssets(), rods: START_RODS, drones: START_DRONES,
     stores: emptyStores(), rooms: newRooms(), shipments: [],
-    schedule: buildSchedule(r, actII), next: 0,
+    schedule: buildSchedule(r, actII), next: 0, scans: [],
     gauges: { parts: 100, rods: 100, rareCmp: 100, drones: 100 }, colony: newColony(),
     crew: [], requests: [], memorial: [], pool: { ...POOL }, nextCrewId: 0, nextTaskId: 0,
     rules: [], board: [], signals: [], acked: 0, settings: { ...DEFAULT_SETTINGS },
@@ -192,6 +192,32 @@ function finish(s: State, task: Task, p: Settings): boolean {
   // touches it, and its reading looks fine precisely because it reads high.
   a.sensorCond = 100;
   return true;
+}
+
+/** Things that take less than a day.
+ *
+ *  §6b's rescan is one game-hour, and the simulation steps in days — so it
+ *  cannot be resolved by step(). This is not a second clock: the client already
+ *  owns real time (ARCHITECTURE §2) and interpolates a fractional day between
+ *  ticks, so it passes that value in and the core decides what has finished.
+ *  The core still knows only ticks; the tick is just finer than a day here.
+ *
+ *  Idempotent and cheap — it is a no-op on almost every frame. */
+export function tickShort(s: State, now: number): State {
+  if (s.dead || !s.scans.length) return s;
+  for (let i = s.scans.length - 1; i >= 0; i--) {
+    if (now < s.scans[i].doneAt) continue;
+    const enc = s.schedule.find(e => e.id === s.scans[i].enc);
+    s.scans.splice(i, 1);
+    if (!enc) continue;
+    enc.scans++;
+    const conf = confidence(enc, now / 365);
+    emit(s, "info", "Bridge", "NAV-SCAN",
+         `Survey complete. ${classReading(enc, conf)}, ${
+           Math.round(trueMass(enc) * (1 + enc.bias * (1 - conf) * 0.4))} units, ` +
+         `${Math.round(conf * 100)}% confidence.`);
+  }
+  return s;
 }
 
 /** One day. Wear is linear within a day, so a daily step is exact for it. */

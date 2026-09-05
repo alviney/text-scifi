@@ -84,7 +84,7 @@
       </div>
     </div>
   {:else if tab === "voyage"}
-    <Voyage {ship} progress={() => engine.progress()} />
+    <Voyage {ship} progress={() => engine.progress()} send={c => engine.send(c)} />
   {:else if tab === "facilities"}
     <Facilities {ship} send={c => engine.send(c)} />
   {:else if tab === "crew"}

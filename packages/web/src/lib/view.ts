@@ -120,6 +120,14 @@ export const ROOMS = ["Bridge", "Reactor", "Engineering", "Life Support", "Hydro
 
 export const roomOf = (a: Asset) => (a.room === "node" ? "Life Support" : a.room);
 
+/** design/README's vocabulary rule again: the spec's keys are a specification,
+ *  not an interface. Nothing in the game says "vol". */
+export const MATERIAL: Record<string, string> = {
+  parts: "Metal parts", electronics: "Electronics", rareCmp: "Rare compounds",
+  refMetal: "Refined metal", ore: "Metal ore", rare: "Rare earths",
+  sil: "Silicates", ice: "Water ice", vol: "Volatiles",
+};
+
 /** §4: the materials worth showing on a shelf, in the order a person reads them. */
 export const SHELF: [string, string][] = [
   ["parts", "Metal parts"], ["electronics", "Electronics"], ["rareCmp", "Rare compounds"],

@@ -8,7 +8,7 @@
  *  So the loop steps the sim as fast as the speed demands, and PUBLISHES a
  *  snapshot at a fixed, much slower rate. Continuous motion (the starfield, bar
  *  interpolation) reads `progress()` every frame and never touches the store. */
-import { init, step, DAYS } from "../../../sim/src/sim.ts";
+import { init, step, tickShort, DAYS } from "../../../sim/src/sim.ts";
 import { apply, unacked, type Command } from "../../../sim/src/commands.ts";
 import type { State } from "../../../sim/src/types.ts";
 
@@ -66,7 +66,10 @@ export class Engine {
    *  forward without waiting for the wall clock. Screenshots and balance checks
    *  need a year-200 ship; a player does not. */
   fastForward(days: number) {
-    for (let i = 0; i < days && !this.state.dead; i++) step(this.state);
+    for (let i = 0; i < days && !this.state.dead; i++) {
+      step(this.state);
+      tickShort(this.state, this.state.day);
+    }
     this.publish();
   }
 
@@ -90,6 +93,9 @@ export class Engine {
 
       if (!this.state.dead) {
         this.carry += dt * DAYS_PER_SECOND;
+        // Anything shorter than a day resolves against the interpolated clock —
+        // a one-hour survey should not wait for the day to turn over.
+        tickShort(this.state, this.state.day + this.carry);
         let n = Math.min(Math.floor(this.carry), MAX_STEPS_PER_FRAME);
         this.carry -= n;
         while (n-- > 0 && !this.state.dead) {

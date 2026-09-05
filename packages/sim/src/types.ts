@@ -19,7 +19,19 @@ export type Stores = {
   refMetal: number; rareCmp: number; parts: number; electronics: number;
 };
 
-export type Encounter = { year: number; cls: string; richness: number };
+export type Encounter = {
+  id: number;
+  year: number;
+  cls: string;
+  /** the act's yield multiplier */
+  richness: number;
+  /** this object's own size, averaging 1.0 within its act */
+  size: number;
+  /** which way this object's estimate is wrong, fixed so surveys converge */
+  bias: number;
+  /** how many times the player has paid to look harder */
+  scans: number;
+};
 
 export type Counters = {
   ruleFires: number; staleTasks: number; blindDays: number;
@@ -60,6 +72,9 @@ export type State = {
    *  was frozen — the roster shrank and the next wake reused a live id. */
   nextCrewId: number;
   nextTaskId: number;
+  /** Surveys in progress. Measured in fractional days because a scan is an
+   *  hour and the simulation steps in days — see tickShort(). */
+  scans: { enc: number; doneAt: number }[];
   rules: import("./rules.ts").Rule[];
   board: import("./rules.ts").Task[];
   /** §8's feed. A bounded window, not a ledger — totals live in counters. */
