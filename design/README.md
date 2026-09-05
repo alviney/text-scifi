@@ -132,8 +132,15 @@ nobody has picked the job up — and printing the wrong one sends the player to 
 
 ### The ticker
 
-One feed item at the top of **every** screen, always. New items replace the old one, so
-the ship can be monitored from anywhere without navigating to look.
+**Two** feed items at the top of **every** screen, always — newest on top, the one before it
+dimmed underneath. New items replace the old, so the ship can be monitored from anywhere
+without navigating to look.
+
+It was one item until the strip was made twice as tall, at which point a long signal filled the
+extra height by wrapping and breaking words across lines. Two single-line rows spend that height
+on a second signal instead, which is the better trade: it gives the newest item something to be
+newer *than*, so you can see the ship moving without opening the feed. Each row truncates with an
+ellipsis — never reflowing matters more than never truncating, and the full text is one tap away.
 
 A serious alert turns the strip red and **holds it** — rotation stops until acknowledged.
 
