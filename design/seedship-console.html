@@ -52,12 +52,21 @@
   --d-font:"JetBrains Mono"; --d-shadow:0 18px 44px rgba(0,0,0,.42);
 }
 *{box-sizing:border-box}
-body{
+html{max-width:100%;overflow-x:hidden}
+pre{max-width:100%}
+body{overflow-x:hidden;
   background:var(--pg-bg); color:var(--pg-text);
   font-family:"IBM Plex Sans",system-ui,sans-serif;
   line-height:1.55; -webkit-font-smoothing:antialiased;
 }
 .wrap{max-width:1180px;margin:0 auto;padding:40px 20px 80px}
+@media (max-width:520px){
+  .wrap{padding:26px 12px 56px}
+  .device{font-size:12px}
+  .ticker{font-size:11px;padding:8px 8px;gap:6px}
+  .ticker .sig{font-size:10.5px}
+  .screen{padding:10px 10px 16px}
+}
 
 /* ---------- page chrome ---------- */
 .masthead{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
@@ -74,10 +83,10 @@ h1{
 .rule{height:1px;background:var(--pg-rule);margin:26px 0}
 
 .layout{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:44px;align-items:start}
-@media (max-width:860px){.layout{grid-template-columns:1fr;gap:32px}}
+@media (max-width:860px){.layout{grid-template-columns:minmax(0,1fr);gap:32px}}
 
 /* ---------- device ---------- */
-.skinbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.skinbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-width:0}
 .skinbtn{
   display:flex;align-items:center;gap:7px;cursor:pointer;
   font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12px;font-weight:500;
@@ -93,10 +102,10 @@ h1{
   max-width:46ch;
 }
 .skincap b{color:var(--pg-text);font-weight:600}
-.device-col{position:sticky;top:24px}
+.device-col{min-width:0;position:sticky;top:24px}
 @media (max-width:860px){.device-col{position:static}}
 .device{
-  background:var(--d-bg);border:1px solid var(--d-rule);border-radius:14px;
+  max-width:100%;background:var(--d-bg);border:1px solid var(--d-rule);border-radius:14px;
   overflow:hidden;box-shadow:var(--d-shadow);
   font-family:var(--d-font),ui-monospace,monospace;
   color:var(--d-text);font-size:12.5px;line-height:1.5;
@@ -201,8 +210,8 @@ h1{
 .vital .vh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .vital .vn{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--d-faint)}
 .vital .vv{font-size:12.5px;font-variant-numeric:tabular-nums}
-.vital .spark{font-size:15px;line-height:1.1;letter-spacing:0;margin:5px 0 3px;white-space:nowrap;
-  overflow-x:auto;display:block}
+.vital .spark{font-size:clamp(12px,4.2vw,15px);line-height:1.1;letter-spacing:0;margin:5px 0 3px;
+  white-space:nowrap;overflow-x:auto;display:block;max-width:100%}
 .vital .trend{font-size:11px;color:var(--d-dim)}
 .vital .why{font-size:11.5px;color:var(--d-dim);line-height:1.45;margin:3px 0 0;max-width:34ch}
 .vital.bad .vv{color:var(--d-crit)}
@@ -218,9 +227,9 @@ h1{
 .decks{display:flex;align-items:center;gap:3px}
 .nose,.tail{flex:none;color:var(--d-faint);font-size:15px;line-height:1}
 .bays{flex:1;display:flex;flex-direction:column;gap:0;min-width:0}
-.deck{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.deck{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
 .bay{
-  border:1px solid var(--d-rule);background:var(--d-panel);color:var(--d-dim);
+  min-width:0;border:1px solid var(--d-rule);background:var(--d-panel);color:var(--d-dim);
   font-size:9px;letter-spacing:.06em;text-align:center;padding:7px 0 6px;cursor:pointer;
   font-family:inherit;position:relative;
 }
@@ -234,9 +243,9 @@ h1{
 .bay.s-crit{border-color:#5A241B;background:#1F1310;color:var(--d-text)}
 .bay.s-crit .bd{color:var(--d-crit)}
 .bay.s-off{opacity:.45}
-.spine{height:14px;position:relative;margin:2px 0}
+.spine{height:14px;position:relative;margin:2px 0;overflow:hidden}
 .spine::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--d-rule)}
-.flow{position:absolute;top:50%;transform:translateY(-50%);font-size:10px;line-height:1;white-space:nowrap}
+.flow{position:absolute;top:50%;transform:translateY(-50%);font-size:9.5px;line-height:1;white-space:nowrap;max-width:48%;overflow:hidden;text-overflow:ellipsis}
 .flow.moving{color:var(--d-ok);animation:slide 6s linear infinite}
 .flow.stuck{color:var(--d-crit)}
 @keyframes slide{from{left:12%}to{left:62%}}
@@ -253,7 +262,7 @@ h1{
   font-family:inherit;font-size:12px;background:none;border:none;color:var(--d-text);
   border-bottom:1px solid var(--d-rule);padding:8px 2px;cursor:pointer}
 .fl2:hover{background:var(--d-panel2)}
-.fl2 .hd{display:flex;justify-content:space-between;gap:8px;font-size:11px}
+.fl2 .hd{display:flex;justify-content:space-between;gap:8px;font-size:11px;flex-wrap:wrap}
 .fl2 .bd{color:var(--d-text);line-height:1.45}
 .fl2.chat .bd{color:var(--d-faint);font-style:italic}
 .fl2 .tm{color:var(--d-faint);font-size:10px;flex:none}
@@ -267,7 +276,7 @@ h1{
 .ticker:hover{background:var(--d-panel2)}
 .ticker:focus-visible{outline:2px solid var(--d-accent);outline-offset:-2px}
 .ticker .tdot{flex:none}
-.ticker .tmsg{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+.ticker .tmsg{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   transition:opacity .28s ease}
 .ticker .tyr{flex:none;color:var(--d-faint);font-size:10px;letter-spacing:.05em}
 .ticker .tq{flex:none;font-size:9.5px;color:var(--d-faint);border:1px solid var(--d-rule);
@@ -289,7 +298,7 @@ h1{
 @media (prefers-reduced-motion:reduce){.sky .far,.sky .near{animation:none}}
 .sky .craft{position:absolute;top:46px;left:50%;transform:translateX(-50%);
   color:var(--d-accent);font-size:15px}
-.track{font-family:inherit;font-size:11px;line-height:1.35;white-space:pre;margin:0;
+.track{font-family:inherit;font-size:clamp(9px,2.9vw,11px);line-height:1.35;white-space:pre;margin:0;
   overflow-x:auto;color:var(--d-dim)}
 .track .done{color:var(--d-accent)} .track .ahead{color:var(--d-faint)}
 .track .here{color:var(--d-text)}
@@ -341,6 +350,9 @@ h1{
 .note-inline{font-size:10.5px;color:var(--d-crit);margin-top:4px}
 
 /* ---------- annotations ---------- */
+.notes{min-width:0}
+.notes table{width:100%;table-layout:fixed}
+.notes td{word-break:break-word}
 .notes h2{
   font-family:"IBM Plex Mono",ui-monospace,monospace;
   font-size:13px;letter-spacing:.1em;text-transform:uppercase;
@@ -364,6 +376,7 @@ h1{
 .screenlist button:hover{color:var(--pg-accent)}
 .screenlist button:focus-visible{outline:2px solid var(--pg-accent);outline-offset:-2px}
 .screenlist .k{color:var(--pg-dim);flex:none;font-size:11px;letter-spacing:.06em;min-width:5.5em}
+.screenlist button > :not(.k){min-width:0;overflow-wrap:anywhere}
 .callout{
   border-left:2px solid var(--pg-accent);padding:2px 0 2px 14px;
   margin:0 0 10px;max-width:64ch;font-size:15px;
@@ -428,12 +441,12 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
           </div>
 
           <h2 class="scr-title">Voyage <span>year 147 of 300</span></h2>
-          <pre class="track"><span class="done">████████████████████████</span><span class="here">▶</span><span class="ahead">·······························</span></pre>
+          <pre class="track"><span class="done">█████████████████████</span><span class="here">▶</span><span class="ahead">······················</span></pre>
           <div class="tracklbl"><span>launch</span><span>you are here</span><span>arrival</span></div>
           <p class="quiet">Behind you: 38 rocks taken, 6 missed, 7 people dead. Ahead: 153 years.</p>
 
           <div class="sect">The next thirty years</div>
-          <pre class="track"><span class="ahead">├──────</span><span class="acc">◆</span><span class="ahead">───────────────</span><span class="acc">◆</span><span class="ahead">──────</span><span class="dim">◇</span><span class="ahead">────────┤</span></pre>
+          <pre class="track"><span class="ahead">├────</span><span class="acc">◆</span><span class="ahead">────────────</span><span class="acc">◆</span><span class="ahead">─────</span><span class="dim">◇</span><span class="ahead">──────┤</span></pre>
           <div class="tracklbl"><span>6y icy</span><span>21y metal?</span><span>24y ?</span></div>
           <p class="lead" style="margin-top:10px">Nothing within reach for six years. <span class="q">This is the long stretch between stars.</span></p>
           <p class="quiet">These were charted before launch. What they&rsquo;re made of is a guess until a drone gets there &mdash; and the hollow one was never surveyed at all.</p>
@@ -649,7 +662,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
             <dt>Danger to work on</dt><dd class="crit">High</dd>
           </dl>
           <div class="sect">Condition over time</div>
-          <pre style="font-family:inherit;font-size:11px;margin:0;color:var(--d-dim);white-space:pre">100 ▇▇▇▆▆▆▅▅▅▄▄▃▃▂▂▁
+          <pre style="font-family:inherit;font-size:11px;margin:0;color:var(--d-dim);white-space:pre;overflow-x:auto">100 ▇▇▇▆▆▆▅▅▅▄▄▃▃▂▂▁
     y87           y147
 svc  ^  ^   ^  ^   ^  ^</pre>
           <p class="quiet">Every repair lowers the best it can be brought back to. After 29 repairs it can no longer be fixed above 71%.</p>
@@ -993,8 +1006,8 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
       <section>
         <h2>Every signal is marked the same way</h2>
-        <pre style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;margin:0 0 10px;
-             white-space:pre;overflow-x:auto;color:var(--pg-text);line-height:1.6">[CRT][RCT][POWR]  The reactor is failing.
+        <pre style="font-family:'IBM Plex Mono',monospace;font-size:clamp(10px,2.9vw,12.5px);margin:0 0 10px;
+             white-space:pre;overflow-x:auto;max-width:100%;color:var(--pg-text);line-height:1.6">[CRT][RCT][POWR]  The reactor is failing.
 [WRN][LFS][RULE]  Water restock hasn&rsquo;t run in 47 years.
 [WRN][CRG][STOR]  Rare compounds run out in ~90 days.
 [INF][HYD][MOVE]  Fertiliser delivered from Engineering.
