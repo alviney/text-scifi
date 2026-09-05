@@ -205,6 +205,39 @@ h1{
 .act:hover{border-color:var(--d-accent);color:var(--d-accent)}
 .act.danger:hover{border-color:var(--d-crit);color:var(--d-crit)}
 
+/* ---- CREW hero: the colony, as 200 pods in 8 banks ---- */
+.colony{margin:-10px -10px 12px;padding:14px 10px 11px;border-bottom:1px solid var(--d-rule)}
+.banks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bank{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:4px;
+  border:1px solid var(--d-rule);background:var(--d-panel);animation:breathe 6s ease-in-out infinite}
+.bank:nth-child(2){animation-delay:.7s} .bank:nth-child(3){animation-delay:1.4s}
+.bank:nth-child(4){animation-delay:2.1s} .bank:nth-child(5){animation-delay:.35s}
+.bank:nth-child(6){animation-delay:1.05s} .bank:nth-child(7){animation-delay:1.75s}
+.bank:nth-child(8){animation-delay:2.45s}
+@keyframes breathe{0%,100%{opacity:.72}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.bank{animation:none;opacity:.9}}
+.pod{width:100%;aspect-ratio:1;background:var(--d-dim);opacity:.45;border-radius:1px}
+.pod.awake{background:var(--d-accent);opacity:1}
+.pod.lost{background:none;box-shadow:inset 0 0 0 1px var(--d-faint);opacity:.3}
+
+/* ---- RULES hero: the automation heartbeat ---- */
+.pulsebox{margin:-10px -10px 12px;padding:14px 10px 11px;border-bottom:1px solid var(--d-rule);
+  display:flex;flex-direction:column;gap:9px}
+.lane{display:flex;align-items:center;gap:8px;font-size:9.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--d-faint)}
+.lane .ln{flex:none;width:5.6em;text-align:right}
+.trace{position:relative;flex:1;min-width:0;height:11px}
+.trace::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--d-rule)}
+.trace i{position:absolute;top:50%;transform:translate(-50%,-50%);width:5px;height:5px;
+  border-radius:50%;background:var(--d-ok);animation:run 5s linear infinite}
+@keyframes run{from{left:0%}to{left:100%}}
+@media (prefers-reduced-motion:reduce){.trace i{animation:none;left:46%}}
+.lane.dead .ln{color:var(--d-crit)}
+.lane.dead .trace::before{background:repeating-linear-gradient(90deg,var(--d-rule) 0 3px,transparent 3px 6px)}
+.lane.dead .trace i{animation:none;background:var(--d-crit);left:34%}
+.lane.dead .brk{position:absolute;left:34%;top:50%;transform:translate(-50%,-50%);
+  color:var(--d-crit);font-size:11px;line-height:1}
+
 /* ---- vital signs: the one legitimate home for density ---- */
 .vital{border-bottom:1px solid var(--d-rule);padding:11px 0 10px}
 .vital .vh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -673,7 +706,12 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
         <!-- ---------- CREW ---------- -->
         <section class="screen" id="s-crew" hidden>
-          <h2 class="scr-title">Crew <span>6 awake &middot; 194 asleep</span></h2>
+          <div class="colony">
+            <div class="banks" id="banks" aria-hidden="true"></div>
+            <div class="hullcap"><span>8 banks</span><span>187 asleep</span><span>7 lost</span></div>
+            <p class="quiet" style="margin:8px 0 0">Each mark is a person. The bright ones are awake; the hollow ones did not survive being awake.</p>
+          </div>
+          <h2 class="scr-title">Crew <span>6 awake &middot; 187 asleep</span></h2>
           <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Adeyemi</span><span class="vl">Picking crops</span></button>
           <button class="row" data-go="crewmember"><span class="dot warn">◐</span><span class="nm">Okonkwo</span><span class="vl">Exhausted</span></button>
           <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Vasquez</span><span class="vl">Free</span></button>
@@ -705,7 +743,7 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <dl class="kv">
             <dt>Years spent awake</dt><dd>1,044</dd>
             <dt>Colony is older by</dt><dd>11.2 years</dd>
-            <dt>Died awake</dt><dd class="crit">7</dd>
+            <dt>Died awake</dt><dd class="crit">7 &mdash; of 200 aboard</dd>
           </dl>
         </section>
 
@@ -730,6 +768,14 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
         <!-- ---------- AUTOMATION ---------- -->
         <section class="screen" id="s-auto" hidden>
+          <div class="pulsebox" aria-hidden="true">
+            <div class="lane"><span class="ln">food</span><span class="trace"><i style="animation-duration:4.2s"></i></span></div>
+            <div class="lane"><span class="ln">filters</span><span class="trace"><i style="animation-duration:6.5s;animation-delay:-2s"></i></span></div>
+            <div class="lane"><span class="ln">seals</span><span class="trace"><i style="animation-duration:8s;animation-delay:-5s"></i></span></div>
+            <div class="lane"><span class="ln">water</span><span class="trace"><i style="animation-duration:11s;animation-delay:-3s"></i></span></div>
+            <div class="lane dead"><span class="ln">ore</span><span class="trace"><i></i><span class="brk">&#10005;</span></span></div>
+          </div>
+          <p class="quiet" style="margin:-4px 0 10px">Five chains running. The ore chain stopped moving eleven days ago.</p>
           <h2 class="scr-title">Automation <span>61 rules</span></h2>
           <p class="lead">Three rules need attention.</p>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
@@ -1011,6 +1057,21 @@ svc  ^  ^   ^  ^   ^  ^</pre>
       </section>
 
       <section>
+        <h2>Crew: the colony as two hundred marks</h2>
+        <p>Eight banks, twenty-five people each. Bright marks are awake, hollow ones did not survive being awake, and the rest are asleep. The banks <strong>breathe</strong> on a slow stagger &mdash; the ship keeping 187 people alive, visibly, every second you look at it.</p>
+        <p class="callout">§1 scores the ending on how many of these are left. This is the only screen that shows you the score.</p>
+        <p>It earns its place on the same test as the others: numbers cannot carry it. &ldquo;7 died&rdquo; is a statistic; seven gaps in a grid you have been watching breathe for two hundred years is not. And it makes the worst decision in the game unambiguous &mdash; <strong>shutting down a cryo bank is twenty-five marks going dark at once</strong>, a quarter of one cluster, permanently.</p>
+        <p>Building it surfaced a counting error, too: the roster said <em>6 awake, 194 asleep</em> while the colony page said 7 had died. 200 minus 7 is 193, so it is 187 asleep. Drawing a thing tends to find that.</p>
+      </section>
+
+      <section>
+        <h2>Rules: the automation heartbeat</h2>
+        <p>Five lanes, one per chain, each with a pulse running its length as the chain fires. Different periods, so the traces drift in and out of step the way a real plant does &mdash; food every few days, water every few months.</p>
+        <p>The ore lane is <strong>flatlined</strong>: dashed trace, stalled pulse, and a break marker where it stopped. That reads as wrong before you have identified a single word on the screen.</p>
+        <p>A list of 61 rules can tell you one is broken. It cannot tell you the ship&rsquo;s automation has a <em>rhythm</em>, or that one part of it has stopped beating. That is what this adds, and it is the closest the interface gets to saying the quiet thing out loud: you are not looking at the ship&rsquo;s controls. <strong>You are looking at yourself.</strong></p>
+      </section>
+
+      <section>
         <h2>Every signal is marked the same way</h2>
         <pre style="font-family:'IBM Plex Mono',monospace;font-size:clamp(10px,2.9vw,12.5px);margin:0 0 10px;
              white-space:pre;overflow-x:auto;max-width:100%;color:var(--pg-text);line-height:1.6">[CRT][RCT][POWR]  The reactor is failing.
@@ -1167,6 +1228,24 @@ svc  ^  ^   ^  ^   ^  ^</pre>
     tk.classList.remove("held");
     idx = 0; paint(); start();
   });
+
+  /* 200 colonists, 8 banks of 25. 6 awake, 7 lost. */
+  var banksEl = document.getElementById("banks");
+  if (banksEl) {
+    var awake = [3, 27, 61, 88, 140, 176];
+    var lost  = [12, 44, 45, 97, 118, 153, 191];
+    for (var b = 0; b < 8; b++) {
+      var bank = document.createElement("div");
+      bank.className = "bank";
+      for (var i = 0; i < 25; i++) {
+        var n = b * 25 + i;
+        var pod = document.createElement("span");
+        pod.className = "pod" + (awake.indexOf(n) > -1 ? " awake" : lost.indexOf(n) > -1 ? " lost" : "");
+        bank.appendChild(pod);
+      }
+      banksEl.appendChild(bank);
+    }
+  }
 
   document.addEventListener("click", function(e){
     var s = e.target.closest("[data-skin-set]");
