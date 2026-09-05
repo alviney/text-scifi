@@ -119,3 +119,30 @@ export const ROOMS = ["Bridge", "Reactor", "Engineering", "Life Support", "Hydro
                       "Medbay", "Quarters", "Cargo Bay", "Drone Bay", "Maintenance"];
 
 export const roomOf = (a: Asset) => (a.room === "node" ? "Life Support" : a.room);
+
+/** §4: the materials worth showing on a shelf, in the order a person reads them. */
+export const SHELF: [string, string][] = [
+  ["parts", "Metal parts"], ["electronics", "Electronics"], ["rareCmp", "Rare compounds"],
+  ["refMetal", "Refined metal"], ["ore", "Metal ore"], ["rare", "Rare earths"],
+  ["sil", "Silicates"], ["ice", "Water ice"], ["vol", "Volatiles"],
+];
+
+/** What a room is holding, worth-showing entries only. */
+export function shelf(s: State, room: string) {
+  const st = s.rooms[room];
+  if (!st) return [];
+  return SHELF.filter(([k]) => (st as Record<string, number>)[k] > 0.5)
+              .map(([k, name]) => ({ key: k, name, qty: (st as Record<string, number>)[k] }));
+}
+
+/** Consignments on their way, for the room that is waiting on them. */
+export const inbound = (s: State, room: string) => s.shipments.filter(x => x.to === room);
+export const outbound = (s: State, room: string) => s.shipments.filter(x => x.from === room);
+
+/** §4's jam, in one sentence. The crane is 30 kW and a worn reactor has none. */
+export function logistics(s: State) {
+  const crane = s.assets.find(a => a.id === "crane")!;
+  const waiting = s.board.filter(t => t.kind === "deliver");
+  return { crane, waiting, moving: s.shipments.length,
+           stuck: waiting.length > 0 && (crane.faulted || s.brownout === true) };
+}

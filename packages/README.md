@@ -325,6 +325,135 @@ Not fixed — a galley capacity or a spoilage rate are both plausible and it is 
 - **`state` is not a usable variable name in Svelte 5** — the compiler read `$state()` as a
   store subscription on a variable called `state` and the app died on load.
 
+## Per-room stores, delivery jobs, and load shedding
+
+`packages/sim/src/logistics.ts` implements §4's "there is no ship-wide inventory". Material
+lands in the Cargo Bay, the shop draws on Engineering's shelf, and nothing crosses a bulkhead
+unless a crew member carries it — which is a job, which can be automated, and which can jam.
+The ship launches with twelve standing delivery rules (§5c), because the player should inherit
+a working logistics layer and then watch it fail.
+
+Implementing it also required §6's **load shedding**, which had never been built at all.
+
+### The five jams, all of them mine
+
+Every one of these was a modelling error rather than a design one, and each produced a
+plausible-looking ship that quietly died.
+
+**1. Replacement needed all three materials in the room.** Rooms never hold electronics, so
+nothing outside Engineering could be replaced. Replacements over a voyage fell from 281 to
+**17** and the reactor aged out by year 20. Split it: the precision half (electronics, rare
+compounds) comes off the shop's shelf, the fitting half (metal parts) has to be in the room.
+
+**2. Water poisoned the bay.** Ice and volatiles have one sink each — drone propellant, already
+netted off at the sortie — so they accumulate forever. Sharing a single bay cap, they crowded
+out the silicon the fabricator needs: **1,295 units of ice** starved electronics for 4,745 days.
+Fixed with a keep-ceiling — surplus water is left in space, which is a decision rather than a
+loss and is reported separately from genuine overflow.
+
+**3. Finished goods crowded out raw material.** Engineering's shelf held everything the shop
+made, so a fabricator running flat out filled the room with its own parts and then bounced
+incoming ore deliveries straight back to the Cargo Bay. Measured: **3% of landed ore ever
+reached the shop** — 11,746 units of 363,157. §4's own diagram separates the input buffer from
+the output buffer; capping parts production at a target is the cheap way to honour that.
+
+**4. The delivery rules thrashed.** LG-01/02/03 fired **14,519 times each in 46 years and
+produced 23 hauls** — the shop was below threshold every day and the source was empty, so the
+rule re-raised a job nobody could do. That is `plan.md`'s own THRASH failure state, shipped as
+the default behaviour of an inherited rule. Don't send anyone to fetch what isn't there.
+
+**5. A flat parts threshold ignored room size.** Life Support has thirteen assets; the Bridge
+has two; both topped up to 20 parts, which is less than one high-complexity replacement. This
+was the single worst number in the layer:
+
+```
+asset-days wanting replacement, blocked by:
+  no parts in the room   440,697
+  no electronics               0
+  no rare compounds            0
+  could proceed            3,815
+```
+
+Not once in a 300-year voyage was the choke point the thing §7 says is the choke point. The
+threshold is now sized to the room — `20 + 4 x assets` — which is also what a player would
+naturally set once they noticed.
+
+### §6's load shedding did not exist
+
+The sim treated the 890 kW baseline as a hard floor. Any reactor below it was in permanent
+deficit, which is what turned §4's death spiral from a mechanic into a **soft lock**: entered
+around year 80, never escaped, 220 years coasting at the scrap floor with 617 rare compounds
+sitting uselessly in a shop that had no metal.
+
+§6 always specified the way out. Power Distribution sheds bottom-up: `sheddable` first,
+`dimmable` scales to 60% rather than cutting, `critical` never auto-sheds.
+
+| Output | Load | Headroom | Banks lit | State |
+|-------:|-----:|---------:|----------:|-------|
+| 1000 | 890 | 110 | 8 | nominal |
+| 830 | 830 | 0 | 8 | non-essentials shed |
+| 780 | 728 | 52 | 8 | shed and dimmed |
+| 700 | 678 | 22 | 7 | cascade brownout |
+
+**The cryo cliff moves from 890 kW to 728** — a 162 kW cushion that is exactly the window §1's
+"degrades gracefully" promise is made of, and it was missing.
+
+Also implemented: §6 lever 2, "shed empty rooms". Eight crew cannot occupy ten rooms, and
+holding atmosphere in the empty ones costs ~56 kW. That matters more than it sounds, because
+headroom at a perfect reactor is only 110 kW and **the Loading Crane takes 30 of it** — adding
+the logistics layer quietly cut industrial throughput by 27%.
+
+### What it costs: the game is now harder, and not yet retuned
+
+This is the honest headline. Before logistics, a ship on one ship-wide service rule reached
+190/200 alive and arrived every time. With the layer in:
+
+| Service at | Arrived | Alive | Replacements | Brownout | Crane blocked |
+|-----------:|--------:|------:|-------------:|---------:|--------------:|
+| 45 | 9/20 | 90 | 190 | 13% | 11% |
+| 50 | 8/20 | 80 | 192 | 13% | 11% |
+| **55** | **13/20** | **130** | 206 | 12% | 10% |
+| 60 | 9/20 | 90 | 187 | 12% | 10% |
+| 65 | 3/20 | 22 | 191 | 16% | 13% |
+
+The optimum also shifted down from 60 to 55, because deliveries now compete for the same crew
+that does the maintenance. The full policy harness shows the same thing with more of the
+strategy attached, and reads better than the bare sweep:
+
+| Policy | Arrived | Alive | Services | Replaced | Faults | Brownout |
+|--------|--------:|------:|---------:|---------:|-------:|---------:|
+| **steady** (service 55) | **80%** | **160** | 47,589 | 237 | 46 | 5% |
+| no gauges (55, uncalibrated) | 65% | 130 | 68,785 | 206 | 87 | 12% |
+| diligent (service 70) | 35% | 70 | 84,770 | 221 | 87 | 13% |
+| no rules / neglectful / underfed | 0% | — | — | — | — | — |
+
+**Diligent is now half as good as steady**, where before the two were within twenty colonists
+of each other. Over-servicing costs 37,000 extra crew-jobs that the delivery layer needed, and
+the ship browns out for want of hauls rather than for want of repairs. That is a much better
+shaped decision than the one the maintenance model produced on its own — it is the first place
+in this simulation where two different kinds of work genuinely compete.
+
+One thing cuts the other way, and it is worth noting because it was not the goal. Checked
+against `plan.md`'s hand-computed economy, the logistics layer moved the simulation **closer**
+to the design's own figures on three of four metrics:
+
+| Metric | plan.md claims | Before logistics | After |
+|--------|---------------:|-----------------:|------:|
+| Replacements over 300y | 246 | 276 | **237** |
+| Asset service life (yr) | 56 | 46 | **53** |
+| Fuel rods consumed | 287 | 302 | **292** |
+| Encounters taken | 100 | 100 | 89 |
+
+The spreadsheet that produced those numbers evidently assumed material had to be carried
+somewhere. Adding the carrying brought the model back to it.
+
+That is a real difficulty increase and it should not be waved through. Two readings, and both
+are probably true: a strategy that ignores logistics entirely *ought* to do worse than one that
+tunes its delivery thresholds, so some of this is the layer doing its job. But 13/20 is not a
+difficulty curve either, and the next session's work is a tuning pass on the logistics numbers
+specifically — bulk load size, transit times, and the room thresholds — rather than on
+maintenance, which is now well understood.
+
 ### Previously unresolved (kept for the record)
 
 A well-run ship still loses 182 of 192 colonists, and tracing it shows they die **in a single

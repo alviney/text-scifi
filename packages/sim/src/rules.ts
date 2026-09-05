@@ -1,18 +1,29 @@
 import type { Asset, State } from "./types.ts";
+import { HOLD, SHOP, RAW } from "./logistics.ts";
+
+/** Where each material is produced, and therefore where a delivery fetches it. */
+export const SOURCE_OF: Record<string, string> =
+  Object.fromEntries([...RAW.map(k => [k, HOLD]),
+                      ...["refMetal", "rareCmp", "parts", "electronics"].map(k => [k, SHOP])]);
 
 /** §5: a rule watches one thing, tests one condition, and takes one action. */
 export type Rule = {
   id: string;
-  watch: string;                       // asset id, or "stores:<key>"
-  kind: "condition" | "stock";
+  /** asset id, "stores:<key>", or "room:<room>:<key>" */
+  watch: string;
+  kind: "condition" | "stock" | "roomstock";
   threshold: number;
-  action: "service" | "replace" | "makeRod" | "makeDrone";
+  action: "service" | "replace" | "makeRod" | "makeDrone" | "deliver";
   inherited: boolean;                  // left by the departure crew (§5c)
   fires: number;
   lastFired: number;                   // day, -1 for never
 };
 
-export type Task = { kind: Rule["action"]; target: string; raised: number; priority: number };
+export type Task = {
+  kind: Rule["action"]; target: string; raised: number; priority: number;
+  /** delivery jobs only: where from, where to, and what */
+  from?: string; to?: string; what?: string;
+};
 
 /** §5: worn sensors do not fail, they LIE — and they read HIGH, so the rule
  *  watching for "below X" is never told the truth and quietly stops firing.
@@ -56,6 +67,29 @@ export function inheritedRules(assets: Asset[]): Rule[] {
     // production and supply
     mk("FB-01", "stores:drones", "stock", 6, "makeDrone"),   // keep the fleet up
     mk("FU-01", "stores:rods", "stock", 60, "makeRod"),
+
+    // §4: the ship does not launch with an empty logistics layer either. These
+    // are the two hauls that keep the shop fed and the rooms stocked, and they
+    // are the ones the player will watch jam when the reactor sags.
+    mk("LG-01", "room:Engineering:ore",  "roomstock", 300, "deliver"),
+    mk("LG-02", "room:Engineering:sil",  "roomstock", 150, "deliver"),
+    mk("LG-03", "room:Engineering:rare", "roomstock",  80, "deliver"),
+    // Parts out to the rooms that consume them, by hand.
+    //
+    // The threshold is sized to the ROOM, not fixed. A flat 20 everywhere looked
+    // reasonable and was the single worst number in the logistics layer: Life
+    // Support has thirteen assets against the Bridge's two, and a shelf holding
+    // 20 parts cannot cover one high-complexity replacement, let alone thirteen
+    // ageing at once. Measured, that blocked 440,697 asset-days of replacements
+    // — every one of them for want of parts in the room, never for want of
+    // electronics or rare compounds.
+    ...Object.entries(assets.reduce((n, a) => {
+      const room = a.room === "node" ? "Life Support" : a.room;
+      n[room] = (n[room] ?? 0) + 1; return n;
+    }, {} as Record<string, number>))
+      .filter(([room]) => room !== "Engineering")
+      .map(([room, n], i) =>
+        mk(`LG-2${i}`, `room:${room}:parts`, "roomstock", 20 + 4 * n, "deliver")),
   ];
 }
 
@@ -84,6 +118,24 @@ export function evaluate(s: State, rules: Rule[], board: Task[], priorityOf: (id
       // §5: a broken thing goes to the FRONT of the queue, not the back
       const pri = a.faulted ? -1 : priorityOf(a.id);
       board.push({ kind: "service", target: a.id, raised: s.day, priority: pri });
+      r.fires++; r.lastFired = s.day;
+    } else if (r.kind === "roomstock") {
+      // §4: a room watching its OWN shelf. The material it wants lives somewhere
+      // else, so the action is a delivery, not production — which is exactly why
+      // chains get deep without any chaining primitive.
+      const [, room, key] = r.watch.split(":");
+      const have = s.rooms[room]?.[key as keyof typeof s.stores] ?? 0;
+      if (have >= r.threshold) continue;
+      // Don't send anyone to fetch what isn't there. Without this the rule fires
+      // every day forever against an empty source — 14,519 firings in 46 years
+      // for 23 actual hauls, which is plan.md's own THRASH failure state and not
+      // something an inherited rule should ship doing.
+      const src = SOURCE_OF[key] ?? HOLD;
+      if ((s.rooms[src]?.[key as keyof typeof s.stores] ?? 0) <= 0) continue;
+      if (board.some(t => t.kind === "deliver" && t.to === room && t.what === key)) continue;
+      if (s.shipments.some(x => x.to === room && x.what === key)) continue;
+      board.push({ kind: "deliver", target: `${room}:${key}`, raised: s.day, priority: 4,
+                   from: src, to: room, what: key });
       r.fires++; r.lastFired = s.day;
     } else {
       const key = r.watch.split(":")[1];

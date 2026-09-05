@@ -3,6 +3,7 @@
  *  report that a neglected ship arrives safely. */
 import type { Asset, State } from "./types.ts";
 import { chance, type Rng } from "./rng.ts";
+import type { Bus } from "./power.ts";
 
 export const CREW_TARGET = 8;
 export const FOOD_PER_CREW_PER_DAY = 3;
@@ -41,12 +42,15 @@ export function labour(c: Colony): number {
   return c.awake * 0.36 * (c.fed / 100) * (c.air / 100);
 }
 
-export function tickColony(s: State, r: Rng, output: number, botanistJobs: number) {
+export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
   const c = s.colony;
 
   // ---- food: beds crop on a cycle, and only if someone plants and picks them ----
   const beds = s.assets.filter(a => a.id.startsWith("bed") && !a.faulted);
-  const perDay = beds.length * (BED_YIELD / BED_CYCLE_DAYS) * Math.min(1, botanistJobs);
+  // §6: grow beds are `dimmable`, so a ship short of power grows less food
+  // rather than none. Dimming is paid for here, one meal at a time.
+  const perDay = beds.length * (BED_YIELD / BED_CYCLE_DAYS) * Math.min(1, botanistJobs)
+               * (b.dimmed ? 0.6 : 1);
   c.food += perDay;
   c.food -= c.awake * FOOD_PER_CREW_PER_DAY;
   if (c.food < 0) { c.food = 0; c.fed = Math.max(0, c.fed - 1.2); }
@@ -56,7 +60,10 @@ export function tickColony(s: State, r: Rng, output: number, botanistJobs: numbe
   const o2 = s.assets.find(a => a.id === "o2gen")!;
   const nodes = s.assets.filter(a => a.id.startsWith("lsn"));
   const nodesOk = nodes.filter(a => !a.faulted).length / nodes.length;
-  const airOk = !o2.faulted && nodesOk > 0.3 && output > CREW_CRITICAL_KW * 0.6;
+  // The O2 generator and the atmosphere regulator are `critical`, so they are
+  // the last things to lose power — air only fails once the bus cannot even
+  // carry the critical block.
+  const airOk = !o2.faulted && nodesOk > 0.3 && b.load >= 175;
   c.air = airOk ? Math.min(100, c.air + 3) : Math.max(0, c.air - 4);
 
   // ---- crew die of starvation or bad air ----
@@ -67,8 +74,8 @@ export function tickColony(s: State, r: Rng, output: number, botanistJobs: numbe
   // ---- the colony needs power, and gets it last ----
   // A bank has thermal mass: it survives a dip and dies to a drought. Killing
   // colonists on the first brownout made a well-run ship lose 182 of them.
-  const forCryo = Math.max(0, output - CREW_CRITICAL_KW);
-  const canPower = Math.min(BANKS, Math.floor(forCryo / KW_PER_BANK));
+  // §6 does the shedding; this only asks how many banks survived it.
+  const canPower = b.banks;
   if (canPower < c.banks) c.cold++; else c.cold = 0;
   if (c.cold >= COLD_GRACE_DAYS) {
     const lost = c.banks - canPower;

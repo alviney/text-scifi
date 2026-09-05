@@ -28,9 +28,22 @@ export function refine(s: Stores, oreCap: number, rareCap: number, silCap: numbe
   s.rareCmp -= made; s.electronics += made;
 }
 
+/** Parts are made to a target, like electronics.
+ *
+ *  Without a ceiling the shop hoards them: §4's room buffer is one shelf, so a
+ *  fabricator running flat out fills Engineering with its own output and then
+ *  has no room to accept the ore it needs. Measured, that let **3% of landed ore
+ *  reach the shop** across a voyage — incoming deliveries bounced back to the
+ *  Cargo Bay and the parts economy quietly died around year 150.
+ *
+ *  §4's own diagram separates the input buffer from the output buffer. Capping
+ *  production is the cheap way to honour that without modelling two shelves. */
+export const PARTS_TARGET = 300;
+
 /** Metal parts: 4 refined metal -> 1 part. */
-export function makeParts(s: Stores, cap: number) {
-  const n = Math.min(Math.floor(s.refMetal / 4), cap);
+export function makeParts(s: Stores, cap: number, target = PARTS_TARGET) {
+  const room = Math.max(0, target - s.parts);
+  const n = Math.min(Math.floor(s.refMetal / 4), cap, room);
   s.refMetal -= n * 4; s.parts += n;
 }
 

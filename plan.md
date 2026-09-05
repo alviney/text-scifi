@@ -408,6 +408,45 @@ starves. Every rule fired correctly.
 
 > **The room reporting the problem is not the room that has it.**
 
+#### Built, and what it took (§4 → `packages/sim/src/logistics.ts`)
+
+The layer works and produces every behaviour above. Getting there took five corrections, and
+all five are worth keeping because each one looked reasonable and quietly killed the ship.
+
+| Mistake | What it did | The rule that replaced it |
+|---|---|---|
+| Replacement needs all three materials in the room | Rooms never hold electronics, so only Engineering could be replaced. Replacements 281 → **17** | Precision half from the shop, fitting half from the room |
+| One shelf per room, shared by everything | Water and volatiles have no sink, so they accumulate and crowd out the silicon. 1,295 ice starved electronics for 4,745 days | A keep-ceiling: surplus water is left in space |
+| The shop's shelf holds its own output | A fabricator at full tilt fills the room with parts and bounces incoming ore. **3% of landed ore reached the shop** | Cap production at a target — the diagram above already separates in from out |
+| Fetch whenever below threshold | Fired 14,519 times in 46 years for 23 hauls, against an empty source. This is the **THRASH** state from the failure gallery, shipped as default behaviour | Don't send anyone to fetch what isn't there |
+| One parts threshold for every room | Life Support has thirteen assets, the Bridge two, both stocked to 20 — less than one high-complexity replacement | Size the buffer to the room: `20 + 4 × assets` |
+
+That fourth row is the one to remember. **440,697 asset-days** of replacement were blocked for
+want of parts in the room, and **not one** for want of electronics or rare compounds — so for
+an entire voyage the binding constraint was never the choke point §7 designs around. A
+logistics layer does not just add difficulty; it moves where the difficulty *is*.
+
+**What it costs, and what it buys.** A well-run ship went from arriving every time with 190 of
+200 alive to arriving 80% of the time with 160. The optimum service threshold moved from 60 to
+55, because deliveries compete for the crew that does the maintenance.
+
+The interesting part is what happened to the *shape* of the decision. Before logistics, a
+diligent player (service at 70) and a steady one (55) landed within twenty colonists of each
+other, and the sweep's plateau meant the choice barely mattered. Now:
+
+| | Arrived | Alive | Services |
+|---|--:|--:|--:|
+| Steady, service at 55 | **80%** | **160** | 47,589 |
+| Diligent, service at 70 | 35% | 70 | 84,770 |
+
+**Diligence is now half as good as restraint**, because the 37,000 extra repair jobs come out
+of the same crew the hauls need, and a ship that cannot move ore browns out however well
+maintained it is. That is the first place in this design where two kinds of work genuinely
+compete for the same scarce thing, and it is worth more than the difficulty it added.
+
+Still untuned: the logistics numbers themselves — bulk load size, transit times, and the room
+thresholds. The maintenance side is now well understood and should be left alone.
+
 Other consequences worth keeping: a vented or lost room takes its stores with it, and the
 storage caps in §6b now apply *per room* rather than to one global pool, which is a tighter
 constraint and makes Cargo Bay overflow a genuine bottleneck during Act I.
@@ -1561,6 +1600,30 @@ window to scramble, and the window itself is costing you equipment.
 **Power Distribution is the dependency that matters.** If it goes `FAULTED`, the player
 loses load-shedding control entirely: priorities stop being honoured and brownouts hit
 whatever they hit. Repair it first.
+
+> **Built, and it was load-bearing in a way this section understates.**
+>
+> The prototype was first written without any shedding at all — 890 kW was treated as a hard
+> floor. That single omission turned §4's death spiral from a mechanic into a **soft lock**:
+> a ship that dipped below 890 could never get back above it, and one run entered the spiral
+> around year 80 and spent the remaining 220 years at the scrap floor, holding 617 rare
+> compounds it could not use because it had no metal.
+>
+> | Output | Load | Headroom | Banks lit | State |
+> |-------:|-----:|---------:|----------:|-------|
+> | 1000 | 890 | 110 | 8 | nominal |
+> | 830 | 830 | 0 | 8 | non-essentials shed |
+> | 780 | 728 | 52 | 8 | shed and dimmed |
+> | 700 | 678 | 22 | 7 | cascade brownout |
+>
+> **Shedding moves the cryo cliff from 890 kW to 728.** That 162 kW is the entire window §1's
+> *"degrades gracefully"* promise is made of, and without it the promise is false — the ship
+> goes from fine to unrecoverable with nothing in between.
+>
+> Lever 2 above ("shed empty rooms, ~70 kW") also turns out to be more than a nicety. Headroom
+> at a perfect reactor is 110 kW and §4's Loading Crane takes 30 of it, so adding the logistics
+> layer cut industrial throughput by **27%** on its own. Reclaiming the empty rooms is what
+> pays for the crane.
 
 #### Cryo banks — the decision
 

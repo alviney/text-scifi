@@ -26,6 +26,9 @@ export type Counters = {
   services: number; replacements: number; faults: number;
   encountersTaken: number; encountersMissed: number;
   rodsMade: number; deficitDays: number; brownoutDays: number;
+  /** §4 logistics: hauls run, material lost to a full bay, days the shop sat
+   *  idle with raw material aboard but in the wrong room. */
+  deliveries: number; overflow: number; starvedDays: number; craneBlockedDays: number;
 };
 
 export type State = {
@@ -34,7 +37,11 @@ export type State = {
   assets: Asset[];
   rods: number;
   drones: number;
+  /** §4: there is no ship-wide inventory. `stores` is the SHOP's shelf, kept as
+   *  a name because production reads it; everything else lives per room. */
   stores: Stores;
+  rooms: Record<string, Stores>;
+  shipments: import("./logistics.ts").Shipment[];
   schedule: Encounter[];
   next: number;          // index into schedule
   /** §5: gauges on the stores. They wear, and a worn one reads high. */
@@ -66,10 +73,13 @@ export type Settings = {
   botanistShare: number;
   /** work the systems everything depends on first? */
   prioritise: boolean;
+  /** §6 lever 2: stop holding atmosphere in rooms nobody is in. ~56 kW. */
+  shedEmptyRooms: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   replaceAt: 62, droneTarget: 6, botanistShare: 0.25, prioritise: true,
+  shedEmptyRooms: true,
 };
 
 /** An autopilot: a scripted player, used by the balance harness.

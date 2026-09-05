@@ -10,7 +10,8 @@
   import type { Asset, State } from "../../../sim/src/types.ts";
   import type { Command } from "../../../sim/src/commands.ts";
   import { assetName, band, GLYPH, roomBand, roomLine, assetLine, stateWord,
-           mark, num, shown, shownStock, ROOMS, roomOf } from "../lib/view.ts";
+           mark, num, shown, shownStock, shelf, inbound, logistics,
+           ROOMS, roomOf } from "../lib/view.ts";
   import { MAXCOND_FLOOR } from "../../../sim/src/sim.ts";
   import { PART_COST, ELEC_COST, RARE_COST } from "../../../sim/src/catalogue.ts";
 
@@ -19,6 +20,7 @@
   let room: string | null = $state(null);
   let pick: string | null = $state(null);
   let details = $state(false);
+  const lg = $derived(logistics(ship));
 
   const inRoom = (r: string) => ship.assets.filter(a => roomOf(a) === r);
   const asset = $derived(pick ? ship.assets.find(a => a.id === pick) ?? null : null);
@@ -88,6 +90,34 @@
     <div class="big">{room}</div>
     <div class="sentence dim">{roomLine(inRoom(room))}</div>
   </div>
+
+  <!-- §4: there is no ship-wide inventory. This shelf is the room's own, and
+       anything it needs from anywhere else has to be carried here. -->
+  <div class="pad hr">
+    <div class="label">On the shelf</div>
+    {#if shelf(ship, room).length === 0}
+      <div class="sentence dim">Empty.</div>
+    {:else}
+      <div class="grid">
+        {#each shelf(ship, room) as it}
+          <div><div class="label">{it.name}</div><div>{num(it.qty)}</div></div>
+        {/each}
+      </div>
+    {/if}
+    {#each inbound(ship, room) as sh}
+      <div class="moving">
+        <span class="mv">▸</span>
+        {num(sh.qty)} {sh.what} on the way from {sh.from}
+        <span class="faint">{sh.eta - ship.day}d</span>
+      </div>
+    {/each}
+    {#each ship.board.filter(t => t.kind === "deliver" && t.to === room) as t}
+      <div class="moving crit">
+        <span class="mv">◦</span> waiting on {t.what} from {t.from}
+        <span class="faint">{ship.day - t.raised}d</span>
+      </div>
+    {/each}
+  </div>
   {#each inRoom(room) as a (a.id)}
     <button class="row" onclick={() => pick = a.id}>
       <span class={band(a)}>{GLYPH[band(a)]}</span>
@@ -119,7 +149,31 @@
   {/each}
 
   <div class="pad hr">
-    <div class="label">Stores</div>
+    <div class="label">Moving things around</div>
+    <div class="big">{lg.moving} <span class="dim">in transit</span></div>
+    <div class="sentence" class:crit={lg.stuck}>
+      {#if lg.crane.faulted}
+        The Loading Crane is broken. Nothing bulky is going anywhere.
+      {:else if lg.stuck}
+        {lg.waiting.length} haul{lg.waiting.length === 1 ? "" : "s"} waiting on power —
+        the crane needs 30 kW and there is none spare.
+      {:else if lg.waiting.length}
+        {lg.waiting.length} haul{lg.waiting.length === 1 ? "" : "s"} waiting for someone to pick it up.
+      {:else}
+        Nothing stuck.
+      {/if}
+    </div>
+    {#each ship.shipments.slice(0, 6) as sh}
+      <div class="moving">
+        <span class="mv">▸</span> {num(sh.qty)} {sh.what}
+        <span class="dim">{sh.from} → {sh.to}</span>
+        <span class="faint">{sh.eta - ship.day}d</span>
+      </div>
+    {/each}
+  </div>
+
+  <div class="pad hr">
+    <div class="label">The shop — Engineering</div>
     <div class="grid">
       {#each [["Metal parts","parts",ship.stores.parts],["Electronics","electronics",ship.stores.electronics],["Rare compounds","rareCmp",ship.stores.rareCmp],["Refined metal","refMetal",ship.stores.refMetal]] as [name,key,v]}
         {@const r = shownStock(ship, key as string, v as number)}
@@ -145,6 +199,11 @@
   .act:disabled { border-color: var(--rule); color: var(--faint); cursor: default; }
   .more { color: var(--dim); font-size: 11px; margin-top: 12px; }
   .kv { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 4px 12px; margin-top: 8px; }
+  .moving { display: flex; gap: 8px; align-items: baseline; font-size: 11.5px;
+            padding: 4px 0; border-bottom: 1px solid var(--rule); }
+  .moving .faint { margin-left: auto; }
+  .mv { color: var(--accent); }
+  .moving.crit .mv { color: var(--crit); }
   .kv > div { display: flex; justify-content: space-between; gap: 8px;
               border-bottom: 1px solid var(--rule); padding: 3px 0; font-size: 11px; }
 </style>
