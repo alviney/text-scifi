@@ -10,6 +10,8 @@ export type Asset = {
   maxCond: number;   // the ceiling repairs restore to; erodes with every repair
   faulted: boolean;
   repairs: number;
+  /** §5: the instrument reporting this asset. It wears too, and a worn one lies. */
+  sensorCond: number;
 };
 
 export type Stores = {
@@ -20,6 +22,7 @@ export type Stores = {
 export type Encounter = { year: number; cls: string; richness: number };
 
 export type Counters = {
+  ruleFires: number; staleTasks: number; blindDays: number;
   services: number; replacements: number; faults: number;
   encountersTaken: number; encountersMissed: number;
   rodsMade: number; deficitDays: number; brownoutDays: number;
@@ -34,6 +37,10 @@ export type State = {
   stores: Stores;
   schedule: Encounter[];
   next: number;          // index into schedule
+  /** §5: gauges on the stores. They wear, and a worn one reads high. */
+  gauges: Record<string, number>;
+  rules: import("./rules.ts").Rule[];
+  board: import("./rules.ts").Task[];
   counters: Counters;
   dead: string | null;   // reason, if the run ended early
 };
@@ -51,4 +58,8 @@ export type Policy = {
   labourPerDay: number;
   /** does the player look after the systems everything else depends on first? */
   prioritise: boolean;
+  /** does the player write maintenance rules, or notice things by hand? */
+  automate: boolean;
+  /** does the player service the instruments as well as the machines? */
+  maintainSensors: boolean;
 };

@@ -2,7 +2,8 @@
 import { run } from "../sim/src/sim.ts";
 import type { Policy, State } from "../sim/src/types.ts";
 
-const steady: Policy = { name: "steady", serviceAt: 55, replaceAt: 62, droneTarget: 6, labourPerDay: 2, prioritise: true };
+const steady: Policy = { name: "steady", serviceAt: 55, replaceAt: 62, droneTarget: 6,
+                         labourPerDay: 2, prioritise: true, automate: true, maintainSensors: true };
 const SEEDS = 20;
 const runs: State[] = [];
 for (let s = 1; s <= SEEDS; s++) runs.push(run(s, steady));

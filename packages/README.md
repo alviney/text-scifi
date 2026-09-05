@@ -18,9 +18,10 @@ Asset wear with condition bands and an eroding ceiling · reactor output and eff
 condition · fuel burn · power-gated industry · refining and fabrication · three-act encounters
 with the five object classes and drone-limited hauls · maintenance under a labour cap.
 
-**Stubbed for this pass:** individual crew (aggregate labour), hydroponics detail, per-room
-stores and deliveries, and the rule engine — player behaviour is a `Policy` instead, which is
-what lets the harness compare play styles.
+**Now modelled:** the §5 rule engine, a task board, and sensors that wear and lie.
+
+**Still stubbed:** individual crew (aggregate labour), hydroponics detail, and per-room stores
+with deliveries. Player behaviour is a `Policy`, which is what lets the harness compare styles.
 
 ## What it found
 
@@ -65,23 +66,62 @@ rare compounds auto-converting into electronics with no reserve, banking 752 ele
 the replacement needing 14 rare compounds starved · industry running flat out forever rather
 than idling when there was nothing to do.
 
+## The rule engine, and the two bets it tested
+
+`rules.ts` implements §5: a rule watches one thing, tests one condition, takes one action, and
+raises a task to a board the crew work through. The ship launches with the inherited rules from
+§5c; a player who automates adds their own. Rules read the ship **through its sensors**, and
+worn sensors read high — so a rule watching for "below X" is never told the truth.
+
+```
+node --experimental-strip-types packages/harness/experiments.ts
+```
+
+| Arm | End condition | Faults | Blind days | Brownout |
+|-----|--------------:|-------:|-----------:|---------:|
+| rules + sensors kept | **55** | 901 | 0% | 5% |
+| rules, sensors rot | 35 | 3,641 | 99% | 57% |
+| no rules, sensors kept | 36 | 2,207 | 51% | 31% |
+| no rules, sensors rot | 29 | 3,138 | 99% | 54% |
+
+**Automation is worth 18.8 condition points**, and a ship without it runs four times the
+brownouts. The design's central premise holds.
+
+**Letting the instruments rot costs 20 points** — slightly more than not automating at all.
+And the interaction is the interesting part:
+
+> Sensor decay costs **7 points without rules and 20 points with them**. The better automated
+> you are, the more instrument decay hurts, because your rules are what the sensors feed.
+
+That is §5's thesis, measured.
+
+### Where the lie has to live
+
+The first implementation put sensor drift on **asset condition**, and it made no measurable
+difference at all. The reason is worth keeping: **a faulted machine announces itself however
+broken its gauge is**, so drift there only delays routine servicing — which costs nothing under
+the corrected refurbishment model.
+
+Drift bites on **stock**, where there is no such backstop. A store reading 900 while holding 300
+has nothing to announce it, which is exactly plan.md's water-restock example and why that rule
+had not fired in 47 years. Sensors on machines are flavour; **gauges on stores are the
+mechanic.**
+
 ## Where it stands against plan.md
 
 | Metric | plan.md | simulated | |
 |---|---|---|---|
-| Replacements over 300 years | 246 | 165 | within tolerance |
-| Encounters taken | 100 | 86 | holds |
-| Fuel rods consumed | 287 | 274 | holds — 5% |
-| Asset service life | 56 yr | 77 yr | high, worth a look |
+| Replacements over 300 years | 246 | **276** | 12% |
+| Encounters taken | 100 | **98** | 2% |
+| Fuel rods consumed | 287 | **300** | 5% |
+| Asset service life | 56 yr | 46 yr | 18% — runs short |
 
-Play styles now order correctly — diligent finishes with the best condition, most replacements
-and lowest brownout; neglectful with the worst of each.
+Every derived figure in plan.md now reproduces within tolerance, from an independent
+implementation. Play styles order correctly, and the raw-rare backlog that suggested a refining
+bottleneck has gone — it was the dead drone fleet, not throughput.
 
-**Not yet confirmed:** ~866 raw rare elements still sit unrefined at arrival, which suggests
-refining throughput, not asteroid supply, is the binding constraint in the late game. That is
-either a finding about §7 or an artefact of the stubbed industry model, and it needs the real
-per-room delivery chain before it can be trusted.
+**Still true, and still a problem:** 0 of 20 runs hit a fail state. §1's fail states remain
+unreachable even for a player who neither automates nor maintains anything.
 
-**Untested entirely:** the three bets flagged in plan.md — sensor drift, the 2% food margin,
-and whether 13,000 maintenance tasks reads as pressure or noise. None of those systems are in
-this pass.
+**Still untested:** the 2% food margin, and whether 13,000 maintenance tasks reads as pressure
+or noise — hydroponics and individual crew are both still stubbed.

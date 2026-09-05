@@ -460,8 +460,33 @@ across its assets. That's the whole green/amber/red rule.
 Each asset also carries **`maxCondition`**, starting at 100.
 
 - A repair restores `condition` up to `maxCondition` — never past it.
-- Every repair costs a little `maxCondition` (refurbishment loss): ~0.5 for routine
-  servicing, ~2-3 for a `FAULTED` rebuild.
+- Every repair costs a little `maxCondition` (**refurbishment loss**), and the cost is
+  **mostly proportional to how much wear it recovers**:
+
+```
+loss = 0.05 + 0.022 × (wear recovered)      + 2.0 for a FAULTED rebuild
+```
+
+**Why proportional, and not a flat cost per repair.** An earlier draft charged a flat ~0.5
+per service. Simulating it (`packages/`) showed that inverts the whole premise: servicing at
+75 recovers 25 points for the same price as servicing at 32 recovers 68, so **frequent
+maintenance burned an asset's life four times faster than neglect**. Across full 300-year
+runs the neglectful strategy genuinely beat the diligent one. The optimal way to play was to
+ignore the ship.
+
+Proportional loss removes that. Total ceiling erosion now tracks **total wear**, not visit
+count, so every service threshold lands near the same ~56-year service life:
+
+| Service at | Services/yr | Ceiling lost/yr | Service life |
+|-----------:|------------:|----------------:|-------------:|
+| 75 | 1.20 | 0.72 | 56 yr |
+| 55 | 0.67 | 0.69 | 58 yr |
+| 32 | 0.44 | 0.68 | 59 yr |
+
+The small fixed overhead still discourages pointless fiddling, and a faulted rebuild carries a
+real penalty on top. **The decision moves to where it belongs — fault risk.** Waiting saves
+nothing on the ceiling and exposes the asset to the `AT_RISK` failure roll, so diligence is
+rewarded by *avoided faults* rather than by the repair counter.
 
 Everything the difficulty curve needs falls out of that one decaying ceiling:
 
@@ -2188,6 +2213,12 @@ Complexity tracks sophistication, not danger — it's what drives replacement co
 42 active assets (+4 passive). The mix is Med-heavy because of the ten LifeSupportNodes, which
 gives **~1,300 rare compounds** for 246 replacements against the 1,378 §7 assumed — 6% under,
 comfortably inside the tolerance of the §6b encounter target.
+
+> **Do not charge this twice.** The 14/5/2 figures are the *total* rare-compound cost of a
+> replacement, and most of it is already the electronics inside the unit (1 rare compound
+> each). Adding the electronics cost on top of the table figure makes the economy ~60% short
+> and locks the ship into an unrecoverable death spiral — which is exactly what happened the
+> first time the prototype implemented it.
 
 ---
 

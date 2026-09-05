@@ -3,11 +3,11 @@ import { run, START_RODS } from "../sim/src/sim.ts";
 import type { Policy, State } from "../sim/src/types.ts";
 
 const POLICIES: Policy[] = [
-  { name: "diligent",  serviceAt: 70, replaceAt: 65, droneTarget: 8, labourPerDay: 3, prioritise: true },
-  { name: "steady",    serviceAt: 55, replaceAt: 62, droneTarget: 6, labourPerDay: 2, prioritise: true },
-  { name: "reactive",  serviceAt: 32, replaceAt: 55, droneTarget: 5, labourPerDay: 1, prioritise: true },
-  { name: "no-triage", serviceAt: 55, replaceAt: 62, droneTarget: 6, labourPerDay: 2, prioritise: false },
-  { name: "neglectful",serviceAt: 15, replaceAt: 45, droneTarget: 4, labourPerDay: 0.4, prioritise: false },
+  { name: "diligent",  serviceAt: 70, replaceAt: 65, droneTarget: 8, labourPerDay: 3, prioritise: true, automate: true, maintainSensors: true },
+  { name: "steady",    serviceAt: 55, replaceAt: 62, droneTarget: 6, labourPerDay: 2, prioritise: true, automate: true, maintainSensors: true },
+  { name: "reactive",  serviceAt: 32, replaceAt: 55, droneTarget: 5, labourPerDay: 1, prioritise: true, automate: true, maintainSensors: false },
+  { name: "no-triage", serviceAt: 55, replaceAt: 62, droneTarget: 6, labourPerDay: 2, prioritise: false, automate: true, maintainSensors: true },
+  { name: "neglectful",serviceAt: 15, replaceAt: 45, droneTarget: 4, labourPerDay: 0.4, prioritise: false, automate: false, maintainSensors: false },
 ];
 
 const SEEDS = Number(process.env.SEEDS ?? 20);

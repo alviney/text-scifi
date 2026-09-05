@@ -5,23 +5,29 @@ import { buildSchedule, harvest } from "./encounters.ts";
 import { emptyStores, refine, makeParts, canMakeRod, makeRod, canMakeDrone, makeDrone,
          RARE_RESERVE, ELEC_TARGET } from "./economy.ts";
 import { BASELINE_KW, reactorOutput, rodsPerDay, conditionFactor } from "./power.ts";
+import { type Rule, type Task, inheritedRules, playerRules, evaluate, reportedCondition } from "./rules.ts";
 
 export const START_RODS = 320;
 export const START_DRONES = 6;
 const DAYS = 300 * 365;
 
-export function init(seed: number, actII = 40): State {
+export function init(seed: number, actII = 40, p?: Policy): State {
   const r = rng(seed);
   const s: State = {
     day: 0, rngState: 0, assets: buildAssets(), rods: START_RODS, drones: START_DRONES,
     stores: emptyStores(), schedule: buildSchedule(r, actII), next: 0,
-    counters: { services: 0, replacements: 0, faults: 0, encountersTaken: 0,
-                encountersMissed: 0, rodsMade: 0, deficitDays: 0, brownoutDays: 0 },
+    gauges: { parts: 100, rods: 100, rareCmp: 100, drones: 100 }, rules: [], board: [],
+    counters: { ruleFires: 0, staleTasks: 0, blindDays: 0, services: 0, replacements: 0,
+                faults: 0, encountersTaken: 0, encountersMissed: 0, rodsMade: 0,
+                deficitDays: 0, brownoutDays: 0 },
     dead: null,
   };
   s.rngState = r.s;
   // the ship departs with a working stock, not empty shelves
   s.stores.parts = 120; s.stores.electronics = 40; s.stores.rareCmp = 60; s.stores.refMetal = 200;
+  // §5c: the ship never launches empty — the departure crew left standing rules
+  s.rules = inheritedRules(s.assets);
+  if (p?.automate) s.rules.push(...playerRules(s.assets, p.serviceAt, p.replaceAt));
   return s;
 }
 
@@ -92,7 +98,10 @@ export function step(s: State, p: Policy): State {
   if (s.rods <= 0) { s.dead = "out of fuel"; s.rngState = r.s; return s; }
 
   // ---- wear ----
+  for (const k of Object.keys(s.gauges)) s.gauges[k] = Math.max(0, s.gauges[k] - 0.0009);
   for (const a of s.assets) {
+    // Instruments wear whether or not the machine does — about a third as fast.
+    a.sensorCond = Math.max(0, a.sensorCond - a.baseWear * 0.35);
     if (a.faulted) continue;
     const env = reactor.faulted ? 2 : 1;
     a.cond -= a.baseWear * ageFactor(a) * env;
@@ -108,37 +117,66 @@ export function step(s: State, p: Policy): State {
   refine(s.stores, 40 * industry, 12 * industry, 20 * industry, RARE_RESERVE, ELEC_TARGET);
   makeParts(s.stores, 6 * industry);
 
+  // ---- automation: rules read the ship through its sensors and raise tasks ----
+  const rank = (id: string) => (p.prioritise ? (CRITICAL_ORDER[id] ?? 9) : 0);
+  const firesBefore = s.rules.reduce((n, r) => n + r.fires, 0);
+  evaluate(s, s.rules, s.board, rank);
+  s.counters.ruleFires += s.rules.reduce((n, r) => n + r.fires, 0) - firesBefore;
+
+  // A player without rules only finds out by looking, and at the speeds this game
+  // is played at they are not looking often. ~0.3%/day is a mean detection lag of
+  // about 330 days — comparable to a whole service interval, so things routinely
+  // break before anyone notices. A rule notices the same day, every time.
+  if (!p.automate) {
+    for (const a of s.assets) {
+      if (!(a.faulted || a.cond < p.serviceAt)) continue;
+      if (s.board.some(t => t.target === a.id)) continue;
+      if (chance(r, 0.003))
+        s.board.push({ kind: "service", target: a.id, raised: s.day, priority: a.faulted ? -1 : rank(a.id) });
+    }
+  }
+
+  // how blind is the ship? sensors reading more than 20 points high
+  if (s.assets.some(a => reportedCondition(a) - a.cond > 20)) s.counters.blindDays++;
+
   // ---- maintenance, limited by crew labour ----
   // Servicing only helps if there is wear to recover: an asset already at its
   // ceiling gains nothing and still pays the refurbishment loss.
+  // The crew work the board, not the ship: a job nobody raised is a job nobody does.
   let jobs = p.labourPerDay;
-  const worthDoing = (a: Asset) =>
-    a.faulted || (a.cond < p.serviceAt && a.cond < a.maxCond - 3);
-  // Which assets a player attends to first is a real strategic axis, and the
-  // ship has a dependency order: without the reactor there is no power, without
-  // power no refining, without refining no parts — including the parts that
-  // would have fixed the reactor.
-  const rank = (a: Asset) => (p.prioritise ? (CRITICAL_ORDER[a.id] ?? 9) : 0);
-  const needy = s.assets.filter(worthDoing)
-    .sort((a, b) => Number(b.faulted) - Number(a.faulted) || rank(a) - rank(b) || a.cond - b.cond);
-  for (const a of needy) {
+  s.board.sort((x, y) => x.priority - y.priority || x.raised - y.raised);
+  const done: Task[] = [];
+  for (const task of s.board) {
     if (jobs <= 0) break;
-    if (a.maxCond < p.replaceAt) {
-      if (replace(s, a)) { jobs--; continue; }
-      // No parts. A worn-but-working asset is left alone rather than having its
-      // ceiling burned for nothing — but a FAULTED one is always patched back,
-      // because the alternative is losing it for the rest of the voyage.
-      if (!a.faulted) continue;
+    if (task.kind === "makeRod") {
+      if (canMakeRod(s.stores)) { makeRod(s.stores); s.rods++; s.counters.rodsMade++; done.push(task); jobs--; }
+      continue;
     }
-    service(s, a); jobs--;
+    if (task.kind === "makeDrone") {
+      if (s.drones < p.droneTarget && canMakeDrone(s.stores)) { makeDrone(s.stores); s.drones++; done.push(task); jobs--; }
+      else if (s.drones >= p.droneTarget) done.push(task);
+      continue;
+    }
+    const a = s.assets.find(x => x.id === task.target);
+    if (!a) { done.push(task); continue; }
+    // nothing left to recover, and not broken: drop it
+    if (!a.faulted && a.cond >= a.maxCond - 3) { done.push(task); continue; }
+    if (a.maxCond < p.replaceAt) {
+      if (replace(s, a)) { done.push(task); jobs--; continue; }
+      if (!a.faulted) continue;               // wait for parts
+    }
+    service(s, a);
+    if (p.maintainSensors) {
+      a.sensorCond = 100;
+      for (const k of Object.keys(s.gauges)) s.gauges[k] = 100;   // the gauges too
+    }
+    done.push(task); jobs--;
   }
+  for (const t2 of done) s.board.splice(s.board.indexOf(t2), 1);
+  s.counters.staleTasks += s.board.filter(t2 => s.day - t2.raised > 365).length > 0 ? 1 : 0;
 
-  // ---- keep the fleet up, and top up fuel when it looks short ----
-  if (s.drones < p.droneTarget && canMakeDrone(s.stores)) { makeDrone(s.stores); s.drones++; }
   const yearsLeft = (DAYS - s.day) / 365;
-  const rodsNeeded = yearsLeft * rodsPerDay(delivered, reactor.cond) * 365;
-  if (s.rods < rodsNeeded * 1.05 && canMakeRod(s.stores)) { makeRod(s.stores); s.rods++; s.counters.rodsMade++; }
-  if (s.rods < rodsNeeded) s.counters.deficitDays++;
+  if (s.rods < yearsLeft * rodsPerDay(delivered, reactor.cond) * 365) s.counters.deficitDays++;
 
   // ---- encounters ----
   const year = s.day / 365;
@@ -160,7 +198,7 @@ export function step(s: State, p: Policy): State {
 }
 
 export function run(seed: number, p: Policy, actII = 40): State {
-  const s = init(seed, actII);
+  const s = init(seed, actII, p);
   while (!s.dead) step(s, p);
   return s;
 }

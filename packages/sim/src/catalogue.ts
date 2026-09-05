@@ -38,7 +38,7 @@ export function buildAssets(): Asset[] {
   const out: Asset[] = [];
   const add = (id: string, room: string, cls: Complexity, mult: number) =>
     out.push({ id, room, cls, baseWear: BASE_WEAR_PER_DAY * mult,
-               cond: 100, maxCond: 100, faulted: false, repairs: 0 });
+               cond: 100, maxCond: 100, faulted: false, repairs: 0, sensorCond: 100 });
 
   for (const [id, room, cls, mult] of CAT) add(id, room, cls, mult);
   for (let i = 1; i <= 10; i++) add(`lsn${i}`, "node", "med", 0.7);   // LifeSupportNode x10
