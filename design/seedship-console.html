@@ -243,13 +243,15 @@ h1{
 .bay.s-crit{border-color:#5A241B;background:#1F1310;color:var(--d-text)}
 .bay.s-crit .bd{color:var(--d-crit)}
 .bay.s-off{opacity:.45}
+.bay .hold{position:absolute;top:2px;right:3px;font-size:8px;line-height:1;color:var(--d-crit)}
+.bay.holding{border-color:#5A241B}
 .spine{height:14px;position:relative;margin:2px 0;overflow:hidden}
 .spine::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--d-rule)}
 .flow{position:absolute;top:50%;transform:translateY(-50%);font-size:9.5px;line-height:1;white-space:nowrap;max-width:48%;overflow:hidden;text-overflow:ellipsis}
-.flow.moving{color:var(--d-ok);animation:slide 6s linear infinite}
-.flow.stuck{color:var(--d-crit)}
-@keyframes slide{from{left:12%}to{left:62%}}
-@media (prefers-reduced-motion:reduce){.flow.moving{animation:none;left:37%}}
+.flow.moving{color:var(--d-ok);animation:slide 7s linear infinite}
+/* Engineering (col 3, centre 50%) -> Life Support (col 5, centre 90%) */
+@keyframes slide{from{left:50%}to{left:88%}}
+@media (prefers-reduced-motion:reduce){.flow.moving{animation:none;left:69%}}
 .hullcap{display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:.08em;
   text-transform:uppercase;color:var(--d-faint);margin-top:9px}
 
@@ -523,11 +525,10 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
                   <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>LFS</button>
                 </div>
                 <div class="spine">
-                  <span class="flow moving">&#9656;&#9656; filters &rarr; LFS</span>
-                  <span class="flow stuck" style="right:2%">&#9888; ore held</span>
+                  <span class="flow moving">&#9656;</span>
                 </div>
                 <div class="deck">
-                  <button class="bay s-ok"   data-go="inventory"><span class="bd">&#9679;</span>CRG</button>
+                  <button class="bay s-ok holding" data-go="inventory"><span class="hold">&#9888;</span><span class="bd">&#9679;</span>CRG</button>
                   <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>MNT</button>
                   <button class="bay s-warn" data-go="mfg"><span class="bd">&#9680;</span>ENG</button>
                   <button class="bay s-crit" data-go="equipment"><span class="bd">&#9675;</span>RCT</button>
@@ -537,7 +538,8 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
               <span class="tail">&#9655;</span>
             </div>
             <div class="hullcap"><span>bow</span><span>1 moving &middot; 1 held</span><span>drive</span></div>
-            <p class="quiet" style="margin:8px 0 0">Ore can&rsquo;t leave the Cargo Bay &mdash; shifting it needs the crane, and there&rsquo;s no power spare to run one.</p>
+            <p class="quiet" style="margin:8px 0 0"><span class="ok">&#9656;</span> Filters on their way from Engineering to Life Support.<br>
+            <span class="crit">&#9888;</span> Ore held in the Cargo Bay &mdash; shifting it needs the crane, and there&rsquo;s no power spare to run one.</p>
           </div>
 
           <h2 class="scr-title">Rooms <span>1 failing &middot; 2 need attention</span></h2>
@@ -991,6 +993,8 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         <h2>The ship is the hero on Rooms</h2>
         <p>§4 says room connectivity is flavour. That was true when inventory was a single global pool &mdash; but <strong>per-room stores changed the brief</strong>. Things physically move between rooms now, and a schematic is the only place that layer can be seen at all.</p>
         <p class="callout">The held delivery is the whole §7 trap in one marker: the reactor is failing, so there is no power for the crane, so the ore can&rsquo;t move, so the smelter is idle, so there are no parts &mdash; <strong>to fix the reactor.</strong></p>
+        <p><strong>Position means location, so the two markers cannot work the same way.</strong> Something <em>moving</em> belongs on the spine, travelling between its real source and destination &mdash; the filters marker runs from Engineering to Life Support because that is where they are going. Something <em>held</em> is not in transit at all: it sits in a room, so it is badged on that room. The ore warning is on the Cargo Bay because that is where the ore is.</p>
+        <p class="quiet" style="font-size:14px">Note the Cargo Bay still reads green. Its equipment is fine &mdash; the held ore is a logistics problem, not a room-health one, and collapsing the two would make the status dot mean two different things.</p>
         <p>So the cutaway does three jobs rather than decorating: <strong>where every room is</strong>, <strong>what state it&rsquo;s in</strong>, and <strong>what is moving between them right now</strong>. The filter delivery slides along the spine; the ore delivery sits stuck against the drive end with a warning, which is why the smelter has been idle eleven days.</p>
         <p>Two decks around a spine, bow to the left and drive to the right, so the shape reads as a ship rather than a grid. Every bay is a tap target &mdash; the same destinations as the list below it, reached spatially instead of alphabetically. Over a few hundred hours the player will know where things are without reading the labels, which is the real prize.</p>
         <p>It mirrors Voyage deliberately: hero above, detail below. Voyage answers <em>where are we going</em>; Rooms answers <em>what shape are we in</em>.</p>

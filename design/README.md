@@ -34,6 +34,20 @@ Workshop and Automation lost their tabs and are found where they live — Engine
 the equipment a rule is attached to. Automation is *also* reachable from the Facilities
 root, because "which of my rules is broken" is a real question with no single address.
 
+### Position means location
+
+On the ship cutaway the two cargo markers work differently, because they mean different things:
+
+- Something **moving** sits on the spine and travels between its real source and destination.
+- Something **held** is not in transit at all — it sits in a room, so it is badged on that room.
+
+Getting this wrong is confusing rather than merely untidy: a held marker placed for visual
+balance reads as movement that isn't happening, from a room the material isn't in.
+
+A held badge is also kept separate from the room's status dot. The Cargo Bay reads green while
+holding blocked ore, because its *equipment* is fine — the block is a logistics problem, and
+collapsing the two would make the status dot mean two different things.
+
 ### The ticker
 
 One feed item at the top of **every** screen, always. New items replace the old one, so
