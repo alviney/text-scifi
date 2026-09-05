@@ -67,9 +67,15 @@ What it buys:
 - Cadence tracks the speed slider for free — a firing every few minutes at 1×, a blur at 8,760×.
 - It shows the variety the traces hid: switching a heater on, making seals, raising a repair job.
 
-The **count** moved out of the hero into a plain ordered bar list, ten rooms longest-first adding
-to 61. The last row is the payload: **Reactor 0**, red, at the bottom of a sorted list where it
-cannot be missed. Tidy beats atmospheric when the information is the point.
+The panel is a **fixed 190px**, with two lines reserved for the condition and for the action.
+Firings vary in length, and without that the whole page reflowed every few seconds — the one
+thing a persistent, always-animating element must never do.
+
+**Deferred:** a visual for how many rules exist, broken down by room. A plain ordered bar list
+worked (ten rooms, longest first, with *Reactor 0* in red at the bottom where it cannot be
+missed), but it was pulled for now to keep the tab focused on the firing panel. Worth
+reinstating once the rest of the tab settles — the "nothing watches the reactor" moment is too
+good to lose permanently.
 
 Superseded: the constellation, and the earlier note about grouping lanes by verb.
 

@@ -222,7 +222,7 @@ h1{
 
 /* ---- RULES hero: watch a rule actually fire ---- */
 .fire{margin:-10px -10px 12px;padding:12px 10px 11px;border-bottom:1px solid var(--d-rule);
-  min-height:132px;display:flex;flex-direction:column}
+  height:190px;overflow:hidden;display:flex;flex-direction:column}
 .fire .lbl{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.13em;
   text-transform:uppercase;color:var(--d-faint);margin-bottom:9px}
 .fire .lbl .live{color:var(--d-accent)}
@@ -234,10 +234,10 @@ h1{
 @keyframes pop{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 @keyframes grow{from{height:0}to{height:15px}}
 .fire .room{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--d-faint)}
-.fire .cond{font-size:13px;color:var(--d-text);line-height:1.35}
+.fire .cond{font-size:13px;color:var(--d-text);line-height:1.35;min-height:36px}
 .fire .arm{width:1px;height:0;background:var(--d-rule);margin:5px 0 5px 5px}
 .fire.go .arm{height:15px}
-.fire .doing{font-size:13px;color:var(--d-accent);line-height:1.35;
+.fire .doing{font-size:13px;color:var(--d-accent);line-height:1.35;min-height:36px;
   background:var(--d-panel2);border:1px solid var(--d-rule);border-radius:2px;padding:7px 9px}
 .fire .out{font-size:11.5px;margin-top:7px;color:var(--d-ok)}
 .fire .out.bad{color:var(--d-crit)}
@@ -246,16 +246,6 @@ h1{
   .fire .arm{height:15px}
   .fire.go .when,.fire.go .then,.fire.go .out,.fire.go .arm{animation:none}
 }
-
-/* ---- rules per room: tidy, ordered, and the gap is the point ---- */
-.byroom{margin:2px 0 4px}
-.byroom .rw{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0}
-.byroom .rn{flex:none;width:7.4em;color:var(--d-dim)}
-.byroom .rb{flex:1;min-width:0;height:7px;background:var(--d-panel2);position:relative}
-.byroom .rb i{position:absolute;left:0;top:0;bottom:0;background:var(--d-accent);opacity:.75}
-.byroom .rc{flex:none;width:1.6em;text-align:right;font-variant-numeric:tabular-nums;color:var(--d-dim)}
-.byroom .rw.none .rn,.byroom .rw.none .rc{color:var(--d-crit)}
-.byroom .rw.none .rb i{background:var(--d-crit)}
 
 /* ---- vital signs: the one legitimate home for density ---- *//* ---- vital signs: the one legitimate home for density ---- *//* ---- vital signs: the one legitimate home for density ---- */
 .vital{border-bottom:1px solid var(--d-rule);padding:11px 0 10px}
@@ -803,21 +793,6 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Cargo bay heater</span><span class="vl">Fighting itself</span></button>
           <button class="row" data-go="rule"><span class="dot warn">◐</span><span class="nm">Service the reactor</span><span class="vl">Waiting 5 yrs</span></button>
-          <div class="sect">Where your rules are &middot; 61</div>
-          <div class="byroom">
-            <div class="rw"><span class="rn">Engineering</span><span class="rb"><i style="width:100%"></i></span><span class="rc">18</span></div>
-            <div class="rw"><span class="rn">Hydroponics</span><span class="rb"><i style="width:67%"></i></span><span class="rc">12</span></div>
-            <div class="rw"><span class="rn">Life Support</span><span class="rb"><i style="width:50%"></i></span><span class="rc">9</span></div>
-            <div class="rw"><span class="rn">Cargo Bay</span><span class="rb"><i style="width:33%"></i></span><span class="rc">6</span></div>
-            <div class="rw"><span class="rn">Quarters</span><span class="rb"><i style="width:28%"></i></span><span class="rc">5</span></div>
-            <div class="rw"><span class="rn">Medbay</span><span class="rb"><i style="width:22%"></i></span><span class="rc">4</span></div>
-            <div class="rw"><span class="rn">Drone Bay</span><span class="rb"><i style="width:17%"></i></span><span class="rc">3</span></div>
-            <div class="rw"><span class="rn">Maintenance</span><span class="rb"><i style="width:17%"></i></span><span class="rc">3</span></div>
-            <div class="rw"><span class="rn">Bridge</span><span class="rb"><i style="width:6%"></i></span><span class="rc">1</span></div>
-            <div class="rw none"><span class="rn">Reactor</span><span class="rb"><i style="width:2%"></i></span><span class="rc">0</span></div>
-          </div>
-          <p class="quiet">Nothing watches the reactor &mdash; the one thing on this ship that can kill everyone in an afternoon.</p>
-
           <div class="sect">Left by the departure crew &middot; 13</div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">7 deliveries between rooms</span><span class="vl">working</span></div>
           <div class="row static"><span class="dot warn">◐</span><span class="nm">Replant a bed when empty</span><span class="vl">beds in phase</span></div>
@@ -1108,13 +1083,7 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         <p>It plays in sequence &mdash; condition, a connector drawing down, the action, then the outcome stamping on. When nothing is running it holds the last firing and relabels itself <em>last &middot; just now</em>, so the panel is never empty and never claims to be live when it isn&rsquo;t.</p>
         <p>What it buys: you learn what your rules <em>do</em> by watching them work, in exactly the sentence shape the builder uses. Failures land in front of you rather than in a list &mdash; <em>&ldquo;Fetch 300 from the Cargo Bay &nbsp;&#10005; no power for the crane&rdquo;</em> is the whole §7 trap caught in the act. And the cadence tracks the speed slider for free: at 1&times; a firing every few minutes, at 8,760&times; a blur.</p>
         <p>It also shows the variety the earlier versions hid. Switching a heater on, making seals, raising a repair job &mdash; not everything is a delivery.</p>
-      </section>
-
-      <section>
-        <h2>Where your rules are</h2>
-        <p>The count moved out of the hero and became a plain ordered bar list, which is what it always wanted to be. Ten rooms, longest first, adding to sixty-one.</p>
-        <p>The last row is the payload: <strong>Reactor &nbsp;0</strong>, in red, at the bottom of a sorted list where it cannot be missed. <em>Nothing watches the reactor &mdash; the one thing on this ship that can kill everyone in an afternoon.</em></p>
-        <p>The constellation gestured at that with an empty patch and the words &ldquo;no rules here&rdquo;. This says it exactly, in order, with a number. <strong>Tidy beats atmospheric when the information is the point.</strong></p>
+        <p><strong>The panel is a fixed 190px</strong>, with two lines reserved for the condition and for the action. Firings vary in length, and without that the whole page reflowed every few seconds &mdash; the one thing a persistent, always-animating element must never do.</p>
       </section>
 
       <section>
