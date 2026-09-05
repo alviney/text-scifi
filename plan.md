@@ -2200,6 +2200,54 @@ comfortably inside the tolerance of the §6b encounter target.
 - Acts as the player's ambient awareness of ship state.
 - Each line is tappable — links to the source of the signal.
 
+#### Signal format
+
+Every signal carries a fixed three-field marker, then a plain sentence:
+
+```
+[LVL][FAC][CODE]  message
+
+[CRT][RCT][POWR]  The reactor is failing. It can't make enough power.
+[WRN][LFS][RULE]  The water restock rule hasn't run in 47 years.
+[WRN][CRG][STOR]  Rare compounds run out in about 90 days.
+[WRN][SHP][JOBS]  A repair job has waited five years. No engineer is awake.
+[INF][RCT][FUEL]  Fuel rod 47 loaded. 149 left.
+[INF][HYD][MOVE]  Fertiliser delivered from Engineering.
+[···][QTR][CREW]  Okonkwo: "third week of the same ration block."
+```
+
+**The marker is metadata; the message is prose.** The player never has to decode the prefix to
+understand a line — the sentence always says it in English. The codes exist so a feed holding
+tens of thousands of entries across three centuries can be **scanned, filtered and recognised
+by pattern**, which prose alone cannot do. Fixed width means the eye lands in the same place
+every time, and the ticker gets a consistent rhythm.
+
+**Level** — severity, and the speed slider's filter floor (§11 Q8):
+
+| | |
+|---|---|
+| `CRT` | Critical. Holds the ticker, trips snap-back. |
+| `WRN` | Warning. Always shown. |
+| `INF` | Routine. Suppressed at high speed. |
+| `···` | Chatter. Only visible at low speed. |
+
+**Facility** — where it came from:
+
+`BRG` Bridge · `ENG` Engineering · `RCT` Reactor · `LFS` Life Support · `HYD` Hydroponics
+`MED` Medbay · `QTR` Quarters · `CRG` Cargo Bay · `DRN` Drone Bay · `MNT` Maintenance
+`SHP` ship-wide · `CRW` a person rather than a place
+
+**Code** — what kind of thing happened:
+
+| | | | |
+|---|---|---|---|
+| `POWR` power | `WEAR` condition | `FAIL` broken | `STOR` stores |
+| `MOVE` deliveries | `MAKE` manufacturing | `JOBS` task board | `RULE` automation |
+| `CREW` people | `NAVG` course & encounters | `FUEL` fuel | `ATMO` air, water, heat |
+
+Twelve codes, each guessable, and they double as the filter chips on the full feed. `[···][QTR][CREW]`
+and `[CRT][RCT][POWR]` are the two ends of the game in the same shape.
+
 ### Key Screens
 <!-- TODO: Design each screen in detail — iterative process -->
 

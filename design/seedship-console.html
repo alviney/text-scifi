@@ -196,6 +196,20 @@ h1{
 .act:hover{border-color:var(--d-accent);color:var(--d-accent)}
 .act.danger:hover{border-color:var(--d-crit);color:var(--d-crit)}
 
+/* ---- signal markers: fixed-width metadata, prose message ---- */
+.sig{flex:none;letter-spacing:-.02em;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sig .lv{font-weight:500}
+.sig .fc,.sig .cd{color:var(--d-faint)}
+.feedline{align-items:flex-start}
+.fl2{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;
+  font-family:inherit;font-size:12px;background:none;border:none;color:var(--d-text);
+  border-bottom:1px solid var(--d-rule);padding:8px 2px;cursor:pointer}
+.fl2:hover{background:var(--d-panel2)}
+.fl2 .hd{display:flex;justify-content:space-between;gap:8px;font-size:11px}
+.fl2 .bd{color:var(--d-text);line-height:1.45}
+.fl2.chat .bd{color:var(--d-faint);font-style:italic}
+.fl2 .tm{color:var(--d-faint);font-size:10px;flex:none}
+
 /* ---- persistent feed ticker: top of every screen ---- */
 .ticker{
   display:flex;align-items:center;gap:8px;flex:none;cursor:pointer;width:100%;text-align:left;
@@ -330,7 +344,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
       </div>
       <div class="device" data-skin="amber">
         <button class="ticker" id="ticker" data-go="feedfull">
-          <span class="tdot" id="tdot">&middot;</span>
+          <span class="sig" id="tsig"><span class="lv dim">[INF]</span><span class="fc">[RCT]</span><span class="cd">[FUEL]</span></span>
           <span class="tmsg" id="tmsg">Fuel rod 47 loaded. 149 left.</span>
           <span class="tq" id="tq" hidden>+0</span>
           <span class="tyr">y147</span>
@@ -397,17 +411,37 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
           <button class="backbtn" data-go="voyage">&lsaquo; back</button>
           <h2 class="scr-title">What&rsquo;s happened <span>4 unread</span></h2>
           <div class="acts" style="margin:0 0 10px">
-            <button class="act">Everything</button><button class="act">Warnings</button><button class="act">Serious</button>
+            <button class="act">All</button><button class="act">WRN+</button><button class="act">POWR</button><button class="act">STOR</button><button class="act">CREW</button>
           </div>
+          <p class="quiet" style="margin:0 0 10px">Filter by any part of the marker.</p>
           <div class="feed">
-            <button class="feedline" data-go="equipment"><span class="ts">14:32</span><span class="msg"><span class="crit">●</span> The reactor is failing. It can&rsquo;t make enough power.</span></button>
-            <button class="feedline" data-go="rule"><span class="ts">11:07</span><span class="msg"><span class="warn">●</span> The water restock rule hasn&rsquo;t run in 47 years.</span></button>
-            <button class="feedline" data-go="inventory"><span class="ts">09:41</span><span class="msg"><span class="warn">●</span> Rare compounds run out in about 90 days.</span></button>
-            <button class="feedline" data-go="tasks"><span class="ts">08:15</span><span class="msg"><span class="warn">●</span> A repair job has waited five years. No engineer is awake.</span></button>
-            <button class="feedline" data-go="voyage"><span class="ts">04:02</span><span class="msg">Fuel rod 47 loaded. 149 left.</span></button>
-            <button class="feedline chatter" data-go="crew"><span class="ts">02:20</span><span class="msg">Okonkwo: &ldquo;third week of the same ration block.&rdquo;</span></button>
-            <button class="feedline" data-go="facility"><span class="ts">01:15</span><span class="msg">Adeyemi picked the crop in bed 4.</span></button>
-            <button class="feedline chatter" data-go="crew"><span class="ts">y146</span><span class="msg">Year 146 closed. Nobody died.</span></button>
+            <button class="fl2" data-go="equipment">
+              <span class="hd"><span class="sig"><span class="lv crit">[CRT]</span><span class="fc">[RCT]</span><span class="cd">[POWR]</span></span><span class="tm">14:32</span></span>
+              <span class="bd">The reactor is failing. It can&rsquo;t make enough power.</span></button>
+            <button class="fl2" data-go="rule">
+              <span class="hd"><span class="sig"><span class="lv warn">[WRN]</span><span class="fc">[LFS]</span><span class="cd">[RULE]</span></span><span class="tm">11:07</span></span>
+              <span class="bd">The water restock rule hasn&rsquo;t run in 47 years.</span></button>
+            <button class="fl2" data-go="inventory">
+              <span class="hd"><span class="sig"><span class="lv warn">[WRN]</span><span class="fc">[CRG]</span><span class="cd">[STOR]</span></span><span class="tm">09:41</span></span>
+              <span class="bd">Rare compounds run out in about 90 days.</span></button>
+            <button class="fl2" data-go="tasks">
+              <span class="hd"><span class="sig"><span class="lv warn">[WRN]</span><span class="fc">[SHP]</span><span class="cd">[JOBS]</span></span><span class="tm">08:15</span></span>
+              <span class="bd">A repair job has waited five years. No engineer is awake.</span></button>
+            <button class="fl2" data-go="inventory">
+              <span class="hd"><span class="sig"><span class="lv warn">[WRN]</span><span class="fc">[ENG]</span><span class="cd">[MOVE]</span></span><span class="tm">07:50</span></span>
+              <span class="bd">Ore delivery unclaimed 11 days. The smelter is idle.</span></button>
+            <button class="fl2" data-go="voyage">
+              <span class="hd"><span class="sig"><span class="lv dim">[INF]</span><span class="fc">[RCT]</span><span class="cd">[FUEL]</span></span><span class="tm">04:02</span></span>
+              <span class="bd">Fuel rod 47 loaded. 149 left.</span></button>
+            <button class="fl2" data-go="facility">
+              <span class="hd"><span class="sig"><span class="lv dim">[INF]</span><span class="fc">[HYD]</span><span class="cd">[MOVE]</span></span><span class="tm">03:20</span></span>
+              <span class="bd">Fertiliser delivered from Engineering.</span></button>
+            <button class="fl2 chat" data-go="crew">
+              <span class="hd"><span class="sig"><span class="lv faint">[&middot;&middot;&middot;]</span><span class="fc">[QTR]</span><span class="cd">[CREW]</span></span><span class="tm">02:20</span></span>
+              <span class="bd">Okonkwo: &ldquo;third week of the same ration block.&rdquo;</span></button>
+            <button class="fl2 chat" data-go="crew">
+              <span class="hd"><span class="sig"><span class="lv faint">[&middot;&middot;&middot;]</span><span class="fc">[SHP]</span><span class="cd">[NAVG]</span></span><span class="tm">y146</span></span>
+              <span class="bd">Year 146 closed. Nobody died.</span></button>
           </div>
           <div class="menu">
             <button id="ackbtn">Mark as read<span class="c">&nbsp;&middot; resumes the ticker</span><span class="g">&rsaquo;</span></button>
@@ -815,6 +849,20 @@ svc  ^  ^   ^  ^   ^  ^</pre>
       </section>
 
       <section>
+        <h2>Every signal is marked the same way</h2>
+        <pre style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;margin:0 0 10px;
+             white-space:pre;overflow-x:auto;color:var(--pg-text);line-height:1.6">[CRT][RCT][POWR]  The reactor is failing.
+[WRN][LFS][RULE]  Water restock hasn&rsquo;t run in 47 years.
+[WRN][CRG][STOR]  Rare compounds run out in ~90 days.
+[INF][HYD][MOVE]  Fertiliser delivered from Engineering.
+[&middot;&middot;&middot;][QTR][CREW]  Okonkwo: &ldquo;third week of the same&hellip;&rdquo;</pre>
+        <p class="callout">The marker is metadata. <strong>The message is prose.</strong></p>
+        <p>The player never decodes the prefix to understand a line &mdash; the sentence always says it in English. The codes exist so a feed holding tens of thousands of entries across three centuries can be <em>scanned, filtered and recognised by pattern</em>, which prose alone cannot do. Fixed width means the eye lands in the same place every time.</p>
+        <p><strong>Level</strong> is severity, and doubles as the speed slider&rsquo;s filter floor: <code>CRT</code> holds the ticker and trips snap-back, <code>WRN</code> always shows, <code>INF</code> is suppressed at high speed, <code>&middot;&middot;&middot;</code> chatter only survives at 1&times;. <strong>Facility</strong> is one of ten rooms, plus <code>SHP</code> for ship-wide and <code>CRW</code> for a person rather than a place. <strong>Code</strong> is one of twelve kinds &mdash; <code>POWR WEAR FAIL STOR MOVE MAKE JOBS RULE CREW NAVG FUEL ATMO</code> &mdash; and they double as the filter chips on the full feed.</p>
+        <p>The two ends of the game end up in the same shape: <code>[&middot;&middot;&middot;][QTR][CREW]</code> and <code>[CRT][RCT][POWR]</code>.</p>
+      </section>
+
+      <section>
         <h2>The ticker is the game&rsquo;s pulse</h2>
         <p>One feed item, at the top of every screen, always. New items replace the old one, so you can monitor the ship from anywhere without going and looking.</p>
         <p class="callout">A serious alert turns the strip red and <strong>holds it there</strong> &mdash; the ticker stops rotating until you acknowledge it.</p>
@@ -912,23 +960,24 @@ svc  ^  ^   ^  ^   ^  ^</pre>
      rotation. That hold is the visible half of §2 snap-back: acknowledging
      it is what resumes both. */
   var items = [
-    {sev:"",     dot:"·", msg:"Fuel rod 47 loaded. 149 left."},
-    {sev:"faint",dot:"·", msg:"Okonkwo: \u201Cthird week of the same ration block.\u201D"},
-    {sev:"warn", dot:"\u25CF", msg:"Rare compounds run out in about 90 days."},
-    {sev:"",     dot:"·", msg:"Adeyemi picked the crop in bed 4."},
-    {sev:"warn", dot:"\u25CF", msg:"A repair job has waited five years."},
-    {sev:"crit", dot:"\u25CF", msg:"The reactor is failing. It can\u2019t make enough power."}
+    {sev:"dim",  lv:"INF", fc:"RCT", cd:"FUEL", msg:"Fuel rod 47 loaded. 149 left."},
+    {sev:"faint",lv:"\u00B7\u00B7\u00B7", fc:"QTR", cd:"CREW", msg:"Okonkwo: \u201Cthird week of the same ration block.\u201D"},
+    {sev:"warn", lv:"WRN", fc:"CRG", cd:"STOR", msg:"Rare compounds run out in about 90 days."},
+    {sev:"dim",  lv:"INF", fc:"HYD", cd:"MOVE", msg:"Fertiliser delivered from Engineering."},
+    {sev:"warn", lv:"WRN", fc:"SHP", cd:"JOBS", msg:"A repair job has waited five years."},
+    {sev:"crit", lv:"CRT", fc:"RCT", cd:"POWR", msg:"The reactor is failing. It can\u2019t make enough power."}
   ];
   var tk = document.getElementById("ticker"),
-      td = document.getElementById("tdot"),
+      ts = document.getElementById("tsig"),
       tm = document.getElementById("tmsg"),
       tq = document.getElementById("tq");
   var idx = 0, held = false, queued = 0, timer = null;
 
   function paint(){
     var it = items[idx];
-    td.className = "tdot " + (it.sev || "dim");
-    td.textContent = it.dot;
+    ts.innerHTML = '<span class="lv ' + it.sev + '">[' + it.lv + ']</span>' +
+                   '<span class="fc">[' + it.fc + ']</span>' +
+                   '<span class="cd">[' + it.cd + ']</span>';
     tm.textContent = it.msg;
     tm.className = "tmsg" + (it.sev === "faint" ? " faint" : "");
     tk.classList.toggle("held", it.sev === "crit");
