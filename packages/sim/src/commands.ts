@@ -154,7 +154,7 @@ export function apply(s: State, c: Command): State {
         emit(s, "warn", "Bridge", "NAV-BLIND", "The Comms Array is down. Nothing to scan with.");
         break;
       }
-      s.scans.push({ enc: c.enc, doneAt: s.day + SCAN_HOURS / 24 });
+      s.scans.push({ enc: c.enc, work: SCAN_HOURS, done: 0 });
       emit(s, "chatter", "Bridge", "NAV-SCAN", `Surveying the object ${
         Math.round(enc.year - s.day / 365)} years out.`);
       break;

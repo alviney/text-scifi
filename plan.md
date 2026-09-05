@@ -68,6 +68,35 @@ The ending is a **narrative outcome** based on ship and colony state at arrival.
 - Continuous slider up to ~**1 game-year per real-minute** (~8,760x).
 - At high speeds, simulation still runs per-hour resolution. Revisit if performance demands batching.
 
+**Built, and the hour is not negotiable.**
+
+The prototype was first written stepping in **days**, which looked like a harmless
+simplification and was not. Everything that takes time then had to be a whole number of days,
+so §6b's one-hour survey had nowhere to live and was bodged onto the client's interpolated
+clock instead. That put one duration in the game outside the simulation — and **durations only
+mean anything relative to each other.** A six-hour repair and a thirty-six-hour rebuild have to
+be the same kind of number, owned by the same clock, or the progress bars are decoration.
+
+So the tick is the game-hour, as this section always said. Day-scale processes — wear, power,
+industry, the colony — still run once a day on the rollover, so nothing about the balance moved;
+the hour is simply where **work and progress** live now.
+
+| Job | Game-hours |
+|-----|-----------:|
+| Survey an object | 1 |
+| Carry a consignment | 3 |
+| Service a machine | 6 |
+| Fabricate a fuel rod | 12 |
+| Build a drone | 24 |
+| Replace a machine | 36 |
+
+**Performance was never the reason to avoid it**: 40 game-years is 350,000 hourly ticks and runs
+in **22 ms**. The concern in the line above is unfounded — no batching needed.
+
+The render loop still interpolates *within* the hour, which is the second layer above doing its
+job. Without it a one-hour survey has no bar at all — it is a single tick, so it would jump
+from empty to done. The simulation owns the duration; the client only smooths between ticks.
+
 **Frame jacking & alert snap-back:**
 - Speed is a continuous spectrum — "frame jacking" is just the high end of the slider.
 - The player configures **snap-back rules**: "if an unresolved alert is older than X game-hours, drop speed to Y."
@@ -2135,10 +2164,8 @@ Two consequences worth keeping:
 - **The Comms Array finally matters.** It is 20 kW and `sheddable` in §6's load table, which
   made it the most disposable thing on the ship. Break it or shed it and you go blind to what
   is ahead — a real cost for the cheapest saving on the bus.
-- **A one-hour action does not fit a daily tick.** The simulation steps in days, so the survey
-  resolves against the client's interpolated fractional day through a separate `tickShort()`.
-  That is not a second clock: ARCHITECTURE §2 already says the client owns real time and the
-  core knows only ticks. The tick is simply finer than a day here.
+- **A one-hour action needs an hourly clock**, and it exposed that the prototype did not have
+  one. See §2 below.
 
 ## 7. Manufacturing
 

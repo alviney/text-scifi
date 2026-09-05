@@ -9,9 +9,13 @@
   import type { Command } from "../../../sim/src/commands.ts";
   import { BANKS, PER_BANK, COLD_GRACE_DAYS } from "../../../sim/src/colony.ts";
   import { ROSTER, ageFactor, RETIRE_AGE, THAW_DAYS, type Role } from "../../../sim/src/crew.ts";
-  import { assetName, num, when } from "../lib/view.ts";
+  import { assetName, hours, num, when } from "../lib/view.ts";
 
-  let { ship, send }: { ship: State; send: (c: Command) => void } = $props();
+  let { ship, frac, send }: { ship: State; frac: number; send: (c: Command) => void } = $props();
+  /** A job somebody is on advances smoothly between ticks; one nobody is on
+   *  does not move at all, and must not look like it is. */
+  const shown = (j: { done: number; work: number; assignee?: string }) =>
+    Math.min(j.work, j.done + (j.assignee ? frac : 0));
   const c = $derived(ship.colony);
   const open = $derived(ship.requests.filter(r => !r.answered));
   const roles = $derived([...new Set(ROSTER)] as string[]);
@@ -107,7 +111,7 @@
             {@const job = ship.board.find(t => t.assignee === p.id)}
             {#if job}
               <span class="doing">{label(job)}</span>
-              <span class="faint">{Math.round((job.done / job.work) * 100)}%</span>
+              <span class="faint">{hours(job.work - shown(job))} left</span>
             {:else}
               <span class="faint">Idle — nothing assigned</span>
             {/if}
@@ -174,12 +178,12 @@
       <div class="job">
         <div class="jline">
           <span class="jname">{label(job)}</span>
-          <span class="faint">{when(job.raised, ship.day)}</span>
+          <span class="faint">{hours(job.work)}</span>
         </div>
-        <div class="bar"><i style="width:{Math.min(100, (job.done / job.work) * 100)}%"></i></div>
+        <div class="bar"><i style="width:{(shown(job) / job.work) * 100}%"></i></div>
         {#if who}
           <div class="jsub">
-            <span class="ok">{who.name}</span>
+            <span class="ok">{who.name} · {hours(job.work - shown(job))} left</span>
             <button class="lnk" onclick={() => send({ kind: "unassign", task: job.id })}>take off</button>
           </div>
         {:else if handing === job.id}
@@ -193,7 +197,7 @@
           </div>
         {:else}
           <div class="jsub">
-            <span class="faint">nobody on it</span>
+            <span class="faint">nobody on it · raised {when(job.raised, ship.day)}</span>
             <button class="lnk" disabled={ship.crew.length === 0}
                     onclick={() => handing = job.id}>give it to…</button>
           </div>

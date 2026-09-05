@@ -39,10 +39,14 @@ export type Task = {
   from?: string; to?: string; what?: string;
 };
 
-/** How long each kind of job takes one person. Deliberately coarse — at one
- *  game-day per 24 real seconds, two crew-days is about a minute of watching. */
+/** How long each kind of job takes, in GAME-HOURS.
+ *
+ *  One unit for every duration in the game, so the bars mean something against
+ *  each other: a repair is a morning, a rebuild is a day and a half, a survey is
+ *  an hour. At one real second per game-hour these are 6 to 60 seconds of
+ *  watching — long enough to feel, short enough to sit through. */
 export const WORK: Record<Rule["action"], number> = {
-  service: 2, replace: 5, makeRod: 2, makeDrone: 4, deliver: 1,
+  service: 6, replace: 36, makeRod: 12, makeDrone: 24, deliver: 3,
 };
 
 export function newTask(s: State, t: Omit<Task, "id" | "work" | "done">): Task {

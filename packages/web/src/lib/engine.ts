@@ -8,11 +8,11 @@
  *  So the loop steps the sim as fast as the speed demands, and PUBLISHES a
  *  snapshot at a fixed, much slower rate. Continuous motion (the starfield, bar
  *  interpolation) reads `progress()` every frame and never touches the store. */
-import { init, step, tickShort, DAYS } from "../../../sim/src/sim.ts";
+import { init, step, HOURS } from "../../../sim/src/sim.ts";
 import { apply, unacked, type Command } from "../../../sim/src/commands.ts";
 import type { State } from "../../../sim/src/types.ts";
 
-/** One game-day every 24 real seconds, so **one real second is one game hour**.
+/** **One game-hour every real second.**
  *
  *  There is no speed control. §2 argues for a ladder up to a game-year a minute
  *  and §11 Q8 builds a severity floor on top of it, but none of that can be
@@ -23,14 +23,14 @@ import type { State } from "../../../sim/src/types.ts";
  *  A consequence worth knowing: a full 300-year voyage at this rate is about a
  *  month of wall-clock time. That is fine — the point is what an hour feels
  *  like, not reaching the destination. */
-export const SECONDS_PER_GAME_DAY = 24;
-export const DAYS_PER_SECOND = 1 / SECONDS_PER_GAME_DAY;
+export const SECONDS_PER_GAME_HOUR = 1;
+export const HOURS_PER_SECOND = 1 / SECONDS_PER_GAME_HOUR;
 
 /** How often the UI is told anything changed. 12/s is well under 60fps, and
  *  above the rate at which anyone reads a changing number. */
 const PUBLISH_HZ = 12;
-/** Never block the main thread: at most this many sim days per animation frame. */
-const MAX_STEPS_PER_FRAME = 4000;
+/** Never block the main thread: at most this many sim hours per animation frame. */
+const MAX_STEPS_PER_FRAME = 20000;
 
 type Sub = (s: State) => void;
 
@@ -41,7 +41,7 @@ export class Engine {
    *  visible half: the ticker pins the alert until it is acknowledged. */
   snapped = false;
   private subs: Sub[] = [];
-  private carry = 0;
+  carry = 0;
   private lastT = 0;
   private lastPublish = 0;
   private raf = 0;
@@ -58,18 +58,23 @@ export class Engine {
 
   private publish() { for (const fn of this.subs) fn(this.state); }
 
-  /** 0..1 through the voyage, interpolated inside the current day so a bar can
-   *  move smoothly at 1× instead of stepping once a second. */
-  progress() { return Math.min(1, (this.state.day + this.carry) / DAYS); }
+  /** How far into the current game-hour we are, 0..1.
+   *
+   *  The simulation owns every duration — a survey is one hour, a repair is six
+   *  — and this is only the client smoothing between ticks, the same way the
+   *  voyage bar already interpolates (ARCHITECTURE §4: continuous motion is the
+   *  renderer's job, not the tick's). Without it a one-hour job has no bar at
+   *  all: it is a single tick, so it would jump straight from empty to done. */
+  get frac() { return Math.min(1, this.carry); }
+
+  /** 0..1 through the voyage, interpolated inside the current hour. */
+  progress() { return Math.min(1, (this.state.hour + this.carry) / HOURS); }
 
   /** Development only, and not reachable from the interface: run the simulation
    *  forward without waiting for the wall clock. Screenshots and balance checks
    *  need a year-200 ship; a player does not. */
   fastForward(days: number) {
-    for (let i = 0; i < days && !this.state.dead; i++) {
-      step(this.state);
-      tickShort(this.state, this.state.day);
-    }
+    for (let i = 0; i < days * 24 && !this.state.dead; i++) step(this.state);
     this.publish();
   }
 
@@ -92,10 +97,7 @@ export class Engine {
       this.lastT = t;
 
       if (!this.state.dead) {
-        this.carry += dt * DAYS_PER_SECOND;
-        // Anything shorter than a day resolves against the interpolated clock —
-        // a one-hour survey should not wait for the day to turn over.
-        tickShort(this.state, this.state.day + this.carry);
+        this.carry += dt * HOURS_PER_SECOND;
         let n = Math.min(Math.floor(this.carry), MAX_STEPS_PER_FRAME);
         this.carry -= n;
         while (n-- > 0 && !this.state.dead) {

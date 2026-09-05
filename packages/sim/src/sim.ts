@@ -17,13 +17,14 @@ import { apply } from "./commands.ts";
 export const START_RODS = 320;
 export const START_DRONES = 6;
 export const DAYS = 300 * 365;
+export const HOURS = DAYS * 24;
 
 export function init(seed: number, actII = 40, p?: Policy): State {
   const r = rng(seed);
   const s: State = {
     day: 0, rngState: 0, assets: buildAssets(), rods: START_RODS, drones: START_DRONES,
     stores: emptyStores(), rooms: newRooms(), shipments: [],
-    schedule: buildSchedule(r, actII), next: 0, scans: [],
+    schedule: buildSchedule(r, actII), next: 0, scans: [], hour: 0,
     gauges: { parts: 100, rods: 100, rareCmp: 100, drones: 100 }, colony: newColony(),
     crew: [], requests: [], memorial: [], pool: { ...POOL }, nextCrewId: 0, nextTaskId: 0,
     rules: [], board: [], signals: [], acked: 0, settings: { ...DEFAULT_SETTINGS },
@@ -194,35 +195,96 @@ function finish(s: State, task: Task, p: Settings): boolean {
   return true;
 }
 
-/** Things that take less than a day.
+/** One game-hour. This is the tick.
  *
- *  §6b's rescan is one game-hour, and the simulation steps in days — so it
- *  cannot be resolved by step(). This is not a second clock: the client already
- *  owns real time (ARCHITECTURE §2) and interpolates a fractional day between
- *  ticks, so it passes that value in and the core decides what has finished.
- *  The core still knows only ticks; the tick is just finer than a day here.
+ *  It used to be a day, which was a shortcut, and the shortcut showed: a survey
+ *  takes an hour and there was nowhere to put it, so it was resolved against the
+ *  client's interpolated clock instead. That made one duration in the game
+ *  incomparable with all the others — and durations only mean anything relative
+ *  to each other. A six-hour repair and a thirty-six-hour rebuild have to be the
+ *  same kind of number, owned by the same clock.
  *
- *  Idempotent and cheap — it is a no-op on almost every frame. */
-export function tickShort(s: State, now: number): State {
-  if (s.dead || !s.scans.length) return s;
+ *  ARCHITECTURE §2 said "integer game-hours, fixed timestep" from the start.
+ *  This is that.
+ *
+ *  Day-scale processes — wear, power, industry, the colony — still run once a
+ *  day, on the rollover. Nothing about the balance changes; the hour is simply
+ *  where work and progress now live. */
+export function step(s: State): State {
+  if (s.dead) return s;
+  s.hour++;
+  hourly(s);
+  if (s.hour % 24 === 0) { s.day++; daily(s); }
+  if (s.hour >= HOURS && !s.dead) {
+    s.dead = "arrived";
+    emit(s, "info", "Voyage", "ARRIVE",
+         `Target reached. ${s.colony.frozen + s.colony.awake} of 200 alive.`);
+  }
+  return s;
+}
+
+/** Everything that happens on the hour: work gets done, surveys come back. */
+function hourly(s: State): void {
+  const p = s.settings;
+  // ---- work ----
+  // §3: crew are task queues. A job is a quantity of work with somebody's name
+  // against it, and until somebody's name is on it, it does not move. That is
+  // the opening phase of the game: nobody is awake, nothing is automated, and
+  // every job is one you handed out.
+  s.board.sort((x, y) => x.priority - y.priority || x.raised - y.raised);
+  const hands = onDuty(s.crew, s.day);
+
+  // Standing order, off at the start. Turning it on is the first thing
+  // automation buys you — the crew stop waiting to be told.
+  if (p.crewSelfAssign) {
+    for (const person of hands) {
+      if (person.task && s.board.some(t => t.id === person.task)) continue;
+      const next = s.board.find(t => !t.assignee && canStart(s, t, s.craneUp !== false));
+      if (!next) break;
+      next.assignee = person.id; person.task = next.id;
+    }
+  }
+
+  const done: Task[] = [];
+  for (const task of s.board) {
+    const person = task.assignee ? s.crew.find(c => c.id === task.assignee) : undefined;
+    // Gone or frozen: the job goes back on the board. Merely still in the medbay:
+    // the job is theirs and waits for them. Clearing it here silently unassigned
+    // every job given to someone who had just been woken.
+    if (task.assignee && !person) { task.assignee = undefined; continue; }
+    if (!person || person.asleep) continue;
+    if (s.day < person.fitOn) continue;
+    if (!canStart(s, task, s.craneUp !== false)) continue;   // blocked, and getting older
+    // An hour of somebody's time, worth what they are worth. A tired, unhappy,
+    // ageing or injured person moves the bar more slowly, by name.
+    task.done += effort(person) * (1 - p.botanistShare);
+    if (task.done < task.work) continue;
+    if (finish(s, task, p)) { done.push(task); person.task = undefined; }
+    else { task.done = task.work; }             // held, waiting on materials
+  }
+  for (const t2 of done) s.board.splice(s.board.indexOf(t2), 1);
+
+  // §6b: the array is not crew, so a survey needs nobody assigned — but it is
+  // measured in the same hours as everything else, which is the point.
   for (let i = s.scans.length - 1; i >= 0; i--) {
-    if (now < s.scans[i].doneAt) continue;
-    const enc = s.schedule.find(e => e.id === s.scans[i].enc);
+    const scan = s.scans[i];
+    scan.done++;
+    if (scan.done < scan.work) continue;
     s.scans.splice(i, 1);
+    const enc = s.schedule.find(e => e.id === scan.enc);
     if (!enc) continue;
     enc.scans++;
-    const conf = confidence(enc, now / 365);
+    const conf = confidence(enc, s.day / 365);
     emit(s, "info", "Bridge", "NAV-SCAN",
          `Survey complete. ${classReading(enc, conf)}, ${
            Math.round(trueMass(enc) * (1 + enc.bias * (1 - conf) * 0.4))} units, ` +
          `${Math.round(conf * 100)}% confidence.`);
   }
-  return s;
 }
 
-/** One day. Wear is linear within a day, so a daily step is exact for it. */
-export function step(s: State): State {
-  if (s.dead) return s;
+/** One day of wear, power, industry and people. */
+function daily(s: State): void {
+  if (s.dead) return;
   const r: Rng = { s: s.rngState };
   const p = s.settings;
   const reactor = reactorOf(s);
@@ -256,6 +318,7 @@ export function step(s: State): State {
   // in the Cargo Bay. That is §7's death spiral, and it needs no broken part.
   const crane = s.assets.find(a => a.id === "crane")!;
   const craneUp = !crane.faulted && headroom >= CRANE_KW;
+  s.craneUp = craneUp;                     // the hourly work loop reads this
   const craneKw = craneUp ? CRANE_KW : 0;
   if (!craneUp) s.counters.craneBlockedDays++;
 
@@ -274,7 +337,7 @@ export function step(s: State): State {
   s.rods -= rodsPerDay(delivered, reactor.cond);
   if (s.rods <= 0) {
     emit(s, "critical", "Reactor", "FUEL-OUT", "Fuel exhausted. The reactor is cold.", "reactor");
-    s.dead = "out of fuel"; s.rngState = r.s; return s;
+    s.dead = "out of fuel"; s.rngState = r.s; return;
   }
 
   // ---- wear ----
@@ -344,41 +407,6 @@ export function step(s: State): State {
          `${sh.qty.toFixed(0)} ${sh.what} delivered from ${sh.from}.`);
   }
 
-  // ---- work ----
-  // §3: crew are task queues. A job is a quantity of work with somebody's name
-  // against it, and until somebody's name is on it, it does not move. That is
-  // the opening phase of the game: nobody is awake, nothing is automated, and
-  // every job is one you handed out.
-  s.board.sort((x, y) => x.priority - y.priority || x.raised - y.raised);
-  const hands = onDuty(s.crew, s.day);
-
-  // Standing order, off at the start. Turning it on is the first thing
-  // automation buys you — the crew stop waiting to be told.
-  if (p.crewSelfAssign) {
-    for (const person of hands) {
-      if (person.task && s.board.some(t => t.id === person.task)) continue;
-      const next = s.board.find(t => !t.assignee && canStart(s, t, craneUp));
-      if (!next) break;
-      next.assignee = person.id; person.task = next.id;
-    }
-  }
-
-  const done: Task[] = [];
-  for (const task of s.board) {
-    const person = task.assignee ? s.crew.find(c => c.id === task.assignee) : undefined;
-    // Gone or frozen: the job goes back on the board. Merely still in the medbay:
-    // the job is theirs and waits for them. Clearing it here silently unassigned
-    // every job given to someone who had just been woken.
-    if (task.assignee && !person) { task.assignee = undefined; continue; }
-    if (!person || person.asleep) continue;
-    if (s.day < person.fitOn) continue;
-    if (!canStart(s, task, craneUp)) continue;   // blocked, and getting older
-    task.done += effort(person) * (1 - p.botanistShare);
-    if (task.done < task.work) continue;
-    if (finish(s, task, p)) { done.push(task); person.task = undefined; }
-    else { task.done = task.work; }             // held, waiting on materials
-  }
-  for (const t2 of done) s.board.splice(s.board.indexOf(t2), 1);
   s.counters.staleTasks += s.board.filter(t2 => s.day - t2.raised > 365).length > 0 ? 1 : 0;
 
   const yearsLeft = (DAYS - s.day) / 365;
@@ -446,14 +474,7 @@ export function step(s: State): State {
   if (s.colony.awake < awakeBefore)
     emit(s, "critical", "Quarters", "CRW-LOST", `Crew member died.`);
 
-  s.day++;
   s.rngState = r.s;
-  if (s.day >= DAYS) {
-    s.dead = "arrived";
-    emit(s, "info", "Voyage", "ARRIVE",
-         `Target reached. ${s.colony.frozen + s.colony.awake} of 200 alive.`);
-  }
-  return s;
 }
 
 export function run(seed: number, p: Policy, actII = 40): State {
@@ -462,7 +483,8 @@ export function run(seed: number, p: Policy, actII = 40): State {
     // The autopilot's one standing habit the rule engine cannot express:
     // §5 gauges have no machine to be opened alongside, so calibration is a
     // deliberate act. A human client issues apply(s, {kind:"calibrate"}).
-    if (p.maintainSensors && s.day % 365 === 0)
+    // Once a year, not once an hour on every 365th day — the tick is finer now.
+    if (p.maintainSensors && s.hour % (365 * 24) === 0)
       for (const k of Object.keys(s.gauges)) s.gauges[k] = 100;
     step(s);
   }

@@ -3,7 +3,7 @@
   import { Engine } from "./lib/engine.ts";
   import type { State } from "../../sim/src/types.ts";
   import { LEVEL_MARK } from "../../sim/src/signals.ts";
-  import { num, year, when } from "./lib/view.ts";
+  import { clock, num, year, when } from "./lib/view.ts";
   import Ticker from "./lib/Ticker.svelte";
   import Start from "./lib/Start.svelte";
   import { save, load, peek, clear } from "./lib/save.ts";
@@ -17,6 +17,8 @@
   let saved = $state(peek());
   let ship = $state<State>(engine.state);
   let snapped = $state(false);
+  /** fraction of the current game-hour elapsed, for smoothing progress bars */
+  let frac = $state(0);
   let tab = $state("voyage");
   let feedOpen = $state(false);
   let showAll = $state(true);
@@ -31,6 +33,7 @@
     // two rates are deliberately not coupled.
     off = engine.subscribe(s => {
       ship = { ...s };            // new identity so $state sees the change
+      frac = engine.frac;
       snapped = engine.snapped;
     });
     engine.onSave = s => { save(s); saved = peek(); };
@@ -62,7 +65,9 @@
 
   <div class="bar2">
     <span class="yr">Y{num(year(ship.day))}</span>
-    <span class="clock">day {num(ship.day % 365 + 1)}</span>
+    <!-- The hour ticks once a real second, so it is the part of the clock that
+         shows the ship is running. -->
+    <span class="clock">day {num(ship.day % 365 + 1)} <b>{clock(ship.hour)}</b></span>
   </div>
 
   {#if ship.dead}
@@ -84,11 +89,11 @@
       </div>
     </div>
   {:else if tab === "voyage"}
-    <Voyage {ship} progress={() => engine.progress()} send={c => engine.send(c)} />
+    <Voyage {ship} {frac} progress={() => engine.progress()} send={c => engine.send(c)} />
   {:else if tab === "facilities"}
     <Facilities {ship} send={c => engine.send(c)} />
   {:else if tab === "crew"}
-    <Crew {ship} send={c => engine.send(c)} />
+    <Crew {ship} {frac} send={c => engine.send(c)} />
   {:else}
     <Rules {ship} send={c => engine.send(c)} />
   {/if}
@@ -129,6 +134,7 @@
   }
   .yr { color: var(--accent); flex: none; }
   .clock { flex: 1; min-width: 0; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .clock b { color: var(--text); font-weight: 400; }
 
   nav { display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
         border-top: 1px solid var(--rule); background: var(--panel); }

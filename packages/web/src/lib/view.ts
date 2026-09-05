@@ -64,6 +64,18 @@ export const mark = (r: { value: number; doubt: boolean }, d = 0) =>
 
 /** Game time, in the two units the player actually thinks in. */
 export const year = (day: number) => Math.floor(day / 365);
+
+/** Every duration in the game is game-hours, so there is one way to print one.
+ *  Keeping hours visible below a couple of days is the point — the player is
+ *  meant to feel a six-hour repair against a thirty-six-hour rebuild. */
+export function hours(h: number): string {
+  if (h < 1) return "<1h";
+  if (h < 48) return `${Math.round(h)}h`;
+  return `${Math.round(h / 24)}d`;
+}
+
+/** The ship's clock. */
+export const clock = (hour: number) => `${String(hour % 24).padStart(2, "0")}:00`;
 export function when(day: number, now: number): string {
   const d = now - day;
   if (d < 1) return "just now";

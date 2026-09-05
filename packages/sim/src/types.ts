@@ -44,6 +44,9 @@ export type Counters = {
 };
 
 export type State = {
+  /** Total elapsed game-hours. THIS is the clock — `day` is derived from it and
+   *  kept alongside because day-scale things read more clearly in days. */
+  hour: number;
   day: number;
   rngState: number;
   assets: Asset[];
@@ -74,7 +77,9 @@ export type State = {
   nextTaskId: number;
   /** Surveys in progress. Measured in fractional days because a scan is an
    *  hour and the simulation steps in days — see tickShort(). */
-  scans: { enc: number; doneAt: number }[];
+  scans: { enc: number; work: number; done: number }[];
+  /** cached each day so the hourly work loop knows whether the crane can run */
+  craneUp?: boolean;
   rules: import("./rules.ts").Rule[];
   board: import("./rules.ts").Task[];
   /** §8's feed. A bounded window, not a ledger — totals live in counters. */

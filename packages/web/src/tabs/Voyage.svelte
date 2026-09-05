@@ -13,10 +13,10 @@
   import { DAYS, START_RODS } from "../../../sim/src/sim.ts";
   import { classReading, confidence, estimate, estimateComposition,
            trueMass, worthScanning, SCAN_HOURS } from "../../../sim/src/encounters.ts";
-  import { fuel, num, power, MATERIAL } from "../lib/view.ts";
+  import { fuel, hours, num, power, MATERIAL } from "../lib/view.ts";
 
-  let { ship, progress, send }: {
-    ship: State; progress: () => number; send: (c: Command) => void } = $props();
+  let { ship, frac, progress, send }: {
+    ship: State; frac: number; progress: () => number; send: (c: Command) => void } = $props();
 
   let sky: HTMLCanvasElement | undefined = $state();
   let bar: HTMLElement | undefined = $state();
@@ -125,10 +125,14 @@
       {/each}
 
       {#if scanning(sel)}
-        <button class="act" disabled>Array is looking…</button>
+        {@const sc = ship.scans.find(x => x.enc === sel!.id)!}
+        <div class="scanning">
+          <div class="bar"><i style="width:{Math.min(100, ((sc.done + frac) / sc.work) * 100)}%"></i></div>
+          <span class="faint">Array is looking — {hours(Math.max(0, sc.work - sc.done - frac))} left</span>
+        </div>
       {:else if worthScanning(sel, yr)}
         <button class="act" onclick={() => send({ kind: "rescan", enc: sel!.id })}>
-          Rescan — {SCAN_HOURS} hour
+          Rescan — {hours(SCAN_HOURS)}
         </button>
       {:else}
         <button class="act" disabled>Nothing more to learn from here</button>
@@ -230,6 +234,8 @@
           align-items: center; font-size: 11px; padding: 3px 0; }
   .comp .bar { height: 3px; }
   .comp .faint { text-align: right; }
+  .scanning { margin-top: 16px; display: grid; gap: 5px; }
+  .scanning .faint { font-size: 11px; }
   .act { display: block; width: 100%; border: 1px solid var(--accent); color: var(--accent);
          padding: 9px; text-align: center; margin-top: 16px; }
   .act:disabled { border-color: var(--rule); color: var(--faint); }

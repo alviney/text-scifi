@@ -45,8 +45,7 @@ becomes "Best after repair" in one place, and no component invents its own wordi
 
 ## One speed, on purpose
 
-**One game-day every 24 real seconds** — so one real second is one game hour. There is no speed
-control.
+**One game-hour every real second.** There is no speed control.
 
 §2 specifies a ladder up to a game-year a real minute, and §11 Q8 builds a severity floor on top
 of it so the feed stays readable at speed. Neither can be settled from a spreadsheet: what a
@@ -56,6 +55,11 @@ playing it says what the ladder should be, and the feed carries everything inclu
 
 A 300-year voyage at this rate is about a month of wall clock. That is fine — the question is
 what an hour feels like, not whether you reach the destination.
+
+**The simulation ticks in game-hours**, so every duration in the game is one number in one unit
+and the progress bars are comparable: a survey is 1, a repair 6, a rebuild 36. The client
+interpolates *within* the hour so a one-tick job still has a bar, but it never decides how long
+anything takes.
 
 `engine.fastForward(days)` still exists for screenshots and balance checks. It is not reachable
 from the interface.
