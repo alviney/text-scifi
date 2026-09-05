@@ -2605,6 +2605,22 @@ These features would use an LLM to replace/supplement the text bank with dynamic
    top — an arrival-phase power windfall would give the endgame a distinct texture. The
    catalogue's "Solar Array Control" is renamed "Aux Array Control" pending this.
 
+10. **Should anything be permanently irreplaceable?**
+   Today every one of the 42 assets can be replaced outright, the reactor included — there is
+   no "cannot be replaced" flag anywhere in the design or the prototype. The reactor only
+   *feels* unreplaceable because three things stack on it: the catalogue's highest wear rate
+   (1.8x base), `high` complexity so it is one of only six assets costing rare compounds
+   directly, and the fact that its condition gates the whole ship rather than one room.
+   That is scarcity through the material economy, not through a rule.
+
+   The consequence is that a perfectly played ship could in principle run forever, and arrival
+   is simply when the clock stops. An irreplaceable asset — the pressure hull is the obvious
+   candidate, since it is already catalogued as passive plating — would give the voyage a
+   terminal shape and make late-game decisions about *what to save* real.
+
+   **Deferred deliberately.** Leaving it means all the §4 tuning stands as measured. Revisit
+   if the endgame turns out to lack pressure once the arrival sequence exists.
+
 ---
 
 ## Appendix: Inspiration & References
