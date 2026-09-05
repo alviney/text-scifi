@@ -109,17 +109,26 @@ export function makePerson(r: Rng, role: Role, day: number, n: number): Person {
   };
 }
 
+/** Make someone whose name nobody aboard already has.
+ *
+ *  Two people called Kai on an eight-person ship reads as a bug rather than a
+ *  coincidence, and so does a roster with three Adeyemis on it. Both halves of
+ *  the name have to be clear, because the feed uses whichever fits: "Okonkwo
+ *  took the hull repair" is only a story if there is one Okonkwo. */
+export function makeDistinct(r: Rng, role: Role, day: number, id: number,
+                             aboard: Person[]): Person {
+  const taken = new Set(aboard.flatMap(o => o.name.split(" ")));
+  let p = makePerson(r, role, day, id);
+  for (let guard = 0; guard < 40; guard++) {
+    if (!p.name.split(" ").some(part => taken.has(part))) break;
+    p = makePerson(r, role, day, id);
+  }
+  return p;
+}
+
 export function newCrew(r: Rng): Person[] {
   const out: Person[] = [];
-  for (const role of ROSTER) {
-    let p = makePerson(r, role, 0, out.length);
-    // Two people called Kai on an eight-person ship reads as a bug, not a
-    // coincidence, and the feed refers to them by name constantly.
-    let guard = 0;
-    while (out.some(o => o.name.split(" ")[0] === p.name.split(" ")[0]) && guard++ < 30)
-      p = makePerson(r, role, 0, out.length);
-    out.push(p);
-  }
+  for (const role of ROSTER) out.push(makeDistinct(r, role, 0, out.length, out));
   return out;
 }
 

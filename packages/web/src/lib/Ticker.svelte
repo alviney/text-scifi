@@ -4,10 +4,10 @@
    *  signal turns the strip red and HOLDS it — rotation stops until acknowledged,
    *  which is the visible half of §2's snap-back.
    *
-   *  Two entries rather than one, each on a single line. A wrapping message
-   *  spent the height on one signal and broke words across lines; two rows spend
-   *  it on a second signal instead, which also gives the newest item something
-   *  to be newer *than* — you can see the ship moving without opening the feed. */
+   *  One entry, on a single line, vertically centred. It has been one wrapping
+   *  message and two stacked rows on the way here; a single centred line is the
+   *  quietest of the three, and at one game-day per 24 seconds signals arrive
+   *  slowly enough that a second row was showing something already read. */
   import type { State } from "../../../sim/src/types.ts";
   import { LEVEL_MARK, type Signal } from "../../../sim/src/signals.ts";
 
@@ -15,7 +15,7 @@
     ship: State; snapped: boolean; onack: () => void; onopen: () => void;
   } = $props();
 
-  const ROWS = 2;
+  const ROWS = 1;
   let shown: Signal[] = $state([]);
   let stacked = $state(0);
 
@@ -34,9 +34,7 @@
     // the ship keeps talking.
     const crit = feed.filter(x => x.level === "critical" && x.day > ship.acked);
     if (crit.length) {
-      const pin = crit[crit.length - 1];
-      const rest = feed.filter(x => x !== pin).slice(-(ROWS - 1)).reverse();
-      shown = [pin, ...rest];
+      shown = [crit[crit.length - 1]];
       stacked = crit.length - 1;
       return;
     }
@@ -56,8 +54,7 @@
      role="button" tabindex="0" onkeydown={e => e.key === "Enter" && onopen()}>
   {#if shown.length}
     {#each shown as sig, i}
-      <div class="line" class:old={i > 0}
-           class:crit={sig.level === "critical" && i === 0 && snapped}>
+      <div class="line" class:crit={sig.level === "critical" && snapped}>
         <span class="mk">[{LEVEL_MARK[sig.level]}][{sig.fac}][{sig.code}]</span>
         <span class="msg">{sig.text}</span>
         {#if i === 0 && stacked > 0}<span class="plus">+{stacked}</span>{/if}
@@ -79,15 +76,14 @@
      constantly, so anything that lets it grow reflows the whole page each time
      an item changes. */
   .ticker {
-    display: flex; flex-direction: column; justify-content: center; gap: 4px;
-    width: 100%; text-align: left; height: 66px; padding: 8px 12px;
+    display: flex; flex-direction: column; justify-content: center;
+    width: 100%; text-align: left; height: 53px; padding: 8px 12px;
     border-bottom: 1px solid var(--rule);
     background: var(--panel); font-size: 11.5px; cursor: pointer;
   }
   .ticker.pinned { background: color-mix(in srgb, var(--crit) 22%, var(--panel)); }
 
   .line { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
-  .line.old { opacity: .55; font-size: 10.5px; }
   .line.crit .msg, .line.crit .mk { color: var(--crit); }
 
   .mk { color: var(--faint); white-space: pre; flex: none; }

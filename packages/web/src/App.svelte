@@ -20,7 +20,6 @@
   let tab = $state("voyage");
   let feedOpen = $state(false);
   let showAll = $state(true);
-  let skin = $state("amber");
 
   let off: (() => void) | null = null;
 
@@ -47,12 +46,11 @@
 
   const TABS = [["voyage", "Voyage"], ["facilities", "Facilities"],
                 ["crew", "Crew"], ["rules", "Rules"]];
-  const SKINS = ["amber", "phosphor", "blueprint", "hazard"];
 </script>
 
 <svelte:body />
 
-<div class="shell" class:pre={!running} data-skin={skin}>
+<div class="shell" class:pre={!running}>
 {#if !running}
   <Start {saved}
          onstart={o => { clear(); saved = null; begin(new Engine(o.seed, { inherited: o.inherited })); }}
@@ -65,14 +63,6 @@
   <div class="bar2">
     <span class="yr">Y{num(year(ship.day))}</span>
     <span class="clock">day {num(ship.day % 365 + 1)}</span>
-    <span class="skins">
-      {#each SKINS as s}
-        <button class="sk" aria-pressed={s === skin} onclick={() => skin = s}
-                style="--c:{s === 'amber' ? '#E8A33D' : s === 'phosphor' ? '#8FE39B'
-                        : s === 'blueprint' ? '#0B6FA4' : '#F5C518'}"
-                aria-label={s}></button>
-      {/each}
-    </span>
   </div>
 
   {#if ship.dead}
@@ -139,9 +129,6 @@
   }
   .yr { color: var(--accent); flex: none; }
   .clock { flex: 1; min-width: 0; color: var(--dim); font-variant-numeric: tabular-nums; }
-  .skins { display: flex; gap: 5px; flex: none; }
-  .sk { width: 11px; height: 11px; border: 1px solid var(--rule); background: var(--c); opacity: .45; }
-  .sk[aria-pressed="true"] { opacity: 1; outline: 1px solid var(--text); outline-offset: 1px; }
 
   nav { display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
         border-top: 1px solid var(--rule); background: var(--panel); }

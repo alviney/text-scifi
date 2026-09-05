@@ -219,6 +219,14 @@ Two conventions worth preserving:
 
 ### Skins
 
+**Hazard is locked in and the selector is gone.** All five palettes stay defined in the
+prototype's `app.css`, unused, for when this is revisited — the point of the skin rule is that
+reinstating one costs nothing.
+
+One implementation note that only shows up on a wide screen: the chosen palette has to sit on
+`:root`, not on the app shell. The shell is capped at 560px, so a palette scoped to it leaves
+the page's own ground painted in whatever `:root` still says.
+
 Five interchangeable treatments, switchable in the page. Every skin defines the same
 token set, so **no screen markup changes between them** — only colour, typeface and
 shadow. If a skin needs different markup, it is a redesign, not a skin.

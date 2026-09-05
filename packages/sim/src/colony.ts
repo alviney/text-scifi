@@ -5,7 +5,7 @@ import type { Asset, State } from "./types.ts";
 import { chance, type Rng } from "./rng.ts";
 import { emit } from "./signals.ts";
 import type { Bus } from "./power.ts";
-import { effort, makePerson, mourn, nextRole, type Person } from "./crew.ts";
+import { effort, makeDistinct, mourn, nextRole, type Person } from "./crew.ts";
 
 export const CREW_TARGET = 8;
 export const FOOD_PER_CREW_PER_DAY = 3;
@@ -118,7 +118,7 @@ export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
       const want = nextRole(s.crew, s.pool);
       if (want) {
         s.pool[want]--;
-        const p = makePerson(r, want, s.day, s.nextCrewId++);
+        const p = makeDistinct(r, want, s.day, s.nextCrewId++, s.crew);
         s.crew.push(p); c.awake++; c.frozen--;
         emit(s, "info", "Medbay", "CRW-WAKE",
              `${p.name} is out of cryo. ${p.role[0].toUpperCase() + p.role.slice(1)}, age ${Math.floor(p.age)}.`);

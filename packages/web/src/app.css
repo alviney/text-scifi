@@ -1,7 +1,18 @@
 /* Tokens lifted from design/seedship-console.html. design/README's skin rule:
    every skin defines the SAME token set, so no markup changes between them.
    If a skin needs different markup it is a redesign, not a skin. */
-:root, [data-skin="amber"] {
+/* Hazard is the ship's look for now — locked in and the selector removed, so
+   this is the root palette rather than an override. It has to sit on :root and
+   not on the shell: the shell is capped at 560px, so a palette scoped to it
+   would leave the page's own ground painted in a different skin on a wide
+   screen. The others stay defined below, unused, for when this is revisited. */
+:root, [data-skin="hazard"] {
+  --bg:#0F1418; --panel:#161D23; --panel2:#1C252D; --rule:#2B3841;
+  --text:#DCE6ED; --dim:#8296A5; --faint:#4F6070;
+  --accent:#F5C518; --ok:#4CAF6A; --warn:#F0A828; --crit:#E2513C;
+  --font:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+[data-skin="amber"] {
   --bg:#100E0A; --panel:#181510; --panel2:#201C14; --rule:#2E2820;
   --text:#E4D8C0; --dim:#8B8069; --faint:#59503F;
   --accent:#E8A33D; --ok:#7DA35E; --warn:#E0B84E; --crit:#D0553F;
@@ -17,12 +28,6 @@
   --text:#13314C; --dim:#4D6E8B; --faint:#8BA3B7;
   --accent:#0B6FA4; --ok:#2C7A57; --warn:#9A6410; --crit:#B03A2E;
   --font:"Roboto Mono", ui-monospace, monospace;
-}
-[data-skin="hazard"] {
-  --bg:#0F1418; --panel:#161D23; --panel2:#1C252D; --rule:#2B3841;
-  --text:#DCE6ED; --dim:#8296A5; --faint:#4F6070;
-  --accent:#F5C518; --ok:#4CAF6A; --warn:#F0A828; --crit:#E2513C;
-  --font:"JetBrains Mono", ui-monospace, monospace;
 }
 
 * { box-sizing: border-box; }
