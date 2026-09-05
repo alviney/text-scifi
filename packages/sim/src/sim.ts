@@ -100,6 +100,9 @@ export function step(s: State, p: Policy): State {
 
   // ---- wear ----
   for (const k of Object.keys(s.gauges)) s.gauges[k] = Math.max(0, s.gauges[k] - 0.0009);
+  // Calibrating the store gauges is its own job, and nothing prompts it.
+  if (p.maintainSensors && s.day % 365 === 0)
+    for (const k of Object.keys(s.gauges)) s.gauges[k] = 100;
   for (const a of s.assets) {
     // Instruments wear whether or not the machine does — about a third as fast.
     a.sensorCond = Math.max(0, a.sensorCond - a.baseWear * 0.35);
@@ -168,10 +171,11 @@ export function step(s: State, p: Policy): State {
       if (!a.faulted) continue;               // wait for parts
     }
     service(s, a);
-    if (p.maintainSensors) {
-      a.sensorCond = 100;
-      for (const k of Object.keys(s.gauges)) s.gauges[k] = 100;   // the gauges too
-    }
+    // A sensor bolted to a machine gets checked while the machine is open, so
+    // routine repairs DO mitigate condition drift — for free, without the player
+    // ever deciding to. A gauge on a store has no such visit: nothing routine
+    // touches it, and its reading looks fine precisely because it reads high.
+    a.sensorCond = 100;
     done.push(task); jobs--;
   }
   for (const t2 of done) s.board.splice(s.board.indexOf(t2), 1);

@@ -741,6 +741,36 @@ unsettling late game than equipment simply breaking faster.
 **UI consequence:** values sourced from a degraded sensor should render marked — `47%?`, or
 dimmed — so uncertainty is visible without being explained. Fits the CLI aesthetic exactly.
 
+#### Which instruments routine repairs quietly fix, and which they don't
+
+Simulating this (`packages/harness/gauges.ts`) drew a line that turns out to matter:
+
+- **A sensor bolted to a machine is mitigated for free.** It gets checked while the machine is
+  open, so any player doing routine maintenance never experiences condition drift at all.
+  Measured, it makes **no difference whatsoever** — which is why the first implementation of
+  this mechanic appeared to do nothing.
+- **A gauge on a store is not.** Nothing routine touches it. No machine's service visit takes
+  it apart, and calibrating it is a deliberate job the player has to decide to do.
+
+That asymmetry is the mechanic:
+
+> **The instrument that lies is the one nothing gives you a reason to check — and its lie is
+> what removes the reason to check it.** A gauge reading high looks like a store that is fine.
+
+The cost of never calibrating, over a full voyage, against a ship that does it yearly:
+
+| | end condition | fuel rods left | drones | colonists lost |
+|---|---:|---:|---:|---:|
+| Calibrated yearly | 56 | 55 | 4.8 | 48 |
+| Never calibrated | 48 | **25** | **2.1** | **67** |
+
+Half the fuel reserve, half the drone fleet, and nineteen more people — from an instrument
+that never announced a problem. Both ships still arrive, which is the right shape: this is not
+a fail state, it is a **quiet tax on inattention**.
+
+So machine sensors are flavour and atmosphere; **store gauges are the mechanic.** The
+`47%?` marker matters most where §8 shows it on Stores.
+
 ### The other failure: nobody comes
 
 The quieter failure mode needs no broken hardware at all.
