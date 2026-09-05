@@ -48,20 +48,28 @@ A held badge is also kept separate from the room's status dot. The Cargo Bay rea
 holding blocked ore, because its *equipment* is fine — the block is a logistics problem, and
 collapsing the two would make the status dot mean two different things.
 
-### Group by what a rule does, not what it touches
+### The Rules hero is the mind, not a report
 
-The Rules hero first showed one lane per consumable (food, filters, water, ore). That was wrong
-at the concept level rather than the copy level: it quietly claimed **every automation is
-logistics**. Rules also switch equipment off, reorder power priority, queue manufacturing, raise
-repair jobs and write their own alerts.
+Two attempts drew it as activity traces — lanes per consumable, then lanes per verb. Both were
+**bookkeeping**, and bookkeeping is not compelling: counts of firings say the ship is busy, they
+do not make anyone feel anything.
 
-Lanes are now verbs — `fetching` `switching` `making` `warning` `fixing` — with a firing count
-at the right. The payload is the last one: **`fixing 0`**, flat for ninety days, not because a
-rule broke but because the player never wrote one. The ship ships with a single repair rule
-(§5c) and forty-five assets without.
+The other heroes each give something visceral — the journey, the ship as a place, 200 lives
+breathing. What is visceral about automation is that **it is you**, and unlike everything else
+aboard, you made it. So the hero is 61 dots, one per rule, linked into the chains they belong to.
+Not readable in detail, and not meant to be: it shows **shape, coverage and growth**.
 
-A list of 61 rules can say one is broken. Only this can say what has **never been automated at
-all**.
+Three things fall out that no list gives:
+
+- **The blind spot** — an empty region labelled "no rules here", because nothing the player wrote
+  watches that part of the ship.
+- **Hollow dots** — rules that have never once fired. A different failure from broken, with no
+  other home in the interface.
+- **Growth** — thirteen at launch, sixty-one now. Over a playthrough the constellation visibly
+  thickens, and late game it should be dense and tangled with dead threads still hanging in it.
+
+Superseded: the earlier note about grouping lanes by verb rather than consumable. That distinction
+was right as far as it went, but the whole lane form was the wrong idea.
 
 ### Motion means two different things, and they must not be confused
 

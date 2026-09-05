@@ -220,30 +220,21 @@ h1{
 .pod.awake{background:var(--d-accent);opacity:1}
 .pod.lost{background:none;box-shadow:inset 0 0 0 1px var(--d-faint);opacity:.3}
 
-/* ---- RULES hero: activity over time, NOT movement through space ----
-   Motion vocabulary is deliberate and split:
-     drifting background (starfield, this trace) = time passing
-     a discrete marker travelling (Rooms delivery) = a specific thing moving
-   Using the second for automation was the bug — it read as transit. */
-.pulsebox{margin:-10px -10px 12px;padding:12px 10px 10px;border-bottom:1px solid var(--d-rule)}
-.axis{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.11em;
-  text-transform:uppercase;color:var(--d-faint);margin-bottom:6px}
-.lane{display:flex;align-items:center;gap:7px;font-size:9.5px;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--d-faint);margin-bottom:1px}
-.lane .ln{flex:none;width:5.4em;text-align:right}
-.lane .ct{flex:none;width:2.2em;text-align:right;font-variant-numeric:tabular-nums;color:var(--d-dim)}
-.lane.dead .ct{color:var(--d-crit)}
-.trace{position:relative;flex:1;min-width:0;height:14px;overflow:hidden}
-.trace pre{position:absolute;top:0;left:0;margin:0;font-family:inherit;font-size:12px;
-  line-height:14px;white-space:pre;color:var(--d-ok);animation:scroll 26s linear infinite}
-@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-@media (prefers-reduced-motion:reduce){.trace pre{animation:none}}
-.lane.slow .trace pre{animation-duration:44s}
-.lane.dead .ln{color:var(--d-crit)}
-.lane.dead .trace pre{color:var(--d-faint);animation-duration:26s}
-.lane .stop{flex:none;color:var(--d-crit);font-size:9px;letter-spacing:.04em}
+/* ---- RULES hero: the mind you have built ----
+   61 dots, one per rule, linked into chains. Not readable in detail and
+   not meant to be: it shows shape, coverage and growth. */
+.mind{margin:-10px -10px 12px;padding:12px 10px 10px;border-bottom:1px solid var(--d-rule)}
+.mind canvas{display:block;width:100%;height:132px}
+.mindcap{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--d-faint);margin-top:7px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:10px;color:var(--d-dim);margin-top:8px}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend i{width:6px;height:6px;border-radius:50%;flex:none;font-style:normal}
+.legend .lg-ok{background:var(--d-accent)}
+.legend .lg-new{background:none;box-shadow:inset 0 0 0 1px var(--d-faint)}
+.legend .lg-bad{background:var(--d-crit)}
 
-/* ---- vital signs: the one legitimate home for density ---- */
+/* ---- vital signs: the one legitimate home for density ---- *//* ---- vital signs: the one legitimate home for density ---- */
 .vital{border-bottom:1px solid var(--d-rule);padding:11px 0 10px}
 .vital .vh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .vital .vn{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--d-faint)}
@@ -773,15 +764,16 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
         <!-- ---------- AUTOMATION ---------- -->
         <section class="screen" id="s-auto" hidden>
-          <div class="pulsebox" aria-hidden="true">
-            <div class="axis"><span>what your rules have been doing</span><span>90 days &#9656;</span></div>
-            <div class="lane "><span class="ln">fetching</span><span class="trace"><pre>▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁▁▂▁▁▁▂▁</pre></span><span class="ct">34</span></div>
-            <div class="lane "><span class="ln">switching</span><span class="trace"><pre>▁▂▁▂▂▁▁▂▁▂▁▂▂▁▂▁▁▂▁▂▁▂▂▁▂▁▁▂▁▁▂▁▂▂▁▁▂▁▂▁▂▂▁▂▁▁▂▁▂▁▂▂▁▂▁▁▂▁</pre></span><span class="ct">61</span></div>
-            <div class="lane slow"><span class="ln">making</span><span class="trace"><pre>▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁</pre></span><span class="ct">8</span></div>
-            <div class="lane slow"><span class="ln">warning</span><span class="trace"><pre>▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁▂▁▁▁▁▁▁▁▁▁▁</pre></span><span class="ct">3</span></div>
-            <div class="lane dead"><span class="ln">fixing</span><span class="trace"><pre>▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁</pre></span><span class="ct">0</span></div>
+          <div class="mind">
+            <canvas id="mindcv" aria-hidden="true"></canvas>
+            <div class="mindcap"><span>your rules</span><span>11 chains</span><span>3 broken</span></div>
+            <div class="legend">
+              <span><i class="lg-ok"></i>working</span>
+              <span><i class="lg-new"></i>never fired</span>
+              <span><i class="lg-bad"></i>broken</span>
+            </div>
           </div>
-          <p class="quiet" style="margin:-4px 0 10px">Fetching, switching things on and off, queueing work, raising alerts. <span class="crit">Nothing has been set up to fix anything</span> &mdash; every repair on this ship still waits for you to notice it.</p>
+          <p class="quiet" style="margin:0 0 10px">Sixty-one rules in eleven chains. <span class="acc">You were left thirteen</span> &mdash; the rest you built. Nothing here watches the reactor.</p>
           <h2 class="scr-title">Automation <span>61 rules</span></h2>
           <p class="lead">Three rules need attention.</p>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
@@ -1071,12 +1063,12 @@ svc  ^  ^   ^  ^   ^  ^</pre>
       </section>
 
       <section>
-        <h2>Rules: what your automations have been doing</h2>
-        <p>An earlier version put one lane per consumable &mdash; food, filters, water, ore. That was wrong at the concept level, not the copy level: it quietly claimed <strong>every automation is logistics</strong>. They aren&rsquo;t. Rules switch equipment off, reorder power priority, queue manufacturing, raise repair jobs and write their own alerts.</p>
-        <p class="callout">Group by <strong>what a rule does</strong>, not what it touches. Verbs, not materials.</p>
-        <p>Five lanes: <code>fetching</code>, <code>switching</code>, <code>making</code>, <code>warning</code>, <code>fixing</code>. Ninety days of history scrolling leftward, a count at the right, and each mark is one firing. The tempos differ honestly &mdash; switching fires constantly because the ship is short of power, warning almost never.</p>
-        <p>And the payload is the last lane. <strong><code>fixing &nbsp;0</code></strong> &mdash; flat, for ninety days. Not because a rule broke, but because <em>the player never wrote one</em>. The ship ships with a single repair rule (§5c) and forty-five assets without. Every repair still waits for a human to notice it.</p>
-        <p>That is a far better thing for this screen to say than which chain is jammed. A list of 61 rules can tell you one is broken; only this can tell you what you have <strong>never automated at all</strong>.</p>
+        <h2>Rules: the mind you have built</h2>
+        <p>Two earlier attempts drew this as activity traces &mdash; lanes per consumable, then lanes per verb. Both were <em>bookkeeping</em>, and bookkeeping is not compelling. Counts of firings tell you the ship is busy; they do not make you feel anything.</p>
+        <p>The other three heroes each give something visceral: the journey, the ship as a place, two hundred lives breathing. So what is visceral about automation? <strong>It is you.</strong> These rules are your extended mind, and unlike everything else on the ship, <em>you made them</em>.</p>
+        <p class="callout">Sixty-one dots, one per rule, linked into the eleven chains they belong to. Not readable in detail, and not meant to be &mdash; it shows <strong>shape, coverage and growth</strong>.</p>
+        <p>Three things fall out of it that no list gives you. The <strong>blind spot</strong>: a whole empty region with &ldquo;no rules here&rdquo; sitting in it, because nothing you have written watches that part of the ship. The <strong>hollow dots</strong>: rules that have never once fired, which is a different failure from broken and has no other home. And the <strong>growth</strong> &mdash; you launched with thirteen of these and now there are sixty-one, so over a playthrough the constellation visibly thickens. Late game it should be dense and tangled, with old dead threads still hanging in it.</p>
+        <p>The caption carries the point the picture cannot: <em>you were left thirteen; the rest you built.</em></p>
       </section>
 
       <section>
@@ -1164,6 +1156,8 @@ svc  ^  ^   ^  ^   ^  ^</pre>
     });
     var scr = document.getElementById("s-" + name);
     if (scr) scr.scrollTop = 0;
+    /* the canvas has no width while its screen is hidden, so draw on arrival */
+    if (name === "auto") requestAnimationFrame(drawMind);
   }
 
   var caps = {
@@ -1181,6 +1175,7 @@ svc  ^  ^   ^  ^   ^  ^</pre>
     if (!caps[name]) return;
     device.setAttribute("data-skin", name);
     cap.innerHTML = caps[name];
+    if (typeof drawMind === "function") drawMind();
     skinBtns.forEach(function(b){
       b.setAttribute("aria-pressed", b.getAttribute("data-skin-set") === name ? "true" : "false");
     });
@@ -1236,6 +1231,66 @@ svc  ^  ^   ^  ^   ^  ^</pre>
     tk.classList.remove("held");
     idx = 0; paint(); start();
   });
+
+  /* ---- the mind: 61 rules, 11 chains, drawn as a constellation ---- */
+  var cv = document.getElementById("mindcv");
+  function drawMind(){
+    if (!cv) return;
+    var dpr = window.devicePixelRatio || 1;
+    var w = cv.clientWidth, h = 132;
+    if (!w) return;
+    cv.width = w * dpr; cv.height = h * dpr;
+    var g = cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
+    var cs = getComputedStyle(cv);
+    var acc = cs.getPropertyValue("--d-accent").trim() || "#E8A33D";
+    var faint = cs.getPropertyValue("--d-faint").trim() || "#59503F";
+    var crit = cs.getPropertyValue("--d-crit").trim() || "#D0553F";
+
+    /* deterministic layout: 11 chains, clustered, left-weighted where the
+       player has automated and empty at the right where they have not */
+    var seed = 7;
+    function rnd(){ seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+    var chains = [], nodes = [];
+    var sizes = [8,7,7,6,6,5,5,4,4,3,6];
+    for (var c = 0; c < sizes.length; c++){
+      var cx = 0.06 + rnd() * 0.60, cy = 0.16 + rnd() * 0.68;
+      var members = [];
+      for (var i = 0; i < sizes[c]; i++){
+        var n = { x:(cx + (rnd()-0.5)*0.15) * w, y:(cy + (rnd()-0.5)*0.34) * h, c:c };
+        n.x = Math.max(8, Math.min(w-8, n.x)); n.y = Math.max(8, Math.min(h-8, n.y));
+        members.push(nodes.length); nodes.push(n);
+      }
+      chains.push(members);
+    }
+    var broken = [4, 23, 44], never = [9, 17, 31, 52];
+
+    g.lineWidth = 1;
+    chains.forEach(function(m, ci){
+      g.strokeStyle = (ci === 2) ? crit : faint;
+      g.globalAlpha = (ci === 2) ? 0.5 : 0.28;
+      for (var i = 1; i < m.length; i++){
+        g.beginPath();
+        g.moveTo(nodes[m[i-1]].x, nodes[m[i-1]].y);
+        g.lineTo(nodes[m[i]].x, nodes[m[i]].y);
+        g.stroke();
+      }
+    });
+    g.globalAlpha = 1;
+    nodes.forEach(function(n, i){
+      var bad = broken.indexOf(i) > -1, nu = never.indexOf(i) > -1;
+      g.beginPath(); g.arc(n.x, n.y, bad ? 2.8 : 2.2, 0, Math.PI*2);
+      if (bad){ g.fillStyle = crit; g.fill(); }
+      else if (nu){ g.strokeStyle = faint; g.lineWidth = 1; g.stroke(); }
+      else { g.fillStyle = acc; g.globalAlpha = 0.42 + (i % 5) * 0.12; g.fill(); g.globalAlpha = 1; }
+    });
+    /* the blind spot: nothing out here */
+    g.fillStyle = faint; g.globalAlpha = .8;
+    g.font = '9px "IBM Plex Mono", monospace';
+    g.fillText("no rules here", w * 0.74, h * 0.52);
+    g.globalAlpha = 1;
+  }
+  drawMind();
+  window.addEventListener("resize", drawMind);
 
   /* 200 colonists, 8 banks of 25. 6 awake, 7 lost. */
   var banksEl = document.getElementById("banks");
