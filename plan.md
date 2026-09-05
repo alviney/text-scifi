@@ -1286,8 +1286,18 @@ watched a number tick down for two centuries without understanding why it was fa
 than it should.
 
 Power is also *not free even when you have headroom*: running the smelter around the clock
-spends journey margin. More rods can be fabricated from **rare compounds** (12 each, §7) —
-which is the escape hatch, and it costs the scarcest thing on the ship.
+spends journey margin.
+
+**The escape hatch, and its catch.** More rods can be fabricated from **rare compounds** (12 each,
+plus 2 metal parts, §7) — so running low is recoverable, at the cost of the scarcest thing aboard.
+But the Fabricator draws 100 kW, and *the reactor is where 100 kW comes from*. Once the rods run
+out there is no power to make more.
+
+> **The point of no return is passed some years before the count reaches zero.**
+
+Which is the honest shape of the whole game in miniature: the failure is never the moment the
+number hits nothing. It is the earlier, quieter moment when you still had everything you needed
+to prevent it.
 
 Every rod inserted is a signal-feed event and a natural milestone marker for §10
 ("*rod 47 seated — 273 remaining*").
@@ -1398,7 +1408,7 @@ that you only have to do it once.
 | Reactor `DEGRADED` | Output falls below baseline → permanent shedding becomes normal |
 | Reactor `FAULTED` (SCRAM) | Battery bank: ~6 h of critical-only load. Then RTGs (~tens of kW). Life support on RTGs alone is survivable for the crew; **cryo is not.** |
 | Power Distribution `FAULTED` | Priorities unenforced; shedding becomes arbitrary |
-| Fuel exhausted | Reactor stops. Same as SCRAM, but permanent. |
+| Fuel exhausted | Reactor stops. Rods **can** still be made (12 rare compounds each, §7) — but the Fabricator needs 100 kW, and the reactor was the 100 kW. In practice terminal, because the point of no return is passed some years *before* the count reaches zero. |
 | Cascade brownout | Condition damage across all active assets |
 
 #### Battery bank — 3,500 kWh
