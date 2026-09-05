@@ -196,6 +196,22 @@ h1{
 .act:hover{border-color:var(--d-accent);color:var(--d-accent)}
 .act.danger:hover{border-color:var(--d-crit);color:var(--d-crit)}
 
+/* ---- vital signs: the one legitimate home for density ---- */
+.vital{border-bottom:1px solid var(--d-rule);padding:11px 0 10px}
+.vital .vh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.vital .vn{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--d-faint)}
+.vital .vv{font-size:12.5px;font-variant-numeric:tabular-nums}
+.vital .spark{font-size:15px;line-height:1.1;letter-spacing:0;margin:5px 0 3px;white-space:nowrap;
+  overflow-x:auto;display:block}
+.vital .trend{font-size:11px;color:var(--d-dim)}
+.vital .why{font-size:11.5px;color:var(--d-dim);line-height:1.45;margin:3px 0 0;max-width:34ch}
+.vital.bad .vv{color:var(--d-crit)}
+.vital.bad .spark{color:var(--d-crit)}
+.vital.warn2 .vv{color:var(--d-warn)}
+.vital.warn2 .spark{color:var(--d-warn)}
+.vital.good .spark{color:var(--d-ok)}
+.vital .trend b{font-weight:500}
+
 /* ---- ship schematic: the Facilities hero ---- */
 .hull{margin:-10px -10px 12px;padding:14px 8px 12px;border-bottom:1px solid var(--d-rule);
   position:relative;overflow:hidden}
@@ -522,8 +538,56 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);colo
           <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Drone Bay</span><span class="vl">Stowed</span></button>
           <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Maintenance</span><span class="vl">OK</span></button>
           <div class="menu">
+            <button data-go="vitals">Vital signs<span class="c">&nbsp;&middot; 4 of 5 declining</span><span class="g">&rsaquo;</span></button>
             <button data-go="inventory">Where everything is<span class="g">&rsaquo;</span></button>
           </div>
+        </section>
+
+        <!-- ---------- VITAL SIGNS (opt-in, trend not state) ---------- -->
+        <section class="screen" id="s-vitals" hidden>
+          <button class="backbtn" data-go="facilities">&lsaquo; rooms</button>
+          <h2 class="scr-title">Vital signs <span>last 20 years</span></h2>
+          <div class="acts" style="margin:0 0 4px">
+            <button class="act">20 years</button><button class="act">100 years</button><button class="act">Whole voyage</button>
+          </div>
+          <p class="quiet" style="margin:0 0 6px">Everywhere else shows how the ship is now. This is the only place that shows which way it&rsquo;s going.</p>
+
+          <div class="vital bad">
+            <div class="vh"><span class="vn">Power</span><span class="vv">780 kW &middot; needs 890</span></div>
+            <span class="spark">▇▇▇▇▇▆▆▆▆▆▅▅▅▅▅▄▄▄▃▃</span>
+            <div class="trend"><b>&darr; falling</b> &middot; &minus;220 kW over 20 years</div>
+            <p class="why">It covered everything until year 131. The reactor has been wearing out since, and nothing has replaced it.</p>
+          </div>
+
+          <div class="vital good">
+            <div class="vh"><span class="vn">Oxygen</span><span class="vv">steady</span></div>
+            <span class="spark">▆▆▇▆▆▇▇▆▆▇▆▆▇▆▇▆▆▇▆▆</span>
+            <div class="trend"><b>&rarr; holding</b></div>
+            <p class="why">The generator is 69% worn but keeping up. It is next in line when power gets tighter.</p>
+          </div>
+
+          <div class="vital warn2">
+            <div class="vh"><span class="vn">Water</span><span class="vv">900<span class="crit">?</span> &middot; needs 620</span></div>
+            <span class="spark">▇▇▇▇▆▆▆▆▆▅▅▅▅▄▄▄▄▃▃▃</span>
+            <div class="trend"><b>&darr; falling</b> &middot; and the number is wrong</div>
+            <p class="why">This comes from a gauge that stopped telling the truth around year 100. The real figure is closer to 300, and the shape of this line is the only honest thing on it.</p>
+          </div>
+
+          <div class="vital warn2">
+            <div class="vh"><span class="vn">Food</span><span class="vv">25/day &middot; 24 eaten</span></div>
+            <span class="spark">▇▅▇▄▇▅▆▃▇▅▇▄▆▂▇▅▇▃▆▂</span>
+            <div class="trend"><b>~ unsteady</b> &middot; swinging every 36 days</div>
+            <p class="why">Three beds keep ripening together, so the ship feasts and then goes hungry. The average is fine. The average is not what people eat.</p>
+          </div>
+
+          <div class="vital warn2">
+            <div class="vh"><span class="vn">Heat</span><span class="vv">8 rooms nominal</span></div>
+            <span class="spark">▇▇▇▇▇▇▇▇▇▆▆▆▆▆▆▅▅▅▅▅</span>
+            <div class="trend"><b>&darr; slipping</b></div>
+            <p class="why">Cargo Bay and Drone Bay are cold &mdash; their air units were switched off to save power. Nothing lives in either, for now.</p>
+          </div>
+
+          <p class="quiet" style="margin-top:12px">Four of five are worse than they were twenty years ago. None of them is an emergency today.</p>
         </section>
 
         <!-- ---------- FACILITY ---------- -->
@@ -863,6 +927,7 @@ svc  ^  ^   ^  ^   ^  ^</pre>
           <li><button data-go="voyage"><span class="k">VOYAGE</span>The journey &mdash; where you are, what&rsquo;s ahead, fuel</button></li>
           <li><button data-go="feedfull"><span class="k">expand</span>Full feed &mdash; from the ticker</button></li>
           <li><button data-go="facilities"><span class="k">ROOMS</span>The ten rooms</button></li>
+          <li><button data-go="vitals"><span class="k">opt-in</span>Vital signs &mdash; trend, not state</button></li>
           <li><button data-go="facility"><span class="k">drill</span>Hydroponics</button></li>
           <li><button data-go="equipment"><span class="k">drill</span>Reactor Core</button></li>
           <li><button data-go="equipdetails"><span class="k">opt-in</span>Details &mdash; the numbers, on demand</button></li>
@@ -915,6 +980,15 @@ svc  ^  ^   ^  ^   ^  ^</pre>
         <p>Two decks around a spine, bow to the left and drive to the right, so the shape reads as a ship rather than a grid. Every bay is a tap target &mdash; the same destinations as the list below it, reached spatially instead of alphabetically. Over a few hundred hours the player will know where things are without reading the labels, which is the real prize.</p>
         <p>It mirrors Voyage deliberately: hero above, detail below. Voyage answers <em>where are we going</em>; Rooms answers <em>what shape are we in</em>.</p>
         <p class="callout">Both heroes show <strong>motion the numbers can&rsquo;t</strong> &mdash; a starfield for a ship that cannot appear to move, and delivery markers for cargo that has no other representation.</p>
+      </section>
+
+      <section>
+        <h2>Vital signs: the one place density belongs</h2>
+        <p>Dense telemetry was rejected as a navigation model, and it should stay rejected. But there is a question no other screen in the game can answer: <strong>is the ship getting better or worse, and how fast?</strong></p>
+        <p class="callout">Everywhere else shows the ship <em>now</em>. Power at 780&nbsp;kW is a fact. Power falling from 1,000 to 780 across sixty years is the story &mdash; and only a sparkline carries it.</p>
+        <p>Five closed loops, the ones that kill everyone if they stop: power, oxygen, water, food, heat. Each gets a current value, twenty years of shape, a direction, and <strong>one plain sentence saying why</strong> &mdash; density <em>plus</em> prose, never instead of it.</p>
+        <p>Two of them pay off immediately. The <strong>food</strong> line is visibly jagged, swinging on a 36-day period, and that waveform <em>is</em> the grow-bed phase collapse from §5c &mdash; the trap diagnosed as a picture rather than a paragraph. <em>&ldquo;The average is fine. The average is not what people eat.&rdquo;</em> And the <strong>water</strong> line still falls correctly even though its number is a lie, because a worn gauge drifts its readings but not its shape.</p>
+        <p>It is opt-in, off the path, and one tap from Rooms &mdash; the same rung of the ladder as equipment Details. The closing line is the point of the whole screen: <em>four of five are worse than twenty years ago, and none of them is an emergency today.</em></p>
       </section>
 
       <section>
@@ -982,9 +1056,9 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
 <script>
 (function(){
-  var screens = ["voyage","feedfull","facilities","facility","equipment","equipdetails","crew","colony","crewmember","requests","auto","rule","newrule","mfg","tasks","inventory"];
+  var screens = ["voyage","feedfull","facilities","vitals","facility","equipment","equipdetails","crew","colony","crewmember","requests","auto","rule","newrule","mfg","tasks","inventory"];
   var tabs = {voyage:"voyage", feedfull:"voyage",
-              facilities:"facilities", facility:"facilities", equipment:"facilities",
+              facilities:"facilities", vitals:"facilities", facility:"facilities", equipment:"facilities",
               equipdetails:"facilities", mfg:"facilities", inventory:"facilities",
               crew:"crew", colony:"crew", crewmember:"crew", tasks:"crew", requests:"crew",
               auto:"auto", rule:"auto", newrule:"auto"};
