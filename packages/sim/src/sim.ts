@@ -168,7 +168,10 @@ export function step(s: State, p: Policy): State {
     if (!a.faulted && a.cond >= a.maxCond - 3) { done.push(task); continue; }
     if (a.maxCond < p.replaceAt) {
       if (replace(s, a)) { done.push(task); jobs--; continue; }
-      if (!a.faulted) continue;               // wait for parts
+      // No parts yet. Keep patching it anyway: the ceiling is already written
+      // off, so there is nothing left to protect, and a high-wear asset in
+      // free-fall reaches zero long before the replacement arrives. Abandoning
+      // the reactor for one year at ageFactor 1.9 cost 182 colonists.
     }
     service(s, a);
     // A sensor bolted to a machine gets checked while the machine is open, so

@@ -490,6 +490,24 @@ rewarded by *avoided faults* rather than by the repair counter.
 
 Everything the difficulty curve needs falls out of that one decaying ceiling:
 
+#### An asset awaiting replacement must still be maintained
+
+Once `maxCondition` falls past the replacement line the instinct is to stop servicing — the
+ceiling is nearly gone, so why spend the work? Simulating that produced the single worst bug
+in the design.
+
+A high-wear asset in free-fall reaches zero **long before the replacement arrives**. The
+reactor at `ageFactor` 1.9 sheds ~118 condition points a year, so the moment it was abandoned
+it fell from 65 to 25 in months, output collapsed to 649 kW, and the cryo banks went dark
+before the new unit was installed. One year of not touching it cost **182 colonists**, in a
+single cascade, on an otherwise well-run ship.
+
+> **Keep patching it until the replacement is actually in.** The ceiling is already written
+> off, so there is nothing left to protect.
+
+Correcting this took a diligent ship from 2,943 faults and 182 dead to **0 faults and 200 of
+200 alive** — the first demonstration that §1's *Perfect arrival* is reachable at all.
+
 - Old kit needs servicing **more often** — less headroom above the `AT_RISK` line.
 - Eventually `maxCondition` drops below the `DEGRADED` line and the asset is a permanent
   liability. The only fix is **replacement**, which costs manufacturing throughput, which

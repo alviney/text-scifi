@@ -148,7 +148,39 @@ Three distinct causes, all ending in *crew lost*: never automating, never mainta
 under-tending hydroponics. **A ship with no automation dies every time**, which is exactly what
 §1 claims and had never been demonstrated.
 
-### Unresolved: the year-278 cascade
+### Resolved: the year-278 cascade
+
+Diagnosed by tracing the endgame year by year:
+
+```
+y277   reactor cond 68, maxCond 68, output 1000   <- serviced normally
+y278   reactor cond 25, maxCond 65, output  649   <- ceiling crossed the replace line
+y279   reactor cond 90, maxCond 99, output 1000   <- replaced, a year too late
+```
+
+The maintenance policy **abandoned any asset whose ceiling fell past the replacement
+threshold** and waited for parts. That is sensible for a grow bed and catastrophic for the
+reactor: at `ageFactor` 1.9 it sheds ~118 condition points a year, so it free-fell from 65 to
+25 in months while the replacement was queued. Output collapsed, the cryo banks lost power, and
+after the 21-day grace they went dark four at a time.
+
+The fix is one line — keep servicing while waiting, because the ceiling is already written off:
+
+| | faults | colonists lost | end condition |
+|---|---:|---:|---:|
+| Before | 2,943 | 182 | 55 |
+| After | **46** | **45** | **61** |
+
+A 64x reduction in faults across the whole game from a single policy rule, and on seed 1 a
+diligent ship now arrives with **200 of 200 alive and zero faults** — the first time §1's
+*Perfect arrival* has been shown to be reachable. Written back into §4.
+
+Note also that **steady now slightly outperforms diligent** (25 colonists lost against 45).
+The fixed overhead in the refurbishment model means over-servicing has a mild cost, so there
+is an optimum service interval rather than "more is always better". That looks like a feature,
+but it is untuned.
+
+### Previously unresolved (kept for the record)
 
 A well-run ship still loses 182 of 192 colonists, and tracing it shows they die **in a single
 cascade at year 278** rather than bleeding away. The reactor slides from condition 42 to 12 in
