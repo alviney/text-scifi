@@ -354,15 +354,33 @@ If a node fails → that room becomes dangerous. If the ship-wide O₂ generator
 
 ### Buffers and Backpressure
 
-Every producing asset has a small **input buffer** and **output buffer**, separate from ship
-stores (the abstract global pool held in the Cargo Bay).
+**There is no ship-wide inventory.** Every room keeps its own stores, and **nothing moves
+between rooms unless a crew member carries it** — which means a *delivery job*, which means it
+can be automated, and which means it can jam.
 
 ```
-ship stores ──► input buffer ──► [ ASSET ] ──► output buffer ──► ship stores
-                                                                  (haul task)
+room stores ──► input buffer ──► [ ASSET ] ──► output buffer ──► room stores
+     ▲                                                                │
+     └──────────── delivery job (crew) ◄──── another room's stores ◄───┘
 ```
 
-Only one transport hop exists, and it's a crew task, so it's automatable — but it can **jam**:
+Costed: ~1,480 delivery jobs across the voyage, about **11% more work** than the maintenance
+load, taking ~0.07% of crew capacity. It spends the idle roster §3 identified rather than
+overloading it, and it finally gives the Cargo Bay and the Loading Crane a job.
+
+**Bulk deliveries need the Loading Crane**, which is a 30 kW intermittent load (§6). Small
+consumables move by hand; raw material in the hundreds of units does not. That makes material
+movement **power-gated**, and closes §7's death spiral one turn tighter:
+
+> The reactor fails → there is no headroom → the crane can't run → ore can't leave the Cargo
+> Bay → the smelter is idle → there is no refined metal → there are no parts → **to fix the
+> reactor.**
+
+Every rule in that chain fires correctly. The jam is not a broken automation, a missing crew
+member, or an empty store — it is 612 units of ore sitting eleven days away from a machine that
+needs it, in a ship that cannot spare 30 kW to carry it there.
+
+Transport is a crew task, so it's automatable — but it can **jam**:
 
 - **Output buffer full** → the asset cannot start its next cycle. It stalls, silently, at full
   health, with nothing broken.
@@ -374,6 +392,25 @@ upstream, and the asset reporting the problem is not the asset that has it.
 
 Backpressure is the single most important property for §5c's chained automations — without it,
 production lines are just lists.
+
+**Per-room stores are what make chains deep.** A consumable now has to be *made* somewhere and
+*carried* somewhere else, so a single need spans rooms:
+
+```
+Life Support: filters low   → delivery job: fetch filters from Engineering
+Engineering:  filters low   → make 60 filters
+Engineering:  metal ore low → delivery job: fetch ore from Cargo Bay
+```
+
+Three rules, each trivially simple, and the chain is three deep. Jam the bottom one — nobody
+picks up the ore delivery — and the smelter idles, the filters are never made, and Life Support
+starves. Every rule fired correctly.
+
+> **The room reporting the problem is not the room that has it.**
+
+Other consequences worth keeping: a vented or lost room takes its stores with it, and the
+storage caps in §6b now apply *per room* rather than to one global pool, which is a tighter
+constraint and makes Cargo Bay overflow a genuine bottleneck during Act I.
 
 ### Equipment Degradation
 - Active equipment degrades over time (per game-hour). Passive does not.
@@ -724,7 +761,21 @@ This is the same mechanism as the facility per-child slot templates above.
 
 ## 5b. Task Board
 
-The bridge between automated systems and human crew.
+The bridge between automated systems and human crew — and it runs **both ways**.
+
+> **Jobs go down to the crew. Requests come back up.**
+
+Same object, opposite direction. Crew post requests to the player: *put me back in cryo*
+(§3 withdrawal), *don't roster me with Novak again* (§3 relationships), *I won't do that repair
+on no sleep* (§10 refusal), *let me train under the engineer* (§3 cross-training), and
+*somebody should look at the water recycler* — crew noticing what the automation missed.
+
+**The player can decline any request, and declining costs morale.** That gives happiness the
+mechanical teeth §3's stat table asked for and never got, and it delivers §10's crew-agency
+design in v1 without needing an LLM: a request is just a task pointed the other way.
+
+Ignored requests are kept on the record. *"Vasquez flagged the water gauge, four years ago"*
+is a much better way to learn that instruments lie than an alert would have been.
 
 - Equipment automations (or the player directly) **post tasks** to the task board.
 - Crew members with an empty personal queue **pick tasks from the board**.
@@ -930,6 +981,69 @@ Steps 4-5 are the player automating their own power reallocation, which is the �
 alternation expressed as two rules.
 
 ---
+
+### The rules you start with
+
+The ship does not launch empty. The departure crew left **13 standing rules** behind — enough
+that it runs itself on day one, with the whole maintenance layer conspicuously absent.
+
+Two constraints shape the set, and both are diegetic:
+
+- **They can only use tier-0 listeners.** No Logic Core, no Scheduler aboard at launch (§7), so
+  every inherited rule is a single condition with no guard and no sense of time.
+- **They were written for a full ship** — eight crew, Act I abundance, and instruments that
+  still told the truth.
+
+| # | Rule | What it does |
+|---|------|--------------|
+| **Deliveries** | | |
+| 1 | Food to Quarters | Quarters food below 40 → fetch 60 from Hydroponics |
+| 2 | Filters to Life Support | below 10 → fetch 40 from Engineering |
+| 3 | Water to Hydroponics | below 200 → fetch 400 from Life Support |
+| 4 | Fertiliser to Hydroponics | below 20 → fetch 40 from Engineering |
+| 5 | Ore to Engineering | below 100 → fetch 300 from Cargo Bay |
+| 6 | Seals to Maintenance | below 10 → fetch 20 from Engineering |
+| 7 | Medicine to Medbay | below 10 → fetch 20 from Engineering |
+| **Production** | | |
+| 8 | Make filters | Engineering stock below 20 → make 60 |
+| 9 | Make seals | below 30 → make 60 |
+| 10 | Replant a bed | Bed empty → post a planting job |
+| **Safety and upkeep** | | |
+| 11 | Fire | Alarm → raise the alert, post a response job. **Does not vent.** |
+| 12 | Reactor service | Reactor starts failing → post a repair job, top of the list |
+| 13 | Water restock | Life Support water below 500 → post a restock job |
+
+#### The set is the tutorial, because it goes wrong slowly
+
+Nothing here is badly written. It all works on day one. It comes apart because **the ship
+changes and the rules cannot**, and each failure teaches one thing at the moment it bites:
+
+| When | What happens | What it teaches |
+|------|--------------|-----------------|
+| Hour one | Everything runs | What a rule looks like, by reading working ones |
+| ~y10-40 | Thresholds sized for eight crew are wrong for five | Rules are yours to maintain, not furniture |
+| **~y40** | **A famine interrupts planting; beds fall into phase and food goes boom-bust** | Pipelining — and you need the Scheduler Module |
+| ~y100 | A worn gauge kills rule 13 silently | Instruments lie (§5) |
+| Always | **None of the 46 assets have a maintenance rule** | The core loop is yours to build |
+
+The grow beds deserve the detail, because it is the best of these. The ship launches with its
+six beds **already out of phase** — planted on different days before departure — so rule 10
+*preserves* a working stagger indefinitely. It only collapses when a planting is missed for
+want of fertiliser: two beds sync, then three, and the phase never recovers on its own.
+
+So the player gets forty good years, one bad harvest, and a permanent boom-bust they have to
+diagnose. The trap is inherited; the fix (§5c, phase offsets) has to be earned.
+
+Rule 11 is deliberately the **safe, slow** version — it raises the alarm rather than venting,
+because venting needs an occupancy guard and the Logic Core to express it. The player adds
+venting themselves later, and the interlock lesson is theirs to learn rather than inherited.
+
+Rule 12 is the single maintenance rule aboard, on the one asset that kills you fastest. It is
+there as a **worked example to copy** — the shape of the thing the player must now do 45 more
+times.
+
+<!-- TODO: Should the inherited rules carry authorship in the UI ("set by Marchetti, y0")?
+     Cheap, and it makes them feel like a legacy rather than a default. -->
 
 ### Failure gallery
 
@@ -1143,16 +1257,50 @@ mid-game squeeze — no separate escalation system needed.
 #### Fuel
 
 The reactor burns **fuel rods**, measured in *rod-years*: one rod = one year at nominal
-(1,000 kW) output, **scaling with actual delivered load**. Draw less, burn slower.
+(1,000 kW) output. The ship departs with **320 rods** against a 300-year journey.
 
-- Ship departs with **320 rods**.
-- Baseline load (below) is ~0.89 nominal → ~360 years of burn against a 300-year journey.
-  A **~20% margin**, and no more.
-- More rods can be fabricated from **rare compounds** — the scarcest asteroid yield (§6).
+Burn depends on two things, and the second one is the point:
 
-So power is *not free even when you have headroom*. Running the smelter around the clock
-doesn't just risk a brownout, it spends journey margin. Every rod inserted is a signal-feed
-event and a natural milestone marker for §10 ("*rod 47 seated — 273 remaining*").
+```
+rods/year = (delivered kW / 1000) ÷ efficiency
+efficiency = 0.65 + 0.35 × (condition / 100)
+```
+
+**A worn reactor is weaker *and* thirstier.** Heat transfer degrades, more energy leaves as
+waste, and it takes more fuel to deliver each kilowatt.
+
+That second term fixes a perverse incentive. Burn scaled to delivered power alone means a
+failing reactor burns *less* fuel — 0.89 rod/yr healthy against 0.70 at 30% condition — so
+neglect extended your range. With efficiency in the formula, neglect costs fuel instead:
+
+| Reactor kept at | Rods needed over 300 years | Against 320 |
+|-----------------|---------------------------:|-------------|
+| ~80% | 287 | 33 spare |
+| ~60% | 310 | 10 spare |
+| **~40%** | **338** | **short by 18** |
+| ~30% | 354 | short by 34 |
+
+So **fuel is not a separate resource to manage — it is a consequence of maintenance.** Keep the
+reactor serviced and 320 rods is comfortable. Let it slide and you arrive out of fuel, having
+watched a number tick down for two centuries without understanding why it was falling faster
+than it should.
+
+Power is also *not free even when you have headroom*: running the smelter around the clock
+spends journey margin.
+
+**The escape hatch, and its catch.** More rods can be fabricated from **rare compounds** (12 each,
+plus 2 metal parts, §7) — so running low is recoverable, at the cost of the scarcest thing aboard.
+But the Fabricator draws 100 kW, and *the reactor is where 100 kW comes from*. Once the rods run
+out there is no power to make more.
+
+> **The point of no return is passed some years before the count reaches zero.**
+
+Which is the honest shape of the whole game in miniature: the failure is never the moment the
+number hits nothing. It is the earlier, quieter moment when you still had everything you needed
+to prevent it.
+
+Every rod inserted is a signal-feed event and a natural milestone marker for §10
+("*rod 47 seated — 273 remaining*").
 
 #### Load table
 
@@ -1260,7 +1408,7 @@ that you only have to do it once.
 | Reactor `DEGRADED` | Output falls below baseline → permanent shedding becomes normal |
 | Reactor `FAULTED` (SCRAM) | Battery bank: ~6 h of critical-only load. Then RTGs (~tens of kW). Life support on RTGs alone is survivable for the crew; **cryo is not.** |
 | Power Distribution `FAULTED` | Priorities unenforced; shedding becomes arbitrary |
-| Fuel exhausted | Reactor stops. Same as SCRAM, but permanent. |
+| Fuel exhausted | Reactor stops. Rods **can** still be made (12 rare compounds each, §7) — but the Fabricator needs 100 kW, and the reactor was the 100 kW. In practice terminal, because the point of no return is passed some years *before* the count reaches zero. |
 | Cascade brownout | Condition damage across all active assets |
 
 #### Battery bank — 3,500 kWh
@@ -2098,6 +2246,54 @@ comfortably inside the tolerance of the §6b encounter target.
 - Acts as the player's ambient awareness of ship state.
 - Each line is tappable — links to the source of the signal.
 
+#### Signal format
+
+Every signal carries a fixed three-field marker, then a plain sentence:
+
+```
+[LVL][FAC][CODE]  message
+
+[CRT][RCT][POWR]  The reactor is failing. It can't make enough power.
+[WRN][LFS][RULE]  The water restock rule hasn't run in 47 years.
+[WRN][CRG][STOR]  Rare compounds run out in about 90 days.
+[WRN][SHP][JOBS]  A repair job has waited five years. No engineer is awake.
+[INF][RCT][FUEL]  Fuel rod 47 loaded. 149 left.
+[INF][HYD][MOVE]  Fertiliser delivered from Engineering.
+[···][QTR][CREW]  Okonkwo: "third week of the same ration block."
+```
+
+**The marker is metadata; the message is prose.** The player never has to decode the prefix to
+understand a line — the sentence always says it in English. The codes exist so a feed holding
+tens of thousands of entries across three centuries can be **scanned, filtered and recognised
+by pattern**, which prose alone cannot do. Fixed width means the eye lands in the same place
+every time, and the ticker gets a consistent rhythm.
+
+**Level** — severity, and the speed slider's filter floor (§11 Q8):
+
+| | |
+|---|---|
+| `CRT` | Critical. Holds the ticker, trips snap-back. |
+| `WRN` | Warning. Always shown. |
+| `INF` | Routine. Suppressed at high speed. |
+| `···` | Chatter. Only visible at low speed. |
+
+**Facility** — where it came from:
+
+`BRG` Bridge · `ENG` Engineering · `RCT` Reactor · `LFS` Life Support · `HYD` Hydroponics
+`MED` Medbay · `QTR` Quarters · `CRG` Cargo Bay · `DRN` Drone Bay · `MNT` Maintenance
+`SHP` ship-wide · `CRW` a person rather than a place
+
+**Code** — what kind of thing happened:
+
+| | | | |
+|---|---|---|---|
+| `POWR` power | `WEAR` condition | `FAIL` broken | `STOR` stores |
+| `MOVE` deliveries | `MAKE` manufacturing | `JOBS` task board | `RULE` automation |
+| `CREW` people | `NAVG` course & encounters | `FUEL` fuel | `ATMO` air, water, heat |
+
+Twelve codes, each guessable, and they double as the filter chips on the full feed. `[···][QTR][CREW]`
+and `[CRT][RCT][POWR]` are the two ends of the game in the same shape.
+
 ### Key Screens
 <!-- TODO: Design each screen in detail — iterative process -->
 
@@ -2194,9 +2390,17 @@ These features would use an LLM to replace/supplement the text bank with dynamic
 2. **Procedural generation** — Are asteroid encounters, equipment failures, crew events randomised?
 3. **Frame jacking risk** — What can go wrong if you frame jack too early? Cascade failures?
 4. **Tutorial / onboarding** — How does the player learn the systems?
-   *Partly answered:* §7's automation-console unlock ladder stages the complexity — the
-   player meets one automation concept at a time, in an order the economy sets, rather than
-   facing the full console on hour one. Doesn't cover the rest of the game's systems.
+   **Largely answered, by two mechanisms and no tutorial:**
+   - §7's unlock ladder stages the automation console's complexity, so the player meets one
+     concept at a time in an order the economy sets.
+   - §5c's **13 inherited rules** are a curriculum that teaches by going wrong slowly: working
+     examples to read on hour one, thresholds that drift as the crew shrinks, a grow-bed phase
+     collapse around year 40 that demands pipelining, and a rule silently killed by a worn
+     gauge around year 100.
+
+   What neither covers: the first hour. The player still has to be shown what a facility, a
+   job and the speed control *are*. That is a smaller problem than teaching the systems, and
+   probably a handful of feed messages rather than a tutorial mode.
 5. **Sound** — Any ambient audio, or purely visual?
 6. **Crew backstories** — Pre-written or generated? How deep?
 

@@ -1,0 +1,1319 @@
+<title>Seedship Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap">
+<style>
+/* ---------- page tokens (themed) ---------- */
+:root{
+  --pg-bg:#F2EFE9; --pg-panel:#FFFFFF; --pg-rule:#DCD5C8;
+  --pg-text:#221E17; --pg-dim:#6B6355; --pg-accent:#9A6413;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --pg-bg:#0C0B08; --pg-panel:#151209; --pg-rule:#2A241A;
+    --pg-text:#E4DCCB; --pg-dim:#918872; --pg-accent:#E8A33D;
+  }
+}
+:root[data-theme="dark"]{
+  --pg-bg:#0C0B08; --pg-panel:#151209; --pg-rule:#2A241A;
+  --pg-text:#E4DCCB; --pg-dim:#918872; --pg-accent:#E8A33D;
+}
+/* ---------- device skins ---------- *
+ * The device commits to its own visual world, independent of page theme.
+ * Every skin defines the same token set, so screen markup never changes. */
+[data-skin]{
+  --d-bg:#100E0A; --d-panel:#181510; --d-panel2:#201C14; --d-rule:#2E2820;
+  --d-text:#E4D8C0; --d-dim:#8B8069; --d-faint:#59503F;
+  --d-accent:#E8A33D; --d-ok:#7DA35E; --d-warn:#E0B84E; --d-crit:#D0553F;
+  --d-font:"IBM Plex Mono"; --d-shadow:0 18px 44px rgba(0,0,0,.34);
+}
+[data-skin="phosphor"]{
+  --d-bg:#040A05; --d-panel:#09130B; --d-panel2:#0E1C11; --d-rule:#1A3220;
+  --d-text:#8FE39B; --d-dim:#4E8C58; --d-faint:#2C5334;
+  --d-accent:#C4FFCF; --d-ok:#5FBF6E; --d-warn:#E4C63F; --d-crit:#FF6B52;
+  --d-font:"IBM Plex Mono"; --d-shadow:0 18px 44px rgba(0,0,0,.5);
+}
+[data-skin="blueprint"]{
+  --d-bg:#E7EDF3; --d-panel:#DCE5ED; --d-panel2:#CFDAE5; --d-rule:#A6BACB;
+  --d-text:#13314C; --d-dim:#4D6E8B; --d-faint:#8BA3B7;
+  --d-accent:#0B6FA4; --d-ok:#2C7A57; --d-warn:#9A6410; --d-crit:#B03A2E;
+  --d-font:"Roboto Mono"; --d-shadow:0 12px 30px rgba(19,49,76,.18);
+}
+[data-skin="teletype"]{
+  --d-bg:#F4F1E8; --d-panel:#EDE9DE; --d-panel2:#E4DFD2; --d-rule:#C7C0AE;
+  --d-text:#1A1712; --d-dim:#5D5648; --d-faint:#948B78;
+  --d-accent:#1A1712; --d-ok:#3F5B36; --d-warn:#8A6B12; --d-crit:#B32517;
+  --d-font:"Courier Prime"; --d-shadow:0 12px 30px rgba(26,23,18,.16);
+}
+[data-skin="hazard"]{
+  --d-bg:#0F1418; --d-panel:#161D23; --d-panel2:#1C252D; --d-rule:#2B3841;
+  --d-text:#DCE6ED; --d-dim:#8296A5; --d-faint:#4F6070;
+  --d-accent:#F5C518; --d-ok:#4CAF6A; --d-warn:#F0A828; --d-crit:#E2513C;
+  --d-font:"JetBrains Mono"; --d-shadow:0 18px 44px rgba(0,0,0,.42);
+}
+*{box-sizing:border-box}
+html{max-width:100%;overflow-x:hidden}
+pre{max-width:100%}
+body{overflow-x:hidden;
+  background:var(--pg-bg); color:var(--pg-text);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;
+  line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 20px 80px}
+@media (max-width:520px){
+  .wrap{padding:26px 12px 56px}
+  .device{font-size:12px}
+  .ticker{font-size:11px;padding:8px 8px;gap:6px}
+  .ticker .sig{font-size:10.5px}
+  .screen{padding:10px 10px 16px}
+}
+
+/* ---------- page chrome ---------- */
+.masthead{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+.eyebrow{
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--pg-accent);font-weight:600;
+}
+h1{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:clamp(28px,4.4vw,42px);font-weight:600;margin:0;
+  letter-spacing:-.02em;text-wrap:balance;
+}
+.standfirst{max-width:62ch;color:var(--pg-dim);font-size:15.5px;margin:0}
+.rule{height:1px;background:var(--pg-rule);margin:26px 0}
+
+.layout{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:44px;align-items:start}
+@media (max-width:860px){.layout{grid-template-columns:minmax(0,1fr);gap:32px}}
+
+/* ---------- device ---------- */
+.skinbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;min-width:0}
+.skinbtn{
+  display:flex;align-items:center;gap:7px;cursor:pointer;
+  font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12px;font-weight:500;
+  background:var(--pg-panel);border:1px solid var(--pg-rule);border-radius:3px;
+  color:var(--pg-dim);padding:5px 9px 5px 6px;
+}
+.skinbtn:hover{color:var(--pg-text)}
+.skinbtn[aria-pressed="true"]{border-color:var(--pg-accent);color:var(--pg-text)}
+.skinbtn:focus-visible{outline:2px solid var(--pg-accent);outline-offset:1px}
+.sw{width:13px;height:13px;border-radius:2px;flex:none;border:1px solid rgba(128,128,128,.35)}
+.skincap{
+  font-size:12.5px;color:var(--pg-dim);margin:10px 0 0;min-height:3.2em;
+  max-width:46ch;
+}
+.skincap b{color:var(--pg-text);font-weight:600}
+.device-col{min-width:0;position:sticky;top:24px}
+@media (max-width:860px){.device-col{position:static}}
+.device{
+  max-width:100%;background:var(--d-bg);border:1px solid var(--d-rule);border-radius:14px;
+  overflow:hidden;box-shadow:var(--d-shadow);
+  font-family:var(--d-font),ui-monospace,monospace;
+  color:var(--d-text);font-size:12.5px;line-height:1.5;
+  display:flex;flex-direction:column;height:648px;
+}
+.statusbar{
+  display:flex;justify-content:space-between;gap:8px;
+  padding:9px 12px;border-bottom:1px solid var(--d-rule);
+  color:var(--d-dim);font-size:10.5px;letter-spacing:.06em;
+  background:var(--d-panel);flex:none;
+}
+.statusbar b{color:var(--d-accent);font-weight:500}
+.screen{flex:1;overflow-y:auto;padding:12px 12px 18px}
+.screen[hidden]{display:none!important}
+.navbar{
+  display:grid;grid-template-columns:repeat(4,1fr);flex:none;
+  border-top:1px solid var(--d-rule);background:var(--d-panel);
+}
+.navbar button{
+  font-family:inherit;font-size:10px;letter-spacing:.1em;
+  background:none;border:none;border-top:2px solid transparent;
+  color:var(--d-faint);padding:9px 2px 8px;cursor:pointer;
+}
+.navbar button[aria-current="true"]{color:var(--d-accent);border-top-color:var(--d-accent)}
+.navbar button:focus-visible,.row:focus-visible,.backbtn:focus-visible,.act:focus-visible{
+  outline:2px solid var(--d-accent);outline-offset:-2px;
+}
+
+/* device typography */
+.scr-title{
+  display:flex;align-items:baseline;justify-content:space-between;gap:8px;
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--d-accent);margin:0 0 10px;font-weight:500;
+}
+.scr-title span{color:var(--d-faint);letter-spacing:.06em}
+.sect{
+  font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--d-faint);margin:16px 0 6px;
+  border-bottom:1px solid var(--d-rule);padding-bottom:4px;
+}
+.sect:first-of-type{margin-top:4px}
+.backbtn{
+  font-family:inherit;font-size:10.5px;background:none;border:none;cursor:pointer;
+  color:var(--d-dim);padding:0 0 8px;letter-spacing:.08em;
+}
+.backbtn:hover{color:var(--d-accent)}
+
+/* rows */
+.row{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+  font-family:inherit;font-size:12.5px;color:var(--d-text);
+  background:none;border:none;border-bottom:1px solid var(--d-rule);
+  padding:7px 2px;cursor:pointer;
+}
+.row:hover{background:var(--d-panel2)}
+.row.static{cursor:default}
+.row.static:hover{background:none}
+.row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .vl{color:var(--d-dim);font-variant-numeric:tabular-nums;flex:none}
+.dot{flex:none;width:1em;text-align:center}
+.ok{color:var(--d-ok)} .warn{color:var(--d-warn)} .crit{color:var(--d-crit)}
+.dim{color:var(--d-dim)} .faint{color:var(--d-faint)} .acc{color:var(--d-accent)}
+.tag{
+  font-size:9.5px;letter-spacing:.09em;border:1px solid currentColor;
+  padding:0 4px;border-radius:2px;flex:none;
+}
+
+/* bars */
+.bar{font-size:11px;letter-spacing:-.5px;white-space:nowrap}
+.bar .fill{color:var(--d-accent)} .bar .empty{color:var(--d-faint)}
+.bar.b-ok .fill{color:var(--d-ok)} .bar.b-warn .fill{color:var(--d-warn)} .bar.b-crit .fill{color:var(--d-crit)}
+
+/* key/value block */
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px;margin:2px 0 4px}
+.kv dt{color:var(--d-dim)}
+.kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+
+/* feed */
+.feed{display:flex;flex-direction:column}
+.feedline{
+  display:flex;gap:8px;width:100%;text-align:left;font-family:inherit;font-size:12px;
+  background:none;border:none;border-bottom:1px solid var(--d-rule);
+  padding:6px 2px;cursor:pointer;color:var(--d-text);
+}
+.feedline:hover{background:var(--d-panel2)}
+.feedline .ts{color:var(--d-faint);flex:none;font-variant-numeric:tabular-nums}
+.feedline .msg{flex:1;min-width:0}
+.feedline.chatter .msg{color:var(--d-faint);font-style:italic}
+
+/* actions */
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.act{
+  font-family:inherit;font-size:10.5px;letter-spacing:.07em;
+  background:var(--d-panel2);border:1px solid var(--d-rule);color:var(--d-text);
+  padding:5px 9px;border-radius:2px;cursor:pointer;
+}
+.act:hover{border-color:var(--d-accent);color:var(--d-accent)}
+.act.danger:hover{border-color:var(--d-crit);color:var(--d-crit)}
+
+/* ---- CREW hero: the colony, as 200 pods in 8 banks ---- */
+.colony{margin:-10px -10px 12px;padding:14px 10px 11px;border-bottom:1px solid var(--d-rule)}
+.banks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bank{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:4px;
+  border:1px solid var(--d-rule);background:var(--d-panel);animation:breathe 6s ease-in-out infinite}
+.bank:nth-child(2){animation-delay:.7s} .bank:nth-child(3){animation-delay:1.4s}
+.bank:nth-child(4){animation-delay:2.1s} .bank:nth-child(5){animation-delay:.35s}
+.bank:nth-child(6){animation-delay:1.05s} .bank:nth-child(7){animation-delay:1.75s}
+.bank:nth-child(8){animation-delay:2.45s}
+@keyframes breathe{0%,100%{opacity:.72}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.bank{animation:none;opacity:.9}}
+.pod{width:100%;aspect-ratio:1;background:var(--d-dim);opacity:.45;border-radius:1px}
+.pod.awake{background:var(--d-accent);opacity:1}
+.pod.lost{background:none;box-shadow:inset 0 0 0 1px var(--d-faint);opacity:.3}
+
+/* ---- RULES hero: watch a rule actually fire ---- */
+.fire{margin:-10px -10px 12px;padding:12px 10px 11px;border-bottom:1px solid var(--d-rule);
+  height:190px;overflow:hidden;display:flex;flex-direction:column}
+.fire .lbl{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--d-faint);margin-bottom:9px}
+.fire .lbl .live{color:var(--d-accent)}
+.fire .when,.fire .then,.fire .out{opacity:0}
+.fire.go .when{animation:pop .4s ease forwards}
+.fire.go .arm{animation:grow .5s ease .38s forwards}
+.fire.go .then{animation:pop .4s ease .78s forwards}
+.fire.go .out{animation:pop .4s ease 1.25s forwards}
+@keyframes pop{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@keyframes grow{from{height:0}to{height:15px}}
+.fire .room{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--d-faint)}
+.fire .cond{font-size:13px;color:var(--d-text);line-height:1.35;min-height:36px}
+.fire .arm{width:1px;height:0;background:var(--d-rule);margin:5px 0 5px 5px}
+.fire.go .arm{height:15px}
+.fire .doing{font-size:13px;color:var(--d-accent);line-height:1.35;min-height:36px;
+  background:var(--d-panel2);border:1px solid var(--d-rule);border-radius:2px;padding:7px 9px}
+.fire .out{font-size:11.5px;margin-top:7px;color:var(--d-ok)}
+.fire .out.bad{color:var(--d-crit)}
+@media (prefers-reduced-motion:reduce){
+  .fire .when,.fire .then,.fire .out{opacity:1}
+  .fire .arm{height:15px}
+  .fire.go .when,.fire.go .then,.fire.go .out,.fire.go .arm{animation:none}
+}
+
+/* ---- vital signs: the one legitimate home for density ---- *//* ---- vital signs: the one legitimate home for density ---- *//* ---- vital signs: the one legitimate home for density ---- */
+.vital{border-bottom:1px solid var(--d-rule);padding:11px 0 10px}
+.vital .vh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.vital .vn{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--d-faint)}
+.vital .vv{font-size:12.5px;font-variant-numeric:tabular-nums}
+.vital .spark{font-size:clamp(12px,4.2vw,15px);line-height:1.1;letter-spacing:0;margin:5px 0 3px;
+  white-space:nowrap;overflow-x:auto;display:block;max-width:100%}
+.vital .trend{font-size:11px;color:var(--d-dim)}
+.vital .why{font-size:11.5px;color:var(--d-dim);line-height:1.45;margin:3px 0 0;max-width:34ch}
+.vital.bad .vv{color:var(--d-crit)}
+.vital.bad .spark{color:var(--d-crit)}
+.vital.warn2 .vv{color:var(--d-warn)}
+.vital.warn2 .spark{color:var(--d-warn)}
+.vital.good .spark{color:var(--d-ok)}
+.vital .trend b{font-weight:500}
+
+/* ---- ship schematic: the Facilities hero ---- */
+.hull{margin:-10px -10px 12px;padding:14px 8px 12px;border-bottom:1px solid var(--d-rule);
+  position:relative;overflow:hidden}
+.decks{display:flex;align-items:center;gap:3px}
+.nose,.tail{flex:none;color:var(--d-faint);font-size:15px;line-height:1}
+.bays{flex:1;display:flex;flex-direction:column;gap:0;min-width:0}
+.deck{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+.bay{
+  min-width:0;border:1px solid var(--d-rule);background:var(--d-panel);color:var(--d-dim);
+  font-size:9px;letter-spacing:.06em;text-align:center;padding:7px 0 6px;cursor:pointer;
+  font-family:inherit;position:relative;
+}
+.bay:hover{border-color:var(--d-accent);color:var(--d-text)}
+.bay:focus-visible{outline:2px solid var(--d-accent);outline-offset:-2px}
+.bay .bd{display:block;font-size:10px;line-height:1;margin-bottom:3px}
+.bay.s-ok{color:var(--d-dim)}
+.bay.s-ok .bd{color:var(--d-ok)}
+.bay.s-warn{border-color:#584512;color:var(--d-text)}
+.bay.s-warn .bd{color:var(--d-warn)}
+.bay.s-crit{border-color:#5A241B;background:#1F1310;color:var(--d-text)}
+.bay.s-crit .bd{color:var(--d-crit)}
+.bay.s-off{opacity:.45}
+.bay .hold{position:absolute;top:2px;right:3px;font-size:8px;line-height:1;color:var(--d-crit)}
+.bay.holding{border-color:#5A241B}
+.spine{height:14px;position:relative;margin:2px 0;overflow:hidden}
+.spine::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--d-rule)}
+.flow{position:absolute;top:50%;transform:translateY(-50%);font-size:9.5px;line-height:1;white-space:nowrap;max-width:48%;overflow:hidden;text-overflow:ellipsis}
+.flow.moving{color:var(--d-ok);animation:slide 7s linear infinite}
+/* Engineering (col 3, centre 50%) -> Life Support (col 5, centre 90%) */
+@keyframes slide{from{left:50%}to{left:88%}}
+@media (prefers-reduced-motion:reduce){.flow.moving{animation:none;left:69%}}
+.hullcap{display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--d-faint);margin-top:9px}
+
+/* ---- signal markers: fixed-width metadata, prose message ---- */
+.sig{flex:none;letter-spacing:-.02em;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sig .lv{font-weight:500}
+.sig .fc,.sig .cd{color:var(--d-faint)}
+.feedline{align-items:flex-start}
+.fl2{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;
+  font-family:inherit;font-size:12px;background:none;border:none;color:var(--d-text);
+  border-bottom:1px solid var(--d-rule);padding:8px 2px;cursor:pointer}
+.fl2:hover{background:var(--d-panel2)}
+.fl2 .hd{display:flex;justify-content:space-between;gap:8px;font-size:11px;flex-wrap:wrap}
+.fl2 .bd{color:var(--d-text);line-height:1.45}
+.fl2.chat .bd{color:var(--d-faint);font-style:italic}
+.fl2 .tm{color:var(--d-faint);font-size:10px;flex:none}
+
+/* ---- persistent feed ticker: top of every screen ---- */
+.ticker{
+  display:flex;align-items:center;gap:8px;flex:none;cursor:pointer;width:100%;text-align:left;
+  font-family:inherit;font-size:11.5px;background:var(--d-panel);color:var(--d-text);
+  border:none;border-bottom:1px solid var(--d-rule);padding:9px 10px;min-height:38px;
+}
+.ticker:hover{background:var(--d-panel2)}
+.ticker:focus-visible{outline:2px solid var(--d-accent);outline-offset:-2px}
+.ticker .tdot{flex:none}
+.ticker .tmsg{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  transition:opacity .28s ease}
+.ticker .tyr{flex:none;color:var(--d-faint);font-size:10px;letter-spacing:.05em}
+.ticker .tq{flex:none;font-size:9.5px;color:var(--d-faint);border:1px solid var(--d-rule);
+  border-radius:8px;padding:0 5px}
+.ticker .tex{flex:none;color:var(--d-faint);font-size:11px}
+.ticker.held{background:#2A100C;border-bottom-color:var(--d-crit)}
+.ticker.held .tmsg{color:#FFC9BE}
+.ticker.fading .tmsg{opacity:.15}
+@media (prefers-reduced-motion:reduce){.ticker .tmsg{transition:none}}
+
+/* ---- voyage ---- */
+.sky{position:relative;height:112px;overflow:hidden;border-bottom:1px solid var(--d-rule);
+  margin:-10px -10px 12px}
+.sky pre{position:absolute;top:0;left:0;margin:0;font-family:inherit;font-size:11px;line-height:1.32;
+  color:var(--d-faint);white-space:pre;will-change:transform}
+.sky .far{opacity:.5;animation:drift 90s linear infinite}
+.sky .near{opacity:.9;animation:drift 42s linear infinite}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.sky .far,.sky .near{animation:none}}
+.sky .craft{position:absolute;top:46px;left:50%;transform:translateX(-50%);
+  color:var(--d-accent);font-size:15px}
+.track{font-family:inherit;font-size:clamp(9px,2.9vw,11px);line-height:1.35;white-space:pre;margin:0;
+  overflow-x:auto;color:var(--d-dim)}
+.track .done{color:var(--d-accent)} .track .ahead{color:var(--d-faint)}
+.track .here{color:var(--d-text)}
+.tracklbl{display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--d-faint);margin:2px 0 0}
+
+/* lead sentence: every pane opens with words, not numbers */
+.lead{font-size:13.5px;line-height:1.55;color:var(--d-text);margin:2px 0 12px;max-width:34ch}
+.lead .q{color:var(--d-dim)}
+.quiet{font-size:12px;color:var(--d-dim);margin:10px 0 0;max-width:34ch;line-height:1.5}
+.bigbar{font-size:13px;letter-spacing:-.5px;margin:10px 0 4px;white-space:nowrap}
+.pct{font-size:12px;color:var(--d-dim);margin:0 0 12px}
+
+/* CLI-styled menu: the only affordance at the bottom of a pane */
+.menu{display:flex;flex-direction:column;margin-top:14px;border-top:1px solid var(--d-rule)}
+.menu button{
+  display:flex;align-items:center;gap:8px;width:100%;text-align:left;font-family:inherit;
+  font-size:12.5px;color:var(--d-text);background:none;border:none;
+  border-bottom:1px solid var(--d-rule);padding:9px 2px;cursor:pointer;
+}
+.menu button:hover{background:var(--d-panel2);color:var(--d-accent)}
+.menu button .g{margin-left:auto;color:var(--d-faint)}
+.menu button .c{color:var(--d-dim);font-size:11.5px}
+
+/* rule sentence */
+.sentence{
+  border-left:2px solid var(--d-accent);padding:2px 0 2px 10px;margin:2px 0 12px;
+  font-size:13px;line-height:1.5;max-width:32ch;
+}
+/* rule builder */
+.build{display:flex;flex-direction:column;gap:5px;margin:4px 0 12px}
+.build .lb{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--d-faint);margin-top:6px}
+.pick{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-family:inherit;font-size:12.5px;color:var(--d-text);width:100%;text-align:left;
+  background:var(--d-panel2);border:1px solid var(--d-rule);border-radius:2px;
+  padding:7px 9px;cursor:pointer;
+}
+.pick:hover{border-color:var(--d-accent)}
+.pick .g{color:var(--d-faint);font-size:10px}
+/* rule card in automation console */
+.rulecard{border:1px solid var(--d-rule);border-radius:3px;padding:8px;margin-bottom:8px;background:var(--d-panel)}
+.rulecard.bad{border-color:#4A2B22}
+.rulecard pre{
+  margin:0 0 6px;font-family:inherit;font-size:11.5px;color:var(--d-text);
+  white-space:pre-wrap;word-break:break-word;
+}
+.rulecard .meta{font-size:10px;color:var(--d-faint);letter-spacing:.05em}
+.note-inline{font-size:10.5px;color:var(--d-crit);margin-top:4px}
+
+/* ---------- annotations ---------- */
+.notes{min-width:0}
+.notes table{width:100%;table-layout:fixed}
+.notes td{word-break:break-word}
+.notes h2{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--pg-accent);margin:0 0 4px;font-weight:600;
+}
+.notes > section{margin-bottom:30px}
+.notes p{margin:0 0 10px;max-width:64ch;font-size:15px}
+.notes p:last-child{margin-bottom:0}
+.notes strong{font-weight:600}
+.notes code{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.88em;
+  background:var(--pg-panel);border:1px solid var(--pg-rule);padding:.5px 4px;border-radius:2px;
+}
+.screenlist{list-style:none;padding:0;margin:0;display:grid;gap:2px}
+.screenlist button{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;
+  background:none;border:none;border-bottom:1px solid var(--pg-rule);
+  color:var(--pg-text);padding:7px 2px;width:100%;text-align:left;cursor:pointer;
+  display:flex;gap:10px;align-items:baseline;
+}
+.screenlist button:hover{color:var(--pg-accent)}
+.screenlist button:focus-visible{outline:2px solid var(--pg-accent);outline-offset:-2px}
+.screenlist .k{color:var(--pg-dim);flex:none;font-size:11px;letter-spacing:.06em;min-width:5.5em}
+.screenlist button > :not(.k){min-width:0;overflow-wrap:anywhere}
+.callout{
+  border-left:2px solid var(--pg-accent);padding:2px 0 2px 14px;
+  margin:0 0 10px;max-width:64ch;font-size:15px;
+}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--pg-rule);color:var(--pg-dim);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="eyebrow">Seedship &middot; §8 interface design</div>
+    <h1>Seedship Console</h1>
+    <p class="standfirst">Ten mobile panes for the ship-management game, in the CLI idiom §8 calls for. The device is live &mdash; tap facilities, feed lines and equipment to drill in. Three tabs, a feed ticker above every screen, and one question per level answered in a sentence before a number. State shown is <strong>year 147</strong>, mid&#8209;Long&#8209;Dark: the reactor is failing, rare compounds are running out, and no engineer is awake. Swap the skin above the device &mdash; the layout never changes, only the treatment.</p>
+  </header>
+  <div class="rule"></div>
+
+  <div class="layout">
+    <!-- ================= DEVICE ================= -->
+    <div class="device-col">
+      <div class="skinbar" role="group" aria-label="Device skin">
+        <button class="skinbtn" data-skin-set="amber" aria-pressed="true"><span class="sw" style="background:linear-gradient(135deg,#100E0A 50%,#E8A33D 50%)"></span>Amber CRT</button>
+        <button class="skinbtn" data-skin-set="phosphor" aria-pressed="false"><span class="sw" style="background:linear-gradient(135deg,#040A05 50%,#8FE39B 50%)"></span>Phosphor</button>
+        <button class="skinbtn" data-skin-set="blueprint" aria-pressed="false"><span class="sw" style="background:linear-gradient(135deg,#E7EDF3 50%,#0B6FA4 50%)"></span>Blueprint</button>
+        <button class="skinbtn" data-skin-set="teletype" aria-pressed="false"><span class="sw" style="background:linear-gradient(135deg,#F4F1E8 50%,#B32517 50%)"></span>Teletype</button>
+        <button class="skinbtn" data-skin-set="hazard" aria-pressed="false"><span class="sw" style="background:linear-gradient(135deg,#0F1418 50%,#F5C518 50%)"></span>Hazard</button>
+      </div>
+      <div class="device" data-skin="amber">
+        <button class="ticker" id="ticker" data-go="feedfull">
+          <span class="sig" id="tsig"><span class="lv dim">[INF]</span><span class="fc">[RCT]</span><span class="cd">[FUEL]</span></span>
+          <span class="tmsg" id="tmsg">Fuel rod 47 loaded. 149 left.</span>
+          <span class="tq" id="tq" hidden>+0</span>
+          <span class="tyr">y147</span>
+          <span class="tex">&#9650;</span>
+        </button>
+
+        <!-- ---------- VOYAGE (tab 1 — the storytelling surface) ---------- -->
+        <section class="screen" id="s-voyage">
+          <div class="sky" aria-hidden="true">
+            <pre class="far">  ·      ˙        ·    ˙   ·         ˙      ·   ˙        ·      ˙   ·     ·   ˙      ·  
+     ˙     ·    ˙      ·        ˙    ·     ˙        ·   ˙     ·      ˙    ·      ˙    
+·       ˙      ·    ˙       ·      ˙    ·      ˙   ·       ˙      ·    ˙      ·    ˙ 
+   ˙  ·      ˙     ·     ˙      ·    ˙      ·   ˙      ·     ˙    ·      ˙   ·      
+      ·   ˙     ·      ˙    ·      ˙     ·      ˙    ·    ˙      ·     ˙    ·    ˙  
+ ˙      ·    ˙      ·   ˙       ·    ˙      ·      ˙    ·      ˙    ·      ˙    ·     ·      ˙        ·    ˙   ·         ˙      ·   ˙        ·      ˙   ·     ·   ˙      ·  
+     ˙     ·    ˙      ·        ˙    ·     ˙        ·   ˙     ·      ˙    ·      ˙    
+·       ˙      ·    ˙       ·      ˙    ·      ˙   ·       ˙      ·    ˙      ·    ˙ 
+   ˙  ·      ˙     ·     ˙      ·    ˙      ·   ˙      ·     ˙    ·      ˙   ·      
+      ·   ˙     ·      ˙    ·      ˙     ·      ˙    ·    ˙      ·     ˙    ·    ˙  
+ ˙      ·    ˙      ·   ˙       ·    ˙      ·      ˙    ·      ˙    ·      ˙    ·   </pre>
+            <pre class="near">    *        .            *        .        *          .        *         .       *  
+         .        *          .          *         .        *        .         *      
+  .          *        .           *         .          *        .        *        .  
+       *        .          *         .         *          .         *        .      
+ .        *          .         *          .        *          .        *        .    
+      .        *         .          *        .         *         .        *             *        .            *        .        *          .        *         .       *  
+         .        *          .          *         .        *        .         *      
+  .          *        .           *         .          *        .        *        .  
+       *        .          *         .         *          .         *        .      
+ .        *          .         *          .        *          .        *        .    
+      .        *         .          *        .         *         .        *         </pre>
+            <span class="craft">&#9654;</span>
+          </div>
+
+          <h2 class="scr-title">Voyage <span>year 147 of 300</span></h2>
+          <pre class="track"><span class="done">█████████████████████</span><span class="here">▶</span><span class="ahead">······················</span></pre>
+          <div class="tracklbl"><span>launch</span><span>you are here</span><span>arrival</span></div>
+          <p class="quiet">Behind you: 38 rocks taken, 6 missed, 7 people dead. Ahead: 153 years.</p>
+
+          <div class="sect">The next thirty years</div>
+          <pre class="track"><span class="ahead">├────</span><span class="acc">◆</span><span class="ahead">────────────</span><span class="acc">◆</span><span class="ahead">─────</span><span class="dim">◇</span><span class="ahead">──────┤</span></pre>
+          <div class="tracklbl"><span>6y icy</span><span>21y metal?</span><span>24y ?</span></div>
+          <p class="lead" style="margin-top:10px">Nothing within reach for six years. <span class="q">This is the long stretch between stars.</span></p>
+          <p class="quiet">These were charted before launch. What they&rsquo;re made of is a guess until a drone gets there &mdash; and the hollow one was never surveyed at all.</p>
+
+          <div class="sect">Fuel</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Rods left</span><span class="vl">149</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Burning</span><span class="vl">1 per 12 months</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Enough for</span><span class="vl">150 years</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Still to travel</span><span class="vl">153 years</span></div>
+          <p class="quiet">Three years short. <span class="crit">The reactor is burning more per kilowatt than it should</span> because of how worn it is &mdash; service it and the rate comes back down. Leave it and the gap widens every year.</p>
+          <div class="menu">
+            <button data-go="mfg">Make 3 more rods<span class="c">&nbsp;&middot; 36 of your 84 rare compounds</span><span class="g">&rsaquo;</span></button>
+          </div>
+          <p class="quiet">You can always build more rods &mdash; while you still have the power to run the fabricator. Once the reactor stops, you can&rsquo;t.</p>
+
+          <div class="sect">Reactor</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Failing</span><span class="vl">780 kW</span></div>
+          <p class="quiet">The ship wants 890 kW. Some things are switched off to cover the gap.</p>
+
+          <div class="menu">
+            <button data-go="equipment">Go to the reactor<span class="g">&rsaquo;</span></button>
+            <button data-go="feedfull">Everything that&rsquo;s happened<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- FULL FEED ---------- -->
+        <section class="screen" id="s-feedfull" hidden>
+          <button class="backbtn" data-go="voyage">&lsaquo; back</button>
+          <h2 class="scr-title">What&rsquo;s happened <span>4 unread</span></h2>
+          <div class="acts" style="margin:0 0 10px">
+            <button class="act">All</button><button class="act">WRN+</button><button class="act">POWR</button><button class="act">STOR</button><button class="act">CREW</button>
+          </div>
+          <p class="quiet" style="margin:0 0 10px">Filter by any part of the marker.</p>
+          <div class="feed">
+            <button class="fl2" data-go="equipment">
+              <span class="hd"><span class="sig"><span class="lv crit">[CRT]</span><span class="fc">[RCT]</span><span class="cd">[POWR]</span></span><span class="tm">14:32</span></span>
+              <span class="bd">The reactor is failing. It can&rsquo;t make enough power.</span></button>
+            <button class="fl2" data-go="rule">
+              <span class="hd"><span class="sig"><span class="lv warn">[WRN]</span><span class="fc">[LFS]</span><span class="cd">[RULE]</span></span><span class="tm">11:07</span></span>
+              <span class="bd">The water restock rule hasn&rsquo;t run in 47 years.</span></button>
+            <button class="fl2" data-go="inventory">
+              <span class="hd"><span class="sig"><span class="lv warn">[WRN]</span><span class="fc">[CRG]</span><span class="cd">[STOR]</span></span><span class="tm">09:41</span></span>
+              <span class="bd">Rare compounds run out in about 90 days.</span></button>
+            <button class="fl2" data-go="tasks">
+              <span class="hd"><span class="sig"><span class="lv warn">[WRN]</span><span class="fc">[SHP]</span><span class="cd">[JOBS]</span></span><span class="tm">08:15</span></span>
+              <span class="bd">A repair job has waited five years. No engineer is awake.</span></button>
+            <button class="fl2" data-go="inventory">
+              <span class="hd"><span class="sig"><span class="lv warn">[WRN]</span><span class="fc">[ENG]</span><span class="cd">[MOVE]</span></span><span class="tm">07:50</span></span>
+              <span class="bd">Ore can&rsquo;t leave the Cargo Bay. The crane has no power, and the smelter has been idle 11 days.</span></button>
+            <button class="fl2" data-go="voyage">
+              <span class="hd"><span class="sig"><span class="lv dim">[INF]</span><span class="fc">[RCT]</span><span class="cd">[FUEL]</span></span><span class="tm">04:02</span></span>
+              <span class="bd">Fuel rod 47 loaded. 149 left.</span></button>
+            <button class="fl2" data-go="facility">
+              <span class="hd"><span class="sig"><span class="lv dim">[INF]</span><span class="fc">[HYD]</span><span class="cd">[MOVE]</span></span><span class="tm">03:20</span></span>
+              <span class="bd">Fertiliser delivered from Engineering.</span></button>
+            <button class="fl2 chat" data-go="crew">
+              <span class="hd"><span class="sig"><span class="lv faint">[&middot;&middot;&middot;]</span><span class="fc">[QTR]</span><span class="cd">[CREW]</span></span><span class="tm">02:20</span></span>
+              <span class="bd">Okonkwo: &ldquo;third week of the same ration block.&rdquo;</span></button>
+            <button class="fl2 chat" data-go="crew">
+              <span class="hd"><span class="sig"><span class="lv faint">[&middot;&middot;&middot;]</span><span class="fc">[SHP]</span><span class="cd">[NAVG]</span></span><span class="tm">y146</span></span>
+              <span class="bd">Year 146 closed. Nobody died.</span></button>
+          </div>
+          <div class="menu">
+            <button id="ackbtn">Mark as read<span class="c">&nbsp;&middot; resumes the ticker</span><span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- FACILITIES (tab 2) ---------- -->
+        <section class="screen" id="s-facilities" hidden>
+          <div class="hull">
+            <div class="decks">
+              <span class="nose">&#9666;</span>
+              <div class="bays">
+                <div class="deck">
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>BRG</button>
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>MED</button>
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>QTR</button>
+                  <button class="bay s-warn" data-go="facility"><span class="bd">&#9680;</span>HYD</button>
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>LFS</button>
+                </div>
+                <div class="spine">
+                  <span class="flow moving">&#9656;</span>
+                </div>
+                <div class="deck">
+                  <button class="bay s-ok holding" data-go="inventory"><span class="hold">&#9888;</span><span class="bd">&#9679;</span>CRG</button>
+                  <button class="bay s-ok"   data-go="facility"><span class="bd">&#9679;</span>MNT</button>
+                  <button class="bay s-warn" data-go="mfg"><span class="bd">&#9680;</span>ENG</button>
+                  <button class="bay s-crit" data-go="equipment"><span class="bd">&#9675;</span>RCT</button>
+                  <button class="bay s-off"  data-go="facility"><span class="bd">&#183;</span>DRN</button>
+                </div>
+              </div>
+              <span class="tail">&#9655;</span>
+            </div>
+            <div class="hullcap"><span>bow</span><span>1 moving &middot; 1 held</span><span>drive</span></div>
+            <p class="quiet" style="margin:8px 0 0"><span class="ok">&#9656;</span> Filters on their way from Engineering to Life Support.<br>
+            <span class="crit">&#9888;</span> Ore held in the Cargo Bay &mdash; shifting it needs the crane, and there&rsquo;s no power spare to run one.</p>
+          </div>
+
+          <h2 class="scr-title">Rooms <span>1 failing &middot; 2 need attention</span></h2>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Bridge</span><span class="vl">OK</span></button>
+          <button class="row" data-go="mfg"><span class="dot warn">◐</span><span class="nm">Engineering</span><span class="vl">Powered down</span></button>
+          <button class="row" data-go="equipment"><span class="dot crit">○</span><span class="nm">Reactor</span><span class="vl">Failing</span></button>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Life Support</span><span class="vl">OK</span></button>
+          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Hydroponics</span><span class="vl">Crops ready</span></button>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Medbay</span><span class="vl">OK</span></button>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Quarters</span><span class="vl">OK</span></button>
+          <button class="row" data-go="inventory"><span class="dot ok">●</span><span class="nm">Cargo Bay</span><span class="vl">OK</span></button>
+          <button class="row" data-go="facility"><span class="dot warn">◐</span><span class="nm">Drone Bay</span><span class="vl">Stowed</span></button>
+          <button class="row" data-go="facility"><span class="dot ok">●</span><span class="nm">Maintenance</span><span class="vl">OK</span></button>
+          <div class="menu">
+            <button data-go="vitals">Vital signs<span class="c">&nbsp;&middot; 4 of 5 declining</span><span class="g">&rsaquo;</span></button>
+            <button data-go="inventory">Where everything is<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- VITAL SIGNS (opt-in, trend not state) ---------- -->
+        <section class="screen" id="s-vitals" hidden>
+          <button class="backbtn" data-go="facilities">&lsaquo; rooms</button>
+          <h2 class="scr-title">Vital signs <span>last 20 years</span></h2>
+          <div class="acts" style="margin:0 0 4px">
+            <button class="act">20 years</button><button class="act">100 years</button><button class="act">Whole voyage</button>
+          </div>
+          <p class="quiet" style="margin:0 0 6px">Everywhere else shows how the ship is now. This is the only place that shows which way it&rsquo;s going.</p>
+
+          <div class="vital bad">
+            <div class="vh"><span class="vn">Power</span><span class="vv">780 kW &middot; needs 890</span></div>
+            <span class="spark">▇▇▇▇▇▆▆▆▆▆▅▅▅▅▅▄▄▄▃▃</span>
+            <div class="trend"><b>&darr; falling</b> &middot; &minus;220 kW over 20 years</div>
+            <p class="why">It covered everything until year 131. The reactor has been wearing out since, and nothing has replaced it.</p>
+          </div>
+
+          <div class="vital good">
+            <div class="vh"><span class="vn">Oxygen</span><span class="vv">steady</span></div>
+            <span class="spark">▆▆▇▆▆▇▇▆▆▇▆▆▇▆▇▆▆▇▆▆</span>
+            <div class="trend"><b>&rarr; holding</b></div>
+            <p class="why">The generator is 69% worn but keeping up. It is next in line when power gets tighter.</p>
+          </div>
+
+          <div class="vital warn2">
+            <div class="vh"><span class="vn">Water</span><span class="vv">900<span class="crit">?</span> &middot; needs 620</span></div>
+            <span class="spark">▇▇▇▇▆▆▆▆▆▅▅▅▅▄▄▄▄▃▃▃</span>
+            <div class="trend"><b>&darr; falling</b> &middot; and the number is wrong</div>
+            <p class="why">This comes from a gauge that stopped telling the truth around year 100. The real figure is closer to 300, and the shape of this line is the only honest thing on it.</p>
+          </div>
+
+          <div class="vital warn2">
+            <div class="vh"><span class="vn">Food</span><span class="vv">25/day &middot; 24 eaten</span></div>
+            <span class="spark">▇▅▇▄▇▅▆▃▇▅▇▄▆▂▇▅▇▃▆▂</span>
+            <div class="trend"><b>~ unsteady</b> &middot; swinging every 36 days</div>
+            <p class="why">Three beds keep ripening together, so the ship feasts and then goes hungry. The average is fine. The average is not what people eat.</p>
+          </div>
+
+          <div class="vital warn2">
+            <div class="vh"><span class="vn">Heat</span><span class="vv">8 rooms nominal</span></div>
+            <span class="spark">▇▇▇▇▇▇▇▇▇▆▆▆▆▆▆▅▅▅▅▅</span>
+            <div class="trend"><b>&darr; slipping</b></div>
+            <p class="why">Cargo Bay and Drone Bay are cold &mdash; their air units were switched off to save power. Nothing lives in either, for now.</p>
+          </div>
+
+          <p class="quiet" style="margin-top:12px">Four of five are worse than they were twenty years ago. None of them is an emergency today.</p>
+        </section>
+
+        <!-- ---------- FACILITY ---------- -->
+        <section class="screen" id="s-facility" hidden>
+          <button class="backbtn" data-go="facilities">&lsaquo; facilities</button>
+          <h2 class="scr-title">Hydroponics <span class="warn">◐</span></h2>
+          <p class="lead">Three crops are ready to pick, and only one botanist is awake to pick them.</p>
+          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 1</span><span class="vl">Ready</span></button>
+          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 2</span><span class="vl">Ready</span></button>
+          <button class="row" data-go="equipment"><span class="dot warn">◐</span><span class="nm">Grow Bed 3</span><span class="vl">Ready</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Grow Bed 4</span><span class="vl">Growing</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Grow Bed 5</span><span class="vl">Growing</span></button>
+          <button class="row" data-go="equipment"><span class="dot dim">·</span><span class="nm">Grow Bed 6</span><span class="vl">Empty</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Irrigation</span><span class="vl">OK</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Seed Vault</span><span class="vl">OK</span></button>
+          <button class="row" data-go="equipment"><span class="dot ok">●</span><span class="nm">Air</span><span class="vl">OK</span></button>
+
+          <div class="sect">Stores in this room</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Seeds</span><span class="vl">240</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Fertiliser</span><span class="vl">18 &middot; 3 weeks</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Water</span><span class="vl">610</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Food, picked</span><span class="vl">155</span></div>
+          <p class="quiet">Fertiliser is made in Engineering. Someone has to carry it here &mdash; there&rsquo;s a standing rule for that, and it&rsquo;s working.</p>
+          <div class="menu">
+            <button data-go="tasks">Deliveries coming here<span class="c">&nbsp;&middot; 1</span><span class="g">&rsaquo;</span></button>
+            <button data-go="equipdetails">Details<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- EQUIPMENT ---------- -->
+        <section class="screen" id="s-equipment" hidden>
+          <button class="backbtn" data-go="facilities">&lsaquo; facilities</button>
+          <h2 class="scr-title">Reactor Core <span class="crit">○</span></h2>
+          <p class="lead">Failing. It hasn&rsquo;t been serviced in six years.</p>
+          <div class="bigbar b-crit"><span class="fill">███████</span><span class="empty">░░░░░░░░░░░░░</span></div>
+          <p class="pct">38% &mdash; getting worse</p>
+          <p class="lead">It&rsquo;s making <b>780 kW</b>. <span class="q">The ship needs 890 kW, so some things are switched off.</span></p>
+          <div class="menu">
+            <button>Service it now<span class="g">&rsaquo;</span></button>
+            <button data-go="rule">Automation<span class="c">&nbsp;&middot; 1 rule</span><span class="g">&rsaquo;</span></button>
+            <button data-go="equipdetails">Details<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- EQUIPMENT DETAILS (opt-in numbers) ---------- -->
+        <section class="screen" id="s-equipdetails" hidden>
+          <button class="backbtn" data-go="equipment">&lsaquo; reactor core</button>
+          <h2 class="scr-title">Details <span>reactor core</span></h2>
+          <dl class="kv">
+            <dt>Condition</dt><dd>38%</dd>
+            <dt>Best after repair</dt><dd>71%</dd>
+            <dt>Wearing</dt><dd>0.011 /hr</dd>
+            <dt>Last serviced</dt><dd>6 years ago</dd>
+            <dt>Times repaired</dt><dd>29</dd>
+            <dt>Power made</dt><dd>780 kW</dd>
+            <dt>Fuel rods</dt><dd>149</dd>
+            <dt>Coolant</dt><dd class="ok">OK</dd>
+            <dt>Fitted</dt><dd>Coolant upgrade</dd>
+            <dt>Danger to work on</dt><dd class="crit">High</dd>
+          </dl>
+          <div class="sect">Condition over time</div>
+          <pre style="font-family:inherit;font-size:11px;margin:0;color:var(--d-dim);white-space:pre;overflow-x:auto">100 ▇▇▇▆▆▆▅▅▅▄▄▃▃▂▂▁
+    y87           y147
+svc  ^  ^   ^  ^   ^  ^</pre>
+          <p class="quiet">Every repair lowers the best it can be brought back to. After 29 repairs it can no longer be fixed above 71%.</p>
+        </section>
+
+        <!-- ---------- CREW ---------- -->
+        <section class="screen" id="s-crew" hidden>
+          <div class="colony">
+            <div class="banks" id="banks" aria-hidden="true"></div>
+            <div class="hullcap"><span>8 banks</span><span>187 asleep</span><span>7 lost</span></div>
+            <p class="quiet" style="margin:8px 0 0">Each mark is a person. The bright ones are awake; the hollow ones did not survive being awake.</p>
+          </div>
+          <h2 class="scr-title">Crew <span>6 awake &middot; 187 asleep</span></h2>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Adeyemi</span><span class="vl">Picking crops</span></button>
+          <button class="row" data-go="crewmember"><span class="dot warn">◐</span><span class="nm">Okonkwo</span><span class="vl">Exhausted</span></button>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Vasquez</span><span class="vl">Free</span></button>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Lindqvist</span><span class="vl">Hauling</span></button>
+          <button class="row" data-go="crewmember"><span class="dot warn">◐</span><span class="nm">Haddad</span><span class="vl">Unhappy</span></button>
+          <button class="row" data-go="crewmember"><span class="dot ok">●</span><span class="nm">Novak</span><span class="vl">Free</span></button>
+          <p class="lead" style="margin-top:14px">No engineer and no pilot is awake. <span class="q">Repairs are piling up, and you can&rsquo;t send drones.</span></p>
+          <div class="menu">
+            <button data-go="tasks">Jobs<span class="c">&nbsp;&middot; 14 waiting, 3 nobody can do</span><span class="g">&rsaquo;</span></button>
+            <button data-go="requests">Requests<span class="c">&nbsp;&middot; 2 from the crew</span><span class="g">&rsaquo;</span></button>
+            <button>Wake someone<span class="g">&rsaquo;</span></button>
+            <button data-go="colony">The colony<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- COLONY (opt-in numbers) ---------- -->
+        <section class="screen" id="s-colony" hidden>
+          <button class="backbtn" data-go="crew">&lsaquo; crew</button>
+          <h2 class="scr-title">The colony <span>200 aboard</span></h2>
+          <p class="lead">Everyone you wake spends years of their life awake. Those years don&rsquo;t come back.</p>
+          <div class="sect">Who is left, and for how long</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineers</span><span class="vl">11 working years</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Pilots</span><span class="vl">4 working years</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Medics</span><span class="vl">9 working years</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Botanists</span><span class="vl">22 working years</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Everyone else</span><span class="vl">61 working years</span></div>
+          <p class="quiet">Four years of pilot left. When that runs out, nobody can fly a drone again.</p>
+          <div class="sect">The cost so far</div>
+          <dl class="kv">
+            <dt>Years spent awake</dt><dd>1,044</dd>
+            <dt>Colony is older by</dt><dd>11.2 years</dd>
+            <dt>Died awake</dt><dd class="crit">7 &mdash; of 200 aboard</dd>
+          </dl>
+        </section>
+
+        <!-- ---------- CREW MEMBER ---------- -->
+        <section class="screen" id="s-crewmember" hidden>
+          <button class="backbtn" data-go="crew">&lsaquo; crew</button>
+          <h2 class="scr-title">Okonkwo <span>Technician &middot; 44</span></h2>
+          <p class="lead">Exhausted. <span class="q">He&rsquo;ll refuse anything dangerous until he&rsquo;s slept.</span></p>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Health</span><span class="vl">Fine</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Rest</span><span class="vl">Exhausted</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Mood</span><span class="vl">Low</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Fed</span><span class="vl">Fine</span></div>
+          <p class="quiet">Awake nine years. Learning to be an engineer &mdash; about two thirds of the way there.</p>
+          <div class="sect">Doing now</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Servicing the water recycler</span><span class="vl">4h</span></div>
+          <div class="menu">
+            <button>Send him to rest<span class="g">&rsaquo;</span></button>
+            <button>Give him a job<span class="g">&rsaquo;</span></button>
+            <button>Put him back to sleep<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- AUTOMATION ---------- -->
+        <section class="screen" id="s-auto" hidden>
+          <div class="fire" id="fire">
+            <div class="lbl"><span id="fireWhen">now</span><span id="fireAgo"></span></div>
+            <div class="when">
+              <div class="room" id="fRoom">Life Support</div>
+              <div class="cond" id="fCond">Filters dropped below 10</div>
+            </div>
+            <div class="arm"></div>
+            <div class="then"><div class="doing" id="fAct">Fetch 40 from Engineering</div></div>
+            <div class="out" id="fOut">&#10003; job raised</div>
+          </div>
+          <p class="quiet" style="margin:0 0 10px">Your rules, as they fire. When nothing is running it holds the last one.</p>
+          <h2 class="scr-title">Automation <span>61 rules</span></h2>
+          <p class="lead">Three rules need attention.</p>
+          <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
+          <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Cargo bay heater</span><span class="vl">Fighting itself</span></button>
+          <button class="row" data-go="rule"><span class="dot warn">◐</span><span class="nm">Service the reactor</span><span class="vl">Waiting 5 yrs</span></button>
+          <div class="sect">Left by the departure crew &middot; 13</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">7 deliveries between rooms</span><span class="vl">working</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Replant a bed when empty</span><span class="vl">beds in phase</span></div>
+          <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">never runs</span></button>
+          <p class="quiet">These were written for eight crew and instruments that still worked. None of them cover maintenance &mdash; that was always going to be your job.</p>
+
+          <div class="sect">A chain that works</div>
+          <p class="quiet">Three rules, each one simple, feeding each other:</p>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Life Support: filters low</span><span class="vl">fetch 40</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Engineering: filters low</span><span class="vl">make 60</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineering: ore low</span><span class="vl">blocked</span></div>
+          <p class="quiet">The last one is jammed. It raised the delivery correctly &mdash; but the crane it needs has no power, so the smelter is idle and the whole chain has stopped behind it. Every rule here is working exactly as written.</p>
+          <div class="menu">
+            <button>Rules that are working<span class="c">&nbsp;&middot; 58</span><span class="g">&rsaquo;</span></button>
+            <button data-go="newrule">Write a new rule<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- ONE RULE ---------- -->
+        <section class="screen" id="s-rule" hidden>
+          <button class="backbtn" data-go="auto">&lsaquo; automation</button>
+          <h2 class="scr-title">Restock water <span class="crit">○</span></h2>
+          <p class="sentence">When water drops below 500, add a job to restock it.</p>
+          <p class="quiet" style="margin:0 0 10px">Set before launch, year 0. Never edited.</p>
+          <p class="lead">This has never run. <span class="q">The water gauge says there are 900 units. There are really about 300.</span></p>
+          <p class="quiet">The gauge is worn out, so the rule is never told the truth. The rule itself is fine &mdash; it has just been listening to a liar for forty-seven years.</p>
+          <div class="menu">
+            <button>Service the gauge<span class="g">&rsaquo;</span></button>
+            <button data-go="newrule">Change this rule<span class="g">&rsaquo;</span></button>
+            <button>Turn it off<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- RULE BUILDER ---------- -->
+        <section class="screen" id="s-newrule" hidden>
+          <button class="backbtn" data-go="auto">&lsaquo; automation</button>
+          <h2 class="scr-title">New rule</h2>
+          <div class="build">
+            <div class="lb">When</div>
+            <button class="pick">Water<span class="g">▾</span></button>
+            <button class="pick">drops below<span class="g">▾</span></button>
+            <button class="pick">500<span class="g">▾</span></button>
+            <div class="lb">Then</div>
+            <button class="pick">Add a job<span class="g">▾</span></button>
+            <button class="pick">Restock water<span class="g">▾</span></button>
+            <button class="pick">at the top of the list<span class="g">▾</span></button>
+          </div>
+          <p class="sentence">When water drops below 500, add a job to restock it, at the top of the list.</p>
+          <p class="quiet">You pick the words. The rule reads back as a sentence, so you can check it means what you meant.</p>
+          <div class="menu"><button>Save<span class="g">&rsaquo;</span></button></div>
+        </section>
+
+        <!-- ---------- MANUFACTURING ---------- -->
+        <section class="screen" id="s-mfg" hidden>
+          <h2 class="scr-title">Workshop</h2>
+          <p class="lead">Making electronics. <span class="q">About three days left.</span></p>
+          <div class="bigbar b-ok"><span class="fill">████████████</span><span class="empty">░░░░░░░░</span></div>
+          <p class="pct">62%</p>
+          <div class="sect">Waiting</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Filters ×40</span><span class="vl">No materials</span></div>
+          <p class="lead" style="margin-top:14px">There isn&rsquo;t enough power to run the smelter. <span class="q">Switch something off first.</span></p>
+          <div class="menu">
+            <button>Standing orders<span class="c">&nbsp;&middot; 3</span><span class="g">&rsaquo;</span></button>
+            <button>Make something<span class="g">&rsaquo;</span></button>
+          </div>
+        </section>
+
+        <!-- ---------- NAVIGATION ---------- -->
+        <section class="screen" id="s-astro" hidden>
+          <h2 class="scr-title">Voyage <span>year 147 of 300</span></h2>
+          <div class="bigbar"><span class="fill">███████████</span><span class="empty">░░░░░░░░░</span></div>
+          <p class="lead">Nothing within reach for six years. <span class="q">This is the long stretch between stars.</span></p>
+          <div class="sect">Coming up</div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Something icy</span><span class="vl">6 years</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Probably metal</span><span class="vl">21 years</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Never surveyed</span><span class="vl">24 years</span></div>
+          <p class="quiet">These were charted before launch. What they&rsquo;re actually made of is a guess until a drone gets there.</p>
+          <p class="lead" style="margin-top:12px">Four drones left. <span class="q">You need six to keep up with what the ship uses.</span></p>
+          <div class="menu"><button>Details<span class="g">&rsaquo;</span></button></div>
+        </section>
+
+        <!-- ---------- REQUESTS (the board, running upward) ---------- -->
+        <section class="screen" id="s-requests" hidden>
+          <button class="backbtn" data-go="crew">&lsaquo; crew</button>
+          <h2 class="scr-title">Requests <span>2 waiting</span></h2>
+          <p class="lead">Jobs go down to the crew. Requests come back up.</p>
+
+          <div class="sect">Okonkwo</div>
+          <p class="lead" style="margin-bottom:6px">&ldquo;Put me back in the freezer. I&rsquo;ve been up nine years and I&rsquo;m done.&rdquo;</p>
+          <p class="quiet">He&rsquo;s your only technician, and two thirds of the way to being an engineer. Say no and he&rsquo;ll stay &mdash; unhappier, and slower.</p>
+          <div class="acts"><button class="act">Let him sleep</button><button class="act danger">Ask him to stay</button></div>
+
+          <div class="sect">Haddad</div>
+          <p class="lead" style="margin-bottom:6px">&ldquo;Don&rsquo;t put me on shift with Novak again.&rdquo;</p>
+          <p class="quiet">No reason given. Ignoring it costs them both a little every time they work together.</p>
+          <div class="acts"><button class="act">Keep them apart</button><button class="act danger">Ignore it</button></div>
+
+          <div class="sect">Earlier</div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Adeyemi asked to train Lindqvist</span><span class="vl">agreed</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Vasquez flagged the water gauge</span><span class="vl">ignored</span></div>
+          <p class="quiet">Vasquez was right about the gauge, four years ago.</p>
+        </section>
+
+        <!-- ---------- JOBS ---------- -->
+        <section class="screen" id="s-tasks" hidden>
+          <button class="backbtn" data-go="crew">&lsaquo; crew</button>
+          <h2 class="scr-title">Jobs <span>14 waiting</span></h2>
+          <p class="lead">Nobody aboard can do three of these.</p>
+          <div class="sect">Waiting for an engineer</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Service the reactor</span><span class="vl">5 yrs</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Service the air maker</span><span class="vl">3 yrs</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Service the fabricator</span><span class="vl">1 yr</span></div>
+          <div class="sect">Moving things about</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Filters &rarr; Life Support</span><span class="vl">2 days</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Metal ore &rarr; Engineering</span><span class="vl">blocked</span></div>
+          <p class="quiet">Nobody can do this one. Shifting three hundred units needs the loading crane, and the reactor isn&rsquo;t making enough power to run it. The smelter has been idle eleven days as a result.</p>
+          <div class="sect">Being done now</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Okonkwo &middot; water recycler</span><span class="vl">4h</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Lindqvist &middot; hauling seals</span><span class="vl">1h</span></div>
+          <div class="menu"><button data-go="crew">Wake an engineer<span class="g">&rsaquo;</span></button></div>
+        </section>
+
+        <!-- ---------- WHERE EVERYTHING IS ---------- -->
+        <section class="screen" id="s-inventory" hidden>
+          <button class="backbtn" data-go="facilities">&lsaquo; rooms</button>
+          <h2 class="scr-title">Where everything is</h2>
+          <p class="lead">Every room keeps its own stores. <span class="q">Nothing moves between rooms unless somebody carries it.</span></p>
+
+          <div class="sect">Rare compounds &middot; 84 left</div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineering</span><span class="vl">84</span></div>
+          <div class="row static"><span class="dot dim">·</span><span class="nm">Everywhere else</span><span class="vl">none</span></div>
+          <p class="quiet">Runs out in about 90 days. The next place to find more is six years away.</p>
+
+          <div class="sect">Metal ore &middot; 612 left</div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Cargo Bay</span><span class="vl">612</span></div>
+          <div class="row static"><span class="dot crit">○</span><span class="nm">Engineering</span><span class="vl">0 &mdash; smelter idle</span></div>
+          <p class="quiet">It&rsquo;s all in the wrong room, and it can&rsquo;t be moved: the crane needs power the reactor isn&rsquo;t making. Fix the reactor and the ore moves, the smelter runs, and you can make the parts to fix the reactor.</p>
+
+          <div class="sect">Filters &middot; 62 left</div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Engineering</span><span class="vl">48</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Life Support</span><span class="vl">9 &middot; 2 weeks</span></div>
+          <div class="row static"><span class="dot ok">●</span><span class="nm">Maintenance</span><span class="vl">5</span></div>
+
+          <div class="sect">Water &middot; 900<span class="crit">?</span></div>
+          <div class="row static"><span class="dot warn">◐</span><span class="nm">Life Support</span><span class="vl">900<span class="crit">?</span></span></div>
+          <p class="quiet">The <span class="crit">?</span> means a worn gauge is reporting this. Don&rsquo;t trust it.</p>
+          <div class="menu"><button data-go="auto">Delivery rules<span class="c">&nbsp;&middot; 9</span><span class="g">&rsaquo;</span></button></div>
+        </section>
+
+        <nav class="navbar">
+          <button data-go="voyage" aria-current="true">VOYAGE</button>
+          <button data-go="facilities">ROOMS</button>
+          <button data-go="crew">CREW</button>
+          <button data-go="auto">RULES</button>
+        </nav>
+      </div>
+      <p class="skincap" id="skincap"><b>Amber CRT.</b> IBM Plex Mono on warm charcoal. The saved baseline &mdash; industrial terminal, VT220 era, warm enough to sit with for hours.</p>
+    </div>
+
+    <!-- ================= NOTES ================= -->
+    <div class="notes">
+      <section>
+        <h2>One question per level</h2>
+        <p>Ship status is the calibration point &mdash; it earns its density because it answers exactly one thing: <em>what needs me?</em> Every level below it now answers one question too, and answers it <strong>in a sentence before it shows a number</strong>.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin:12px 0">
+          <tr><td style="padding:5px 10px 5px 0;color:var(--pg-dim);white-space:nowrap">Ship</td><td style="padding:5px 0">What needs me?</td></tr>
+          <tr><td style="padding:5px 10px 5px 0;color:var(--pg-dim);white-space:nowrap">Facility</td><td style="padding:5px 0">What&rsquo;s wrong in here?</td></tr>
+          <tr><td style="padding:5px 10px 5px 0;color:var(--pg-dim);white-space:nowrap">Equipment</td><td style="padding:5px 0">What do I do about it?</td></tr>
+          <tr><td style="padding:5px 10px 5px 0;color:var(--pg-accent);white-space:nowrap">Details</td><td style="padding:5px 0">Show me the numbers &mdash; opt-in, never on the way past</td></tr>
+        </table>
+        <p>Equipment used to open with twelve figures. It now opens with <em>&ldquo;Failing. It hasn&rsquo;t been serviced in six years&rdquo;</em>, one bar, and the two numbers that decide anything &mdash; 780&nbsp;kW made against 890&nbsp;kW needed. The wear rate, repair count, fuel, coolant and ageing history all moved one tap away.</p>
+        <p class="callout">Nothing was deleted. It was <strong>moved off the path</strong> &mdash; which is what lets a complex system feel simple to walk through.</p>
+      </section>
+
+      <section>
+        <h2>Rules are sentences, not code</h2>
+        <p>The notation in <code>plan.md</code> §5c is a <strong>specification, not an interface</strong>. Players never see <code>limitUnder(500)</code> or <code>postTask("service", front)</code>.</p>
+        <p>They see a rule named <em>Restock water</em> that reads: <em>&ldquo;When water drops below 500, add a job to restock it.&rdquo;</em> They build it by picking each underlined phrase from a menu, and the sentence reassembles itself as they go &mdash; so you can check it means what you meant before saving.</p>
+        <p>The diagnostics got the same treatment. <code>DEAD &middot; last fired 47y</code> became <em>&ldquo;Never runs&rdquo;</em>, and the explanation is a plain sentence: <em>the gauge says 900, there are really about 300, so the rule is never told the truth.</em> <code>THRASH</code> became <em>&ldquo;Fighting itself&rdquo;</em>. <code>STALLED</code> became <em>&ldquo;Waiting 5 years&rdquo;</em>.</p>
+      </section>
+
+      <section>
+        <h2>Words that changed</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">AT_RISK</td><td>Failing</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">SHED</td><td>Powered down</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">maxCondition</td><td>Best after repair</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">unclaimed 1,847d</td><td>Waiting 5 years</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">role-years</td><td>Working years left</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">M-type (est.)</td><td>Probably metal</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">Manufacturing</td><td>Workshop</td></tr>
+          <tr><td style="padding:4px 12px 4px 0;color:var(--pg-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px">Task board</td><td>Jobs</td></tr>
+        </table>
+        <p style="margin-top:10px">The one piece of notation kept is the trailing <code>?</code> on a reading from a worn gauge &mdash; because it is a mark, not a word, and the Stores pane explains it once in plain English.</p>
+      </section>
+
+      <section>
+        <h2>Where numbers survived</h2>
+        <p>A number stays on the path only when it <em>is</em> the decision. <strong>780 kW against 890 kW needed</strong> stays, because that gap is the whole problem. <strong>Four working years of pilot left</strong> stays, because it is the countdown to losing drones forever. <strong>84 rare compounds, 90 days</strong> stays.</p>
+        <p>Condition percentages, wear rates and repair counts do not &mdash; a bar and the words &ldquo;getting worse&rdquo; carry the same decision, and the exact figures are one tap away for anyone who wants them.</p>
+      </section>
+
+      <section>
+        <h2>Jump to a screen</h2>
+        <ul class="screenlist">
+          <li><button data-go="voyage"><span class="k">VOYAGE</span>The journey &mdash; where you are, what&rsquo;s ahead, fuel</button></li>
+          <li><button data-go="feedfull"><span class="k">expand</span>Full feed &mdash; from the ticker</button></li>
+          <li><button data-go="facilities"><span class="k">ROOMS</span>The ten rooms</button></li>
+          <li><button data-go="vitals"><span class="k">opt-in</span>Vital signs &mdash; trend, not state</button></li>
+          <li><button data-go="facility"><span class="k">drill</span>Hydroponics</button></li>
+          <li><button data-go="equipment"><span class="k">drill</span>Reactor Core</button></li>
+          <li><button data-go="equipdetails"><span class="k">opt-in</span>Details &mdash; the numbers, on demand</button></li>
+          <li><button data-go="mfg"><span class="k">drill</span>Engineering &mdash; the workshop</button></li>
+          <li><button data-go="auto"><span class="k">RULES</span>Automation &mdash; three need attention</button></li>
+          <li><button data-go="rule"><span class="k">drill</span>One rule &mdash; Restock water</button></li>
+          <li><button data-go="newrule"><span class="k">drill</span>Rule builder &mdash; sentence-shaped</button></li>
+          <li><button data-go="crew"><span class="k">CREW</span>Crew roster</button></li>
+          <li><button data-go="crewmember"><span class="k">drill</span>Okonkwo</button></li>
+          <li><button data-go="tasks"><span class="k">drill</span>Jobs &mdash; including deliveries</button></li>
+          <li><button data-go="requests"><span class="k">drill</span>Requests &mdash; the board running upward</button></li>
+          <li><button data-go="inventory"><span class="k">drill</span>Where everything is</button></li>
+          <li><button data-go="colony"><span class="k">opt-in</span>The colony &mdash; who is left</button></li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Four tabs, one per thing the game is about</h2>
+        <p><strong>Voyage</strong> is where the ship is going. <strong>Rooms</strong> is its body. <strong>Crew</strong> is the people. <strong>Rules</strong> is your own mind &mdash; you are the ship&rsquo;s AI, and automation is literally you.</p>
+        <p>Rules earned a tab despite attaching to equipment, because §5 made facilities and systems rule-holders too. A rule can live at any level of the hierarchy, so &ldquo;which of mine is broken&rdquo; genuinely has no single address. Moving it out, along with Jobs, leaves Rooms clean: ten rooms and nothing else.</p>
+      </section>
+
+      <section>
+        <h2>Jobs belong to the crew, and the board runs both ways</h2>
+        <p>Jobs are work <em>people</em> do, and the board&rsquo;s failure is always &ldquo;nobody can do this&rdquo; &mdash; a crew problem wearing a facility costume. It sits under Crew now.</p>
+        <p class="callout">Jobs go down to the crew. <strong>Requests come back up.</strong></p>
+        <p>Same object, opposite direction, and it gives §3&rsquo;s withdrawal and §10&rsquo;s crew agency a home in v1 with no LLM needed. Okonkwo asks to go back in the freezer. Haddad won&rsquo;t work with Novak. Adeyemi asks to train someone. You can say no to any of it &mdash; and saying no costs morale, which finally gives happiness the mechanical teeth §3 asked for and never got.</p>
+        <p>The best line on that screen is the quiet one: <em>&ldquo;Vasquez was right about the gauge, four years ago.&rdquo;</em> Crew notice things your automation missed, and ignoring them has a record.</p>
+      </section>
+
+      <section>
+        <h2>Every room keeps its own stores</h2>
+        <p>There is no ship-wide pool. Consumables live in the room that uses them, and <strong>nothing moves unless somebody carries it</strong> &mdash; which means a delivery job, which means it can be automated, which means it can jam.</p>
+        <p>It costs about 11% more jobs across the voyage and 0.07% of the crew&rsquo;s time, so it spends the idle roster §3 identified rather than overloading it. It also gives the Cargo Bay and the Loading Crane something to do, and makes a vented room&rsquo;s contents a real loss.</p>
+        <p>Mostly it buys chains. The Rules tab shows a three-deep one, jammed at the bottom: Life Support wants filters, Engineering makes filters, Engineering needs ore &mdash; and the ore is sitting in the Cargo Bay because nobody picked up the delivery. Three simple rules, all correct, and the smelter has been idle eleven days. <strong>The room reporting the problem is not the room that has it.</strong></p>
+      </section>
+
+      <section>
+        <h2>You inherit thirteen rules</h2>
+        <p>The ship launches with standing rules the departure crew left behind &mdash; seven room-to-room deliveries, three production orders, a fire alarm, a reactor service job, and a water restock. Enough that it runs itself on day one, with the entire maintenance layer conspicuously absent.</p>
+        <p class="callout">Nothing in the set is badly written. It comes apart because <strong>the ship changes and the rules cannot.</strong></p>
+        <p>They can only use tier-0 conditions, because there is no Logic Core or Scheduler aboard at launch &mdash; so every one is a single threshold with no guard and no sense of time. Thresholds sized for eight crew drift wrong as the roster shrinks. The grow beds launch already out of phase, so &ldquo;replant when empty&rdquo; holds a working stagger for forty years and then collapses the first time a planting is missed. And around year 100 a worn gauge quietly kills the water rule &mdash; which is the one on this device, still listening to a liar at year 147.</p>
+        <p>That is the tutorial: working examples to read on hour one, and four decades of slow, legible failure after that. It answers most of Open Question 4 without a tutorial mode existing.</p>
+      </section>
+
+      <section>
+        <h2>The ship is the hero on Rooms</h2>
+        <p>§4 says room connectivity is flavour. That was true when inventory was a single global pool &mdash; but <strong>per-room stores changed the brief</strong>. Things physically move between rooms now, and a schematic is the only place that layer can be seen at all.</p>
+        <p class="callout">The held delivery is the whole §7 trap in one marker: the reactor is failing, so there is no power for the crane, so the ore can&rsquo;t move, so the smelter is idle, so there are no parts &mdash; <strong>to fix the reactor.</strong></p>
+        <p><strong>Position means location, so the two markers cannot work the same way.</strong> Something <em>moving</em> belongs on the spine, travelling between its real source and destination &mdash; the filters marker runs from Engineering to Life Support because that is where they are going. Something <em>held</em> is not in transit at all: it sits in a room, so it is badged on that room. The ore warning is on the Cargo Bay because that is where the ore is.</p>
+        <p class="quiet" style="font-size:14px">Note the Cargo Bay still reads green. Its equipment is fine &mdash; the held ore is a logistics problem, not a room-health one, and collapsing the two would make the status dot mean two different things.</p>
+        <p>So the cutaway does three jobs rather than decorating: <strong>where every room is</strong>, <strong>what state it&rsquo;s in</strong>, and <strong>what is moving between them right now</strong>. The filter delivery slides along the spine; the ore delivery sits stuck against the drive end with a warning, which is why the smelter has been idle eleven days.</p>
+        <p>Two decks around a spine, bow to the left and drive to the right, so the shape reads as a ship rather than a grid. Every bay is a tap target &mdash; the same destinations as the list below it, reached spatially instead of alphabetically. Over a few hundred hours the player will know where things are without reading the labels, which is the real prize.</p>
+        <p>It mirrors Voyage deliberately: hero above, detail below. Voyage answers <em>where are we going</em>; Rooms answers <em>what shape are we in</em>.</p>
+        <p class="callout">Both heroes show <strong>motion the numbers can&rsquo;t</strong> &mdash; a starfield for a ship that cannot appear to move, and delivery markers for cargo that has no other representation.</p>
+      </section>
+
+      <section>
+        <h2>Vital signs: the one place density belongs</h2>
+        <p>Dense telemetry was rejected as a navigation model, and it should stay rejected. But there is a question no other screen in the game can answer: <strong>is the ship getting better or worse, and how fast?</strong></p>
+        <p class="callout">Everywhere else shows the ship <em>now</em>. Power at 780&nbsp;kW is a fact. Power falling from 1,000 to 780 across sixty years is the story &mdash; and only a sparkline carries it.</p>
+        <p>Five closed loops, the ones that kill everyone if they stop: power, oxygen, water, food, heat. Each gets a current value, twenty years of shape, a direction, and <strong>one plain sentence saying why</strong> &mdash; density <em>plus</em> prose, never instead of it.</p>
+        <p>Two of them pay off immediately. The <strong>food</strong> line is visibly jagged, swinging on a 36-day period, and that waveform <em>is</em> the grow-bed phase collapse from §5c &mdash; the trap diagnosed as a picture rather than a paragraph. <em>&ldquo;The average is fine. The average is not what people eat.&rdquo;</em> And the <strong>water</strong> line still falls correctly even though its number is a lie, because a worn gauge drifts its readings but not its shape.</p>
+        <p>It is opt-in, off the path, and one tap from Rooms &mdash; the same rung of the ladder as equipment Details. The closing line is the point of the whole screen: <em>four of five are worse than twenty years ago, and none of them is an emergency today.</em></p>
+      </section>
+
+      <section>
+        <h2>Crew: the colony as two hundred marks</h2>
+        <p>Eight banks, twenty-five people each. Bright marks are awake, hollow ones did not survive being awake, and the rest are asleep. The banks <strong>breathe</strong> on a slow stagger &mdash; the ship keeping 187 people alive, visibly, every second you look at it.</p>
+        <p class="callout">§1 scores the ending on how many of these are left. This is the only screen that shows you the score.</p>
+        <p>It earns its place on the same test as the others: numbers cannot carry it. &ldquo;7 died&rdquo; is a statistic; seven gaps in a grid you have been watching breathe for two hundred years is not. And it makes the worst decision in the game unambiguous &mdash; <strong>shutting down a cryo bank is twenty-five marks going dark at once</strong>, a quarter of one cluster, permanently.</p>
+        <p>Building it surfaced a counting error, too: the roster said <em>6 awake, 194 asleep</em> while the colony page said 7 had died. 200 minus 7 is 193, so it is 187 asleep. Drawing a thing tends to find that.</p>
+      </section>
+
+      <section>
+        <h2>Rules: watch one actually fire</h2>
+        <p>Three attempts failed before this one. Two were activity traces &mdash; bookkeeping, which is never compelling &mdash; and the third was a constellation of all sixty-one rules, which was <em>atmospheric but messy</em>: it gestured at shape without telling you a single true thing.</p>
+        <p class="callout">The answer was specificity. Show <strong>one rule, actually firing</strong>: the condition that tripped, the action taken, and whether it worked.</p>
+        <p>It plays in sequence &mdash; condition, a connector drawing down, the action, then the outcome stamping on. When nothing is running it holds the last firing and relabels itself <em>last &middot; just now</em>, so the panel is never empty and never claims to be live when it isn&rsquo;t.</p>
+        <p>What it buys: you learn what your rules <em>do</em> by watching them work, in exactly the sentence shape the builder uses. Failures land in front of you rather than in a list &mdash; <em>&ldquo;Fetch 300 from the Cargo Bay &nbsp;&#10005; no power for the crane&rdquo;</em> is the whole §7 trap caught in the act. And the cadence tracks the speed slider for free: at 1&times; a firing every few minutes, at 8,760&times; a blur.</p>
+        <p>It also shows the variety the earlier versions hid. Switching a heater on, making seals, raising a repair job &mdash; not everything is a delivery.</p>
+        <p><strong>The panel is a fixed 190px</strong>, with two lines reserved for the condition and for the action. Firings vary in length, and without that the whole page reflowed every few seconds &mdash; the one thing a persistent, always-animating element must never do.</p>
+      </section>
+
+      <section>
+        <h2>Every signal is marked the same way</h2>
+        <pre style="font-family:'IBM Plex Mono',monospace;font-size:clamp(10px,2.9vw,12.5px);margin:0 0 10px;
+             white-space:pre;overflow-x:auto;max-width:100%;color:var(--pg-text);line-height:1.6">[CRT][RCT][POWR]  The reactor is failing.
+[WRN][LFS][RULE]  Water restock hasn&rsquo;t run in 47 years.
+[WRN][CRG][STOR]  Rare compounds run out in ~90 days.
+[INF][HYD][MOVE]  Fertiliser delivered from Engineering.
+[&middot;&middot;&middot;][QTR][CREW]  Okonkwo: &ldquo;third week of the same&hellip;&rdquo;</pre>
+        <p class="callout">The marker is metadata. <strong>The message is prose.</strong></p>
+        <p>The player never decodes the prefix to understand a line &mdash; the sentence always says it in English. The codes exist so a feed holding tens of thousands of entries across three centuries can be <em>scanned, filtered and recognised by pattern</em>, which prose alone cannot do. Fixed width means the eye lands in the same place every time.</p>
+        <p><strong>Level</strong> is severity, and doubles as the speed slider&rsquo;s filter floor: <code>CRT</code> holds the ticker and trips snap-back, <code>WRN</code> always shows, <code>INF</code> is suppressed at high speed, <code>&middot;&middot;&middot;</code> chatter only survives at 1&times;. <strong>Facility</strong> is one of ten rooms, plus <code>SHP</code> for ship-wide and <code>CRW</code> for a person rather than a place. <strong>Code</strong> is one of twelve kinds &mdash; <code>POWR WEAR FAIL STOR MOVE MAKE JOBS RULE CREW NAVG FUEL ATMO</code> &mdash; and they double as the filter chips on the full feed.</p>
+        <p>The two ends of the game end up in the same shape: <code>[&middot;&middot;&middot;][QTR][CREW]</code> and <code>[CRT][RCT][POWR]</code>.</p>
+      </section>
+
+      <section>
+        <h2>The ticker is the game&rsquo;s pulse</h2>
+        <p>One feed item, at the top of every screen, always. New items replace the old one, so you can monitor the ship from anywhere without going and looking.</p>
+        <p class="callout">A serious alert turns the strip red and <strong>holds it there</strong> &mdash; the ticker stops rotating until you acknowledge it.</p>
+        <p>That hold is the visible half of §2&rsquo;s <strong>snap-back</strong>. The same event that pins the strip drops the speed, and the same acknowledgement releases both. §5 already treats &ldquo;unacknowledged for X hours&rdquo; as a rule, so acknowledgement was in the design already &mdash; it just never had a surface.</p>
+        <p>At 8,760&times; items arrive faster than anyone reads, so an item holds for a minimum dwell and a <code>+3</code> badge counts what stacked up behind it. That is §11&rsquo;s severity floor doing its work: at 1&times; the strip carries crew chatter and small events, at full speed only warnings survive. <strong>The strip&rsquo;s content tells you what speed you are at</strong> without showing a number.</p>
+      </section>
+
+      <section>
+        <h2>Voyage carries the story</h2>
+        <p>A progress bar says where you are. This says <em>what it cost to get there</em>: <em>&ldquo;Behind you: 38 rocks taken, 6 missed, 7 people dead. Ahead: 153 years.&rdquo;</em></p>
+        <p>Two scales, because 300 years and the next decade are different questions. The whole voyage puts the Long Dark in front of you as a long stretch of nothing, which is honest. The thirty-year lane is the one you act on &mdash; and the hollow diamond is an object nobody surveyed before launch, so its composition is unknown rather than merely uncertain.</p>
+        <p>Fuel sits here because it belongs to the journey rather than to a room &mdash; and it stopped being reassurance once the burn model was corrected.</p>
+        <p class="callout">A worn reactor is weaker <em>and</em> thirstier. Fuel is not a separate resource to manage; it is <strong>a consequence of maintenance</strong>.</p>
+        <p>The earlier model scaled burn to delivered power alone, which meant a failing reactor burned <em>less</em> fuel &mdash; neglect extended your range. With efficiency in the formula it costs you instead: 287 rods over the journey if the reactor is kept near 80%, 338 if it is allowed to sit at 40%, against 320 aboard.</p>
+        <p>Which is why this panel now reads <strong>150 years of fuel against 153 to travel</strong>. Three years short, at year 147, with 153 still to go &mdash; and the number was falling faster than it should have been for a century without ever saying so.</p>
+      </section>
+
+      <section>
+        <h2>Status is the only colour</h2>
+        <p>The interface is monochrome amber. The single exception is state &mdash; <span style="color:var(--pg-accent)">●</span> ok, ◐ warn, ○ crit &mdash; so anything wrong is the only chromatic thing on screen and reads before you have parsed a word.</p>
+        <p>Colour never carries meaning alone: the glyph differs too, so the panes survive both a monochrome CRT reading and a colour-blind one.</p>
+      </section>
+
+      <section>
+        <h2>Degraded readings are marked, not hidden</h2>
+        <p class="callout">Inventory shows <code>Water 900?</code> and the automation console explains why: the source sensor is at 22%, and the true figure is nearer 300.</p>
+        <p>§5 says worn sensors lie rather than fail. The interface has to make that <em>discoverable without explaining it</em> &mdash; a trailing <code>?</code> on any value sourced from a degraded instrument, and nothing more. The player learns what it means once.</p>
+      </section>
+
+      <section>
+        <h2>The console shows symptoms, not rules</h2>
+        <p>With 61 rules, an alphabetical list is useless. The console opens on <strong>flagged</strong> &mdash; dead, thrashing, stalled &mdash; and pushes the 58 healthy rules below the fold.</p>
+        <p>The stalled one matters most: <code>fired 34 &middot; unclaimed 1,847 d</code>. Nothing is broken, the rule is correct, and no engineer has been awake for five years. That is a §3 problem wearing a §5 costume, and the console is the only place both halves are visible at once.</p>
+      </section>
+
+      <section>
+        <h2>Panes carry their own consequence</h2>
+        <p>Facility view shows three beds ripe simultaneously with one botanist &mdash; the synchronised-ripening trap from §5c, visible as a fact rather than a warning. Crew shows <strong>4 pilot role-years left</strong> beside two lost drones. Nav shows 4 of 6 drones against a break-even of 6.</p>
+        <p>None of these say &ldquo;you are in trouble&rdquo;. They put adjacent numbers next to each other and let the player do the arithmetic, which is the entire register of the game.</p>
+      </section>
+
+      <section>
+        <h2>Still open</h2>
+        <p>The speed slider and snap-back controls live in the status bar here as a readout only &mdash; where the control itself goes on a phone is unresolved. The cycle timeline that §5c calls for (six beds across 36 days, overlaps highlighted) is stubbed as a button, not designed.</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>Design mockup for <strong>plan.md §8</strong>. Figures are illustrative but internally consistent with the tuned economy &mdash; 780&nbsp;kW against an 890&nbsp;kW baseline, 149 rods, 84 rare compounds, 4 of 6 drones.</footer>
+</div>
+
+<script>
+(function(){
+  var screens = ["voyage","feedfull","facilities","vitals","facility","equipment","equipdetails","crew","colony","crewmember","requests","auto","rule","newrule","mfg","tasks","inventory"];
+  var tabs = {voyage:"voyage", feedfull:"voyage",
+              facilities:"facilities", vitals:"facilities", facility:"facilities", equipment:"facilities",
+              equipdetails:"facilities", mfg:"facilities", inventory:"facilities",
+              crew:"crew", colony:"crew", crewmember:"crew", tasks:"crew", requests:"crew",
+              auto:"auto", rule:"auto", newrule:"auto"};
+  var navBtns = Array.prototype.slice.call(document.querySelectorAll(".navbar button"));
+
+  function go(name){
+    if (screens.indexOf(name) === -1) return;
+    screens.forEach(function(s){
+      var el = document.getElementById("s-" + s);
+      if (el) el.hidden = (s !== name);
+    });
+    var active = tabs[name];
+    navBtns.forEach(function(b){
+      b.setAttribute("aria-current", b.getAttribute("data-go") === active ? "true" : "false");
+    });
+    var scr = document.getElementById("s-" + name);
+    if (scr) scr.scrollTop = 0;
+  }
+
+  var caps = {
+    amber:    "<b>Amber CRT.</b> IBM Plex Mono on warm charcoal. The saved baseline &mdash; industrial terminal, VT220 era, warm enough to sit with for hours.",
+    phosphor: "<b>Phosphor.</b> The classic green, kept austere. Status still reads because &ldquo;ok&rdquo; is simply the absence of alarm &mdash; but it is the skin most at risk of reading as costume.",
+    blueprint:"<b>Blueprint.</b> Roboto Mono, navy on pale blue-grey. Takes &ldquo;asset management software in space&rdquo; literally: a document you consult, and the only skin comfortable in daylight.",
+    teletype: "<b>Teletype.</b> Courier Prime on paper stock, one red for alarm. The signal feed becomes a printed record rather than a stream. Watch the bars &mdash; density suffers.",
+    hazard:   "<b>Hazard.</b> JetBrains Mono, slate and safety yellow. How real plant software looks now. Least romantic, most legible, aesthetic doing no narrative work."
+  };
+  var device = document.querySelector(".device");
+  var cap = document.getElementById("skincap");
+  var skinBtns = Array.prototype.slice.call(document.querySelectorAll(".skinbar [data-skin-set]"));
+
+  function setSkin(name){
+    if (!caps[name]) return;
+    device.setAttribute("data-skin", name);
+    cap.innerHTML = caps[name];
+    skinBtns.forEach(function(b){
+      b.setAttribute("aria-pressed", b.getAttribute("data-skin-set") === name ? "true" : "false");
+    });
+  }
+
+  /* ---- persistent feed ticker ----
+     Rotates ambient items; a serious one HOLDS the strip red and stops the
+     rotation. That hold is the visible half of §2 snap-back: acknowledging
+     it is what resumes both. */
+  var items = [
+    {sev:"dim",  lv:"INF", fc:"RCT", cd:"FUEL", msg:"Fuel rod 47 loaded. 149 left."},
+    {sev:"faint",lv:"\u00B7\u00B7\u00B7", fc:"QTR", cd:"CREW", msg:"Okonkwo: \u201Cthird week of the same ration block.\u201D"},
+    {sev:"warn", lv:"WRN", fc:"CRG", cd:"STOR", msg:"Rare compounds run out in about 90 days."},
+    {sev:"dim",  lv:"INF", fc:"HYD", cd:"MOVE", msg:"Fertiliser delivered from Engineering."},
+    {sev:"warn", lv:"WRN", fc:"SHP", cd:"JOBS", msg:"A repair job has waited five years."},
+    {sev:"crit", lv:"CRT", fc:"RCT", cd:"POWR", msg:"The reactor is failing. It can\u2019t make enough power."}
+  ];
+  var tk = document.getElementById("ticker"),
+      ts = document.getElementById("tsig"),
+      tm = document.getElementById("tmsg"),
+      tq = document.getElementById("tq");
+  var idx = 0, held = false, queued = 0, timer = null;
+
+  function paint(){
+    var it = items[idx];
+    ts.innerHTML = '<span class="lv ' + it.sev + '">[' + it.lv + ']</span>' +
+                   '<span class="fc">[' + it.fc + ']</span>' +
+                   '<span class="cd">[' + it.cd + ']</span>';
+    tm.textContent = it.msg;
+    tm.className = "tmsg" + (it.sev === "faint" ? " faint" : "");
+    tk.classList.toggle("held", it.sev === "crit");
+    held = (it.sev === "crit");
+    if (held) { queued = 3; }
+    tq.hidden = !held;
+    if (held) tq.textContent = "+" + queued;
+  }
+  function advance(){
+    if (held) return;
+    tm.parentNode.classList.add("fading");
+    setTimeout(function(){
+      idx = (idx + 1) % items.length;
+      paint();
+      tk.classList.remove("fading");
+    }, 280);
+  }
+  function start(){ if (timer) clearInterval(timer); timer = setInterval(advance, 3400); }
+  paint(); start();
+
+  var ack = document.getElementById("ackbtn");
+  if (ack) ack.addEventListener("click", function(e){
+    e.stopPropagation();
+    held = false; queued = 0; tq.hidden = true;
+    tk.classList.remove("held");
+    idx = 0; paint(); start();
+  });
+
+  /* ---- watch a rule fire ----
+     Cycles the real firings. When nothing is running it holds the last one,
+     relabelled, so the panel is never empty and never claims to be live. */
+  var firings = [
+    {room:"Life Support", cond:"Filters dropped below 10",       act:"Fetch 40 from Engineering",     ok:true,  out:"job raised"},
+    {room:"Cargo Bay",    cond:"Temperature fell below 15\u00B0",  act:"Switch the heater on",          ok:true,  out:"done"},
+    {room:"Quarters",     cond:"Food dropped below 40",          act:"Fetch 60 from Hydroponics",     ok:true,  out:"job raised"},
+    {room:"Engineering",  cond:"Metal ore dropped below 100",    act:"Fetch 300 from the Cargo Bay",  ok:false, out:"no power for the crane"},
+    {room:"Engineering",  cond:"Seals dropped below 30",         act:"Make 60 seals",                 ok:true,  out:"started"},
+    {room:"Reactor",      cond:"Condition fell into failing",    act:"Raise a repair job",            ok:false, out:"nobody can do it"}
+  ];
+  var fireEl = document.getElementById("fire");
+  if (fireEl) {
+    var fWhen = document.getElementById("fireWhen"), fAgo = document.getElementById("fireAgo"),
+        fRoom = document.getElementById("fRoom"), fCond = document.getElementById("fCond"),
+        fAct = document.getElementById("fAct"), fOut = document.getElementById("fOut");
+    var fi = 0, fHold = null;
+    function showFiring(){
+      var f = firings[fi];
+      fRoom.textContent = f.room;
+      fCond.textContent = f.cond;
+      fAct.textContent = f.act;
+      fOut.textContent = (f.ok ? "\u2713 " : "\u2715 ") + f.out;
+      fOut.className = "out" + (f.ok ? "" : " bad");
+      fWhen.textContent = "now"; fWhen.className = "live"; fAgo.textContent = "";
+      fireEl.classList.remove("go");
+      void fireEl.offsetWidth;                 /* restart the animation */
+      fireEl.classList.add("go");
+      clearTimeout(fHold);
+      fHold = setTimeout(function(){          /* it becomes the last thing that ran */
+        fWhen.textContent = "last"; fWhen.className = ""; fAgo.textContent = "just now";
+      }, 2300);
+      fi = (fi + 1) % firings.length;
+    }
+    showFiring();
+    setInterval(showFiring, 5200);
+  }
+
+  /* 200 colonists, 8 banks of 25. 6 awake, 7 lost. */
+  var banksEl = document.getElementById("banks");
+  if (banksEl) {
+    var awake = [3, 27, 61, 88, 140, 176];
+    var lost  = [12, 44, 45, 97, 118, 153, 191];
+    for (var b = 0; b < 8; b++) {
+      var bank = document.createElement("div");
+      bank.className = "bank";
+      for (var i = 0; i < 25; i++) {
+        var n = b * 25 + i;
+        var pod = document.createElement("span");
+        pod.className = "pod" + (awake.indexOf(n) > -1 ? " awake" : lost.indexOf(n) > -1 ? " lost" : "");
+        bank.appendChild(pod);
+      }
+      banksEl.appendChild(bank);
+    }
+  }
+
+  document.addEventListener("click", function(e){
+    var s = e.target.closest("[data-skin-set]");
+    if (s) { setSkin(s.getAttribute("data-skin-set")); return; }
+    var t = e.target.closest("[data-go]");
+    if (!t) return;
+    go(t.getAttribute("data-go"));
+  });
+})();
+</script>
