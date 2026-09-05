@@ -1,0 +1,369 @@
+<title>Seedship Style Studies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --pg-bg:#F2EFE9; --pg-panel:#FFFFFF; --pg-rule:#DCD5C8;
+  --pg-text:#221E17; --pg-dim:#6B6355; --pg-accent:#9A6413;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --pg-bg:#0C0B08; --pg-panel:#151209; --pg-rule:#2A241A;
+  --pg-text:#E4DCCB; --pg-dim:#918872; --pg-accent:#E8A33D;}}
+:root[data-theme="dark"]{
+  --pg-bg:#0C0B08; --pg-panel:#151209; --pg-rule:#2A241A;
+  --pg-text:#E4DCCB; --pg-dim:#918872; --pg-accent:#E8A33D;}
+/* device palette held constant across all three studies */
+:root{
+  --d-bg:#100E0A; --d-panel:#181510; --d-panel2:#201C14; --d-rule:#2E2820;
+  --d-text:#E4D8C0; --d-dim:#8B8069; --d-faint:#59503F;
+  --d-accent:#E8A33D; --d-ok:#7DA35E; --d-warn:#E0B84E; --d-crit:#D0553F;
+}
+*{box-sizing:border-box}
+body{background:var(--pg-bg);color:var(--pg-text);font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:40px 20px 80px}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--pg-accent);font-weight:600}
+h1{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:clamp(28px,4.2vw,40px);font-weight:600;margin:8px 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.standfirst{max-width:66ch;color:var(--pg-dim);font-size:15.5px;margin:0}
+.rule{height:1px;background:var(--pg-rule);margin:24px 0}
+
+.picker{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px;align-items:center}
+.picker .lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--pg-dim);margin-right:4px}
+.pbtn{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:12px;font-weight:500;cursor:pointer;
+  background:var(--pg-panel);border:1px solid var(--pg-rule);border-radius:3px;color:var(--pg-dim);padding:5px 10px}
+.pbtn[aria-pressed="true"]{border-color:var(--pg-accent);color:var(--pg-text)}
+.pbtn:hover{color:var(--pg-text)}
+.pbtn:focus-visible{outline:2px solid var(--pg-accent);outline-offset:1px}
+
+.studies{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}
+@media (max-width:1000px){.studies{grid-template-columns:1fr;max-width:400px}}
+.study h2{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--pg-accent);margin:0 0 3px;font-weight:600}
+.study .sub{font-size:12.5px;color:var(--pg-dim);margin:0 0 12px;min-height:3em}
+.study.base h2{color:var(--pg-dim)}
+
+.dev{background:var(--d-bg);border:1px solid var(--d-rule);border-radius:12px;overflow:hidden;
+  box-shadow:0 14px 34px rgba(0,0,0,.3);font-family:"IBM Plex Mono",ui-monospace,monospace;
+  color:var(--d-text);display:flex;flex-direction:column;height:560px}
+.bar-top{display:flex;justify-content:space-between;gap:6px;padding:8px 10px;border-bottom:1px solid var(--d-rule);
+  color:var(--d-dim);font-size:10px;letter-spacing:.05em;background:var(--d-panel);flex:none}
+.bar-top b{color:var(--d-accent);font-weight:500}
+.pane{flex:1;overflow-y:auto;padding:10px}
+.pane[hidden]{display:none!important}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);flex:none;border-top:1px solid var(--d-rule);background:var(--d-panel)}
+.tabs span{font-size:9px;letter-spacing:.09em;color:var(--d-faint);padding:8px 2px;text-align:center;border-top:2px solid transparent}
+.tabs span.on{color:var(--d-accent);border-top-color:var(--d-accent)}
+.ok{color:var(--d-ok)}.warn{color:var(--d-warn)}.crit{color:var(--d-crit)}
+.dim{color:var(--d-dim)}.faint{color:var(--d-faint)}.acc{color:var(--d-accent)}
+
+/* ---- STYLE 1: rows (baseline) ---- */
+.st-rows{font-size:12.5px;line-height:1.5}
+.st-rows .t{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--d-accent);margin:0 0 8px}
+.st-rows .t span{color:var(--d-faint)}
+.st-rows .h{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--d-faint);
+  margin:14px 0 5px;border-bottom:1px solid var(--d-rule);padding-bottom:3px}
+.st-rows .r{display:flex;gap:7px;align-items:center;border-bottom:1px solid var(--d-rule);padding:6px 1px}
+.st-rows .r .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-rows .r .v{color:var(--d-dim);flex:none;font-variant-numeric:tabular-nums}
+.st-rows .d{width:1em;text-align:center;flex:none}
+.st-rows dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12px;margin:2px 0}
+.st-rows dt{color:var(--d-dim)} .st-rows dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.st-rows .btns{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}
+.st-rows .btns i{font-style:normal;font-size:10px;letter-spacing:.06em;background:var(--d-panel2);
+  border:1px solid var(--d-rule);padding:4px 8px;border-radius:2px;color:var(--d-text)}
+.st-rows .card{border:1px solid var(--d-rule);border-radius:3px;padding:7px;margin-bottom:7px;background:var(--d-panel)}
+.st-rows .card pre{margin:0 0 5px;font-family:inherit;font-size:11px;white-space:pre-wrap}
+.st-rows .card .m{font-size:9.5px;color:var(--d-faint);letter-spacing:.04em}
+
+/* ---- STYLE 2: dense telemetry ---- */
+.st-dense{font-size:11px;line-height:1.42}
+.st-dense pre{margin:0;font-family:inherit;font-size:11px;line-height:1.42;white-space:pre;
+  overflow-x:auto;letter-spacing:0}
+.st-dense .hdr{color:var(--d-faint);border-bottom:1px solid var(--d-rule);padding-bottom:3px;margin-bottom:4px}
+.st-dense .grp{color:var(--d-accent);margin-top:10px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase}
+.st-dense .meter{color:var(--d-accent)} .st-dense .mempty{color:var(--d-faint)}
+
+/* ---- STYLE 3: stream ---- */
+.st-stream{font-size:11.5px;line-height:1.5}
+.st-stream .now{color:var(--d-faint);font-size:10px;letter-spacing:.1em;border-bottom:1px solid var(--d-rule);
+  padding-bottom:5px;margin-bottom:8px;display:flex;justify-content:space-between}
+.st-stream .e{margin-bottom:7px}
+.st-stream .e > .l{display:flex;gap:7px}
+.st-stream .ts{color:var(--d-faint);flex:none;font-variant-numeric:tabular-nums}
+.st-stream .x{flex:1;min-width:0}
+.st-stream .sub2{padding-left:calc(5ch + 7px);color:var(--d-dim);font-size:11px}
+.st-stream .sub2 .k{color:var(--d-faint)}
+.st-stream .cmd{color:var(--d-accent);margin:9px 0 7px;display:flex;gap:6px}
+.st-stream .chat{color:var(--d-faint);font-style:italic}
+.st-stream .inl{display:flex;gap:5px;flex-wrap:wrap;padding-left:calc(5ch + 7px);margin-top:4px}
+.st-stream .inl i{font-style:normal;font-size:10px;background:var(--d-panel2);border:1px solid var(--d-rule);
+  padding:3px 7px;border-radius:2px;color:var(--d-text)}
+.st-stream .prompt{border-top:1px solid var(--d-rule);padding:8px 10px;color:var(--d-faint);
+  font-size:11px;flex:none;background:var(--d-panel);display:flex;gap:6px}
+
+/* ---- notes ---- */
+.notes{margin-top:44px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:30px}
+.notes h3{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--pg-accent);margin:0 0 6px;font-weight:600}
+.notes p{margin:0 0 9px;font-size:14.5px}
+.notes p:last-child{margin-bottom:0}
+.verdict{margin-top:36px;border-left:2px solid var(--pg-accent);padding:2px 0 2px 16px;max-width:70ch}
+.verdict h3{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--pg-accent);margin:0 0 6px;font-weight:600}
+.verdict p{font-size:15px;margin:0 0 10px} .verdict p:last-child{margin-bottom:0}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--pg-rule);color:var(--pg-dim);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Seedship &middot; §8 style studies</div>
+  <h1>Seedship Style Studies</h1>
+  <p class="standfirst">Three <em>structural</em> approaches to the same screens &mdash; not recolours. Palette and typeface are held constant at Amber CRT throughout, so every visible difference is information design. Same state as the console mockup: <strong>year 147</strong>, mid&#8209;Long&#8209;Dark.</p>
+  <div class="rule"></div>
+
+  <div class="picker" role="group" aria-label="Screen">
+    <span class="lbl">Screen</span>
+    <button class="pbtn" data-scr="ship" aria-pressed="true">Ship status</button>
+    <button class="pbtn" data-scr="equip" aria-pressed="false">Reactor Core</button>
+    <button class="pbtn" data-scr="auto" aria-pressed="false">Automation</button>
+  </div>
+
+  <div class="studies">
+    <!-- ============ BASELINE ============ -->
+    <div class="study base">
+      <h2>A &middot; Rows (current)</h2>
+      <p class="sub">List rows, drill-down, five tabs. One thing per line, generous touch targets.</p>
+      <div class="dev">
+        <div class="bar-top"><span>Y<b>147</b>.084</span><span>SPD <b>8760&times;</b></span><span>PWR <b>780</b>kW</span></div>
+
+        <div class="pane st-rows" data-scr="ship">
+          <div class="t">Ship status <span>10 facilities</span></div>
+          <div class="r"><span class="d ok">●</span><span class="n">Bridge</span><span class="v">OK</span></div>
+          <div class="r"><span class="d warn">◐</span><span class="n">Engineering</span><span class="v">FAB SHED</span></div>
+          <div class="r"><span class="d crit">○</span><span class="n">Reactor / Power</span><span class="v">AT RISK</span></div>
+          <div class="r"><span class="d ok">●</span><span class="n">Life Support</span><span class="v">OK</span></div>
+          <div class="r"><span class="d warn">◐</span><span class="n">Hydroponics</span><span class="v">DIMMED</span></div>
+          <div class="r"><span class="d ok">●</span><span class="n">Medbay</span><span class="v">OK</span></div>
+          <div class="r"><span class="d ok">●</span><span class="n">Quarters</span><span class="v">OK</span></div>
+          <div class="h">Signal feed</div>
+          <div class="r"><span class="n"><span class="faint">14:32</span> <span class="crit">CRIT</span> Reactor AT_RISK</span></div>
+          <div class="r"><span class="n"><span class="faint">11:07</span> <span class="warn">WARN</span> WR-01 dead 47yr</span></div>
+          <div class="r"><span class="n"><span class="faint">09:41</span> <span class="warn">WARN</span> Rare cmp 90d</span></div>
+        </div>
+
+        <div class="pane st-rows" data-scr="equip" hidden>
+          <div class="t">Reactor Core <span>high danger</span></div>
+          <div class="r"><span class="d crit">○</span><span class="n"><span class="crit">AT_RISK</span> &middot; RUNNING</span><span class="v">38%</span></div>
+          <div style="margin:7px 0 3px;font-size:11px"><span class="crit">███████</span><span class="faint">░░░░░░░░░░░░░</span> <span class="dim">cond 38</span></div>
+          <div style="margin:0 0 8px;font-size:11px"><span class="acc">██████████████</span><span class="faint">░░░░░░</span> <span class="dim">ceil 71</span></div>
+          <dl>
+            <dt>Output</dt><dd>780 kW</dd>
+            <dt>Wear</dt><dd>0.011 /h</dd>
+            <dt>Serviced</dt><dd>2,140 d</dd>
+            <dt>Rods</dt><dd>149</dd>
+            <dt>Repairs</dt><dd>29</dd>
+          </dl>
+          <div class="h">Listeners 2/3</div>
+          <div class="card"><pre>ON  self → state:atRisk
+DO  postTask("service")</pre><div class="m">fired 34 &middot; unclaimed 1,847d</div></div>
+          <div class="btns"><i>Service</i><i>Add listener</i><i>Scram</i></div>
+        </div>
+
+        <div class="pane st-rows" data-scr="auto" hidden>
+          <div class="t">Automation <span>61 rules</span></div>
+          <div class="h">Flagged &middot; 3</div>
+          <div class="card"><pre>WR-01 [Water Recycler]
+ON  Inventory.water → removed
+WHEN limitUnder(500)</pre><div class="m"><span class="crit">DEAD</span> &middot; 47 yr</div></div>
+          <div class="card"><pre>LC-07 [LSN-Cargo] A/B
+deadband 1°</pre><div class="m"><span class="crit">THRASH</span> &middot; 40,118</div></div>
+          <div class="card"><pre>RC-01 [Reactor Core]
+ON  self → state:atRisk</pre><div class="m"><span class="warn">STALLED</span> &middot; 1,847d</div></div>
+          <div class="h">Healthy &middot; 58</div>
+          <div class="r"><span class="d ok">●</span><span class="n">HY-02 plant</span><span class="v">×6</span></div>
+        </div>
+        <div class="tabs"><span class="on">SHIP</span><span>CREW</span><span>AUTO</span><span>MFG</span><span>NAV</span></div>
+      </div>
+    </div>
+
+    <!-- ============ DENSE ============ -->
+    <div class="study">
+      <h2>B &middot; Dense telemetry</h2>
+      <p class="sub">No drill-down for overview data. Column grid, five variables per line, sparklines. <code>htop</code>, not a list.</p>
+      <div class="dev">
+        <div class="bar-top"><span>Y<b>147</b>.084</span><span>SPD <b>8760&times;</b></span><span>PWR <b>780</b>kW</span></div>
+
+        <div class="pane st-dense" data-scr="ship"><pre class="hdr">PWR <span class="meter">████████████████</span><span class="mempty">░░░░</span> 780/890  <span class="crit">-110</span>
+CRW <span class="meter">███████████████</span><span class="mempty">░░░░░</span> 6/8 awake <span class="crit">TASK 14</span>
+MAT <span class="meter">███</span><span class="mempty">█████████████████</span> rare 84  <span class="crit">90d</span></pre><div class="grp">assets &middot; 46</div><pre>ID          ST CND DUTY    kW  TREND
+BRG.NAV     <span class="ok">●</span>  88 RUN     15  <span class="dim">▇▇▇▇▇</span>
+BRG.COM     <span class="warn">◐</span>  44 RUN     20  <span class="dim">▇▆▆▅▄</span>
+ENG.FAB     <span class="warn">◐</span>  71 <span class="crit">SHED</span>     0  <span class="dim">▇▇▇▇░</span>
+ENG.SML     <span class="warn">◐</span>  66 <span class="crit">SHED</span>     0  <span class="dim">░░░░░</span>
+<span class="crit">RCT.CORE    ○  38 RUN    780  ▇▆▅▃▂</span>
+RCT.DIST    <span class="ok">●</span>  74 RUN     10  <span class="dim">▇▇▇▆▆</span>
+RCT.BATT    <span class="ok">●</span>  81 CHRG    50  <span class="dim">▃▄▅▆▇</span>
+LS.O2GEN    <span class="ok">●</span>  69 RUN     90  <span class="dim">▇▇▆▆▆</span>
+LS.WATER    <span class="warn">◐</span>  22 RUN     40  <span class="dim">▅▄▃▂▁</span>
+HYD.BED1    <span class="warn">◐</span>  77 <span class="warn">RIPE</span>    14  <span class="dim">▇▇▇▇▇</span>
+HYD.BED2    <span class="warn">◐</span>  74 <span class="warn">RIPE</span>    14  <span class="dim">▇▇▇▇▇</span>
+HYD.BED3    <span class="warn">◐</span>  71 <span class="warn">RIPE</span>    14  <span class="dim">▇▇▇▇▇</span>
+HYD.BED4    <span class="ok">●</span>  80 GROW    14  <span class="dim">▇▇▇▇▇</span>
+HYD.BED6    <span class="faint">·</span>  82 IDLE     0  <span class="dim">░░░░░</span>
+MED.CRYO    <span class="ok">●</span>  63 RUN    400  <span class="dim">▇▇▇▇▇</span>
+DRN.LNCH    <span class="faint">·</span>  58 OFF      0  <span class="dim">░░░░░</span></pre><div class="grp">feed &middot; warn+</div><pre>14:32 <span class="crit">!!</span> RCT.CORE → AT_RISK 780kW
+11:07 <span class="warn">! </span> WR-01 no fire 47yr
+09:41 <span class="warn">! </span> rare cmp stockout 90d
+08:15 <span class="warn">! </span> task unclaimed 1847d</pre></div>
+
+        <div class="pane st-dense" data-scr="equip" hidden><pre class="hdr">RCT.CORE   <span class="crit">AT_RISK</span>  RUNNING   danger HIGH</pre><pre>cond  <span class="crit">███████</span><span class="mempty">█████████████</span>  38
+ceil  <span class="meter">██████████████</span><span class="mempty">██████</span>  71
+out   <span class="meter">███████████████</span><span class="mempty">█████</span> 780kW
+
+wear   0.011/h   age x1.70
+srvcd  y141.2    2140d ago
+rods   149       ~149yr
+cool   <span class="ok">nominal</span>    0.5/yr
+repair 29        ceil -29
+attach RCT.COOLANT-UPG  52%</pre><div class="grp">condition history &middot; 60 yr</div><pre><span class="dim">100 ▇▇▇▆▆▆▅▅▅▄▄▄▃▃▃▂▂▂▁▁
+    y87                y147</span>
+    <span class="faint">svc</span>  <span class="faint">^  ^   ^  ^    ^  ^      ^</span></pre><div class="grp">listeners 2/3</div><pre>RC-01 <span class="warn">STALLED</span>  fired 34
+  ON self → state:atRisk
+  DO postTask(service,front)
+  <span class="crit">unclaimed 1847d</span>
+RC-02 <span class="ok">OK</span>       fired 7
+  ON every(180d)</pre></div>
+
+        <div class="pane st-dense" data-scr="auto" hidden><pre class="hdr">RULES 61   <span class="crit">FLAG 3</span>   HW: LOGIC SCHED  <span class="faint">tlm -</span></pre><pre>ID     HOST        STATE    FIRED   LAST
+<span class="crit">WR-01  WATER.REC   DEAD         0  47.0y</span>
+<span class="crit">LC-07  LSN.CARGO   THRASH   40118   0.0h</span>
+<span class="warn">RC-01  RCT.CORE    STALLED     34   5.1y</span>
+HY-02  HYD.BED*    OK        1204   6.2d
+HY-05  HYD         OK         311  36.0d
+FB-01  ENG.FAB     OK         411   9.4d
+LS-03  LS.O2GEN    OK          88   1.2y
+DR-01  DRN.*       OK          12  16.0y
+MD-02  MED.CRYO    OK           3  41.0y
+PW-04  RCT.DIST    OK        2077   0.3d
+SD-01  HYD.VAULT   <span class="warn">NEVER</span>       0     -</pre><div class="grp">WR-01 &middot; diagnosis</div><pre>src   INV.WATER  sensor <span class="crit">22%</span>
+reads <span class="crit">900?</span>  actual ~300
+=> limitUnder(500) never true
+   <span class="dim">rule is correct. input lies.</span></pre><div class="grp">LC-07 &middot; diagnosis</div><pre>A on &lt;15  B off &gt;16  band <span class="crit">1°</span>
+sensor lag 2.1h => oscillation
+   <span class="dim">widen band to 4°</span></pre></div>
+        <div class="tabs"><span class="on">SHIP</span><span>CREW</span><span>AUTO</span><span>MFG</span><span>NAV</span></div>
+      </div>
+    </div>
+
+    <!-- ============ STREAM ============ -->
+    <div class="study">
+      <h2>C &middot; Command stream</h2>
+      <p class="sub">No tabs, no screens. One log; detail expands inline where the event sits. You read the ship, you don&rsquo;t browse it.</p>
+      <div class="dev">
+        <div class="bar-top"><span>Y<b>147</b>.084</span><span>SPD <b>8760&times;</b></span><span>PWR <b>780</b>kW</span></div>
+
+        <div class="pane st-stream" data-scr="ship">
+          <div class="now"><span>SHIP &middot; 10 facilities</span><span class="crit">3 alerts</span></div>
+          <div class="cmd"><span>&gt;</span><span>status</span></div>
+          <div class="e"><div class="l"><span class="ts">     </span><span class="x">
+            <span class="ok">●</span> Bridge &nbsp;<span class="warn">◐</span> Engineering &nbsp;<span class="crit">○</span> Reactor<br>
+            <span class="ok">●</span> Life Sup &nbsp;<span class="warn">◐</span> Hydroponics &nbsp;<span class="ok">●</span> Medbay<br>
+            <span class="ok">●</span> Quarters &nbsp;<span class="ok">●</span> Cargo &nbsp;<span class="warn">◐</span> Drone &nbsp;<span class="ok">●</span> Maint</span></div></div>
+          <div class="e"><div class="l"><span class="ts">14:32</span><span class="x"><span class="crit">!!</span> Reactor Core → <span class="crit">AT_RISK</span></span></div>
+            <div class="sub2"><span class="k">├</span> condition 38 &middot; ceiling 71<br><span class="k">├</span> output 780kW / 890 baseline<br><span class="k">└</span> shed: fabricator, smelter, 3 nodes</div>
+            <div class="inl"><i>service</i><i>rules</i><i>scram</i></div></div>
+          <div class="e"><div class="l"><span class="ts">11:07</span><span class="x"><span class="warn">!</span> WR-01 has not fired in 47 years</span></div>
+            <div class="sub2"><span class="k">└</span> source sensor 22% &mdash; reads 900?</div></div>
+          <div class="e"><div class="l"><span class="ts">09:41</span><span class="x"><span class="warn">!</span> rare compounds stock-out ~90d</span></div></div>
+          <div class="e"><div class="l"><span class="ts">08:15</span><span class="x"><span class="warn">!</span> service task unclaimed 1,847d</span></div>
+            <div class="sub2"><span class="k">└</span> no engineer awake &middot; 11 role-yr left</div>
+            <div class="inl"><i>wake engineer</i></div></div>
+          <div class="e"><div class="l"><span class="ts">04:02</span><span class="x">rod 47 seated &middot; 149 remaining</span></div></div>
+          <div class="e"><div class="l"><span class="ts">02:20</span><span class="x chat">Okonkwo: &ldquo;third week of the same ration block.&rdquo;</span></div></div>
+          <div class="e"><div class="l"><span class="ts">y146</span><span class="x faint">&mdash; year 146 closed &middot; 0 deaths &mdash;</span></div></div>
+        </div>
+
+        <div class="pane st-stream" data-scr="equip" hidden>
+          <div class="now"><span>RCT.CORE</span><span class="crit">AT_RISK</span></div>
+          <div class="cmd"><span>&gt;</span><span>reactor</span></div>
+          <div class="e"><div class="l"><span class="ts">     </span><span class="x">Reactor Core &middot; <span class="crit">AT_RISK</span> &middot; RUNNING</span></div>
+            <div class="sub2"><span class="k">├</span> cond <span class="crit">███████</span><span class="faint">░░░░░░░░░░░░░</span> 38<br>
+            <span class="k">├</span> ceil <span class="acc">██████████████</span><span class="faint">░░░░░░</span> 71<br>
+            <span class="k">├</span> output 780 kW &middot; wear 0.011/h<br>
+            <span class="k">├</span> serviced 2,140d &middot; repairs 29<br>
+            <span class="k">└</span> rods 149 &middot; coolant <span class="ok">nominal</span></div>
+            <div class="inl"><i>service</i><i>history</i><i>scram</i></div></div>
+          <div class="cmd"><span>&gt;</span><span>rules reactor</span></div>
+          <div class="e"><div class="l"><span class="ts">     </span><span class="x">RC-01 &middot; <span class="warn">STALLED</span></span></div>
+            <div class="sub2"><span class="k">├</span> ON self → state:atRisk<br><span class="k">├</span> DO postTask("service", front)<br><span class="k">└</span> fired 34 &middot; <span class="crit">unclaimed 1,847d</span></div></div>
+          <div class="e"><div class="l"><span class="ts">14:32</span><span class="x"><span class="crit">!!</span> entered AT_RISK</span></div></div>
+          <div class="e"><div class="l"><span class="ts">y141</span><span class="x faint">last serviced &middot; Okonkwo &middot; ceiling &minus;0.5</span></div></div>
+        </div>
+
+        <div class="pane st-stream" data-scr="auto" hidden>
+          <div class="now"><span>AUTOMATION &middot; 61</span><span class="crit">3 flagged</span></div>
+          <div class="cmd"><span>&gt;</span><span>rules --flagged</span></div>
+          <div class="e"><div class="l"><span class="ts">     </span><span class="x"><span class="crit">WR-01</span> Water Recycler &middot; <span class="crit">DEAD</span></span></div>
+            <div class="sub2"><span class="k">├</span> last fired 47 years ago<br><span class="k">├</span> source sensor 22% &mdash; reads 900?, actual ~300<br><span class="k">└</span> limitUnder(500) can never be true</div>
+            <div class="inl"><i>service sensor</i><i>edit</i></div></div>
+          <div class="e"><div class="l"><span class="ts">     </span><span class="x"><span class="crit">LC-07</span> LSN-Cargo &middot; <span class="crit">THRASH</span></span></div>
+            <div class="sub2"><span class="k">├</span> fired 40,118 &middot; deadband 1°<br><span class="k">└</span> sensor lag 2.1h &rarr; oscillation</div>
+            <div class="inl"><i>widen band</i></div></div>
+          <div class="e"><div class="l"><span class="ts">     </span><span class="x"><span class="warn">RC-01</span> Reactor Core &middot; <span class="warn">STALLED</span></span></div>
+            <div class="sub2"><span class="k">├</span> fired 34 &middot; unclaimed 1,847d<br><span class="k">└</span> rule is correct. nobody is awake.</div>
+            <div class="inl"><i>wake engineer</i></div></div>
+          <div class="e"><div class="l"><span class="ts">     </span><span class="x faint">58 healthy rules not shown</span></div></div>
+        </div>
+        <div class="prompt"><span class="acc">&gt;</span><span>_</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div>
+      <h3>B &middot; what it buys</h3>
+      <p>Sixteen assets visible at once against seven facilities, with condition, duty, draw and a 5-point trend on every line. The trend column is the real gain: <strong>direction, not just state</strong> &mdash; you can see the reactor falling and the battery charging without opening either.</p>
+      <p>On the equipment pane it shows a 60-year condition history with service marks beneath it. That&rsquo;s the §4 ageing curve made visible, which no amount of row-based detail achieves.</p>
+    </div>
+    <div>
+      <h3>B &middot; what it costs</h3>
+      <p>Touch targets. Those rows are 15px tall &mdash; readable, not tappable. It needs a cursor model or a second interaction layer, and it fights §8&rsquo;s &ldquo;tap a facility&rdquo; navigation directly.</p>
+      <p>It also assumes a fluent player. Hour one, <code>RCT.CORE ○ 38 RUN 780</code> is noise; hour fifty it&rsquo;s the fastest thing on the ship.</p>
+    </div>
+    <div>
+      <h3>C &middot; what it buys</h3>
+      <p>The strongest fiction of the three. You are an AI reading your own log, and detail unfolds <em>where the event is</em> rather than in a pane you navigated to. The reactor alert carries its own consequences and its own actions inline.</p>
+      <p>It also solves something the other two fudge: <strong>the stalled task and the sleeping engineer appear in the same breath</strong>, because a stream can put cause next to effect without a screen boundary between them.</p>
+    </div>
+    <div>
+      <h3>C &middot; what it costs</h3>
+      <p>Terrible for comparison. &ldquo;Which of my ten facilities is worst?&rdquo; is a scroll-and-remember problem, and answering &ldquo;how much water do I have&rdquo; means issuing a query rather than glancing.</p>
+      <p>The command prompt is also a promise. Once there&rsquo;s a <code>&gt;</code>, players will type &mdash; and a tap-only game that looks typeable is a broken contract on a phone.</p>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h3>Where I land</h3>
+    <p><strong>A for structure, B for detail panes, C for the feed.</strong> They aren&rsquo;t exclusive, and treating them as one choice is the mistake.</p>
+    <p>Rows stay the navigation model &mdash; they are tappable and legible cold. But equipment detail should adopt B&rsquo;s density, because the condition history and trend columns show the ageing curve that the whole game turns on, and a list of key-value pairs simply cannot. And the feed should adopt C&rsquo;s inline expansion, so tapping an alert unfolds it in place instead of throwing you to another screen and losing the thread.</p>
+    <p>The one thing I&rsquo;d avoid outright is C&rsquo;s prompt. Everything else in it survives as a feed behaviour.</p>
+  </div>
+
+  <footer>Companion to <strong>design/seedship-console.html</strong>. Palette held constant at Amber CRT so all differences are structural.</footer>
+</div>
+
+<script>
+(function(){
+  var btns = Array.prototype.slice.call(document.querySelectorAll(".pbtn"));
+  document.addEventListener("click", function(e){
+    var b = e.target.closest(".pbtn"); if (!b) return;
+    var scr = b.getAttribute("data-scr");
+    btns.forEach(function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+    Array.prototype.forEach.call(document.querySelectorAll(".pane"), function(p){
+      p.hidden = (p.getAttribute("data-scr") !== scr);
+      if (!p.hidden) p.scrollTop = 0;
+    });
+  });
+})();
+</script>

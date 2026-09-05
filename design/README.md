@@ -54,3 +54,38 @@ is the only treatment comfortable in daylight on a phone.
   control lives on a phone is unresolved, and it is the most-used control in the game.
 - The §5c cycle timeline (six beds across 36 days, overlaps highlighted) is stubbed
   as a button.
+
+---
+
+## `style-studies.html`
+
+Three **structural** approaches to the same screens, compared side by side.
+Palette and typeface are held constant at Amber CRT throughout, so every visible
+difference is information design rather than colour.
+
+Published: https://claude.ai/code/artifact/2efcfec3-2990-4abb-a5ca-5932c9348cf4
+
+| Study | Approach |
+|-------|----------|
+| **A · Rows** | Current design. List rows, drill-down, five tabs. One thing per line. |
+| **B · Dense telemetry** | Column grid, ~16 assets visible at once, five variables per line plus a trend sparkline. `htop`, not a list. |
+| **C · Command stream** | No tabs, no screens. One log; detail expands inline where the event sits. |
+
+### Conclusion
+
+**A for structure, B for detail panes, C for the feed.** They are not exclusive, and
+treating them as a single choice is the mistake.
+
+- **Rows stay the navigation model** — tappable, and legible cold on hour one.
+- **Equipment detail should adopt B's density.** The condition history and trend
+  columns show the §4 ageing curve the whole game turns on; key-value pairs cannot.
+  Cost: 15px rows are readable but not tappable, so B needs a second interaction
+  layer wherever it is used.
+- **The feed should adopt C's inline expansion**, so tapping an alert unfolds it in
+  place rather than throwing the player to another screen and losing the thread.
+  C also puts cause next to effect — the stalled task and the sleeping engineer
+  appear in the same breath, which a screen boundary prevents.
+
+**Avoid C's command prompt.** Once there is a `>`, players will type, and a tap-only
+game that looks typeable is a broken contract on a phone. Everything else in C
+survives as feed behaviour.
