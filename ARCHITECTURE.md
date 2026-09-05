@@ -110,33 +110,59 @@ control over every character cell, and a component library would fight it the wh
 
 ## 5. iOS
 
-### Recommended: Capacitor around the web build
+**The web build is the primary version, permanently.** iOS is a second client, and the only
+question is what renders it.
 
-Weeks, not months. Ships the same codebase, the same DOM, the same crisp monospace text. For a
-game whose entire visual language is characters and box-drawing, a WebView is not a compromise —
-it renders the target aesthetic *better* than a game engine would.
+### The real cost is not rendering — it is a second simulation
 
-### Not recommended: Unity
+Whatever ships on iOS, the decision that matters is whether the simulation exists **once or
+twice**.
 
-Unity is a strong engine and the wrong tool for **this** game:
+| Path | Simulation | UI | Cost |
+|------|-----------|----|------|
+| **Capacitor** | Shared, unchanged | Shared, unchanged | Weeks |
+| **Unity** | **Ported to C#** | Rebuilt in Unity UI / TextMeshPro | Months, then maintained twice |
+| **Native Swift** | **Ported to Swift** | Rebuilt in SwiftUI | Months, then maintained twice |
 
-- Its WebGL target would render the text interface into a canvas, losing selectable text,
-  accessibility, native scrolling and crisp subpixel monospace — the things §8 depends on.
-- It buys physics, 3D, asset pipelines and cross-platform input. This game needs none of them.
-- The core would have to be C#, so either the web version becomes Unity too (see above) or the
-  simulation is written twice.
+Two implementations of a *deterministic* simulation is a heavier commitment than it looks. Every
+balance change is made twice. Every fix is made twice. Any divergence means the two versions
+quietly play differently, and saves stop transferring between them. The core's determinism makes
+the port *tractable* — identical output is testable — but it does not make it free.
 
-Unity becomes the right answer only if the plan changes to include controllers, console
-platforms, or real-time graphics.
+### Recommended: Capacitor first, and decide later
 
-### Viable later: native Swift
+Ship the WebView build. It is weeks of work, it shares everything, and for a game whose visual
+language is monospace characters and box-drawing it renders the target aesthetic **better than
+any engine would** — real text, real scrolling, real accessibility.
 
-If a genuinely native iOS build is ever wanted, the isolated core is exactly what makes that a
-**port rather than a rewrite** — a few thousand lines of deterministic, dependency-free logic
-with a test suite that must produce identical output. That is a tractable job. Porting a
-simulation entangled with a UI is not.
+Then find out whether it is actually inadequate before paying for a rewrite. If it is fine, the
+question never needs answering. If it is not, you will know precisely *why*, which is what should
+choose between the two ports.
 
----
+### If a native client is genuinely needed
+
+**Unity, honestly assessed for an iOS-only target.** Its central benefit is reaching many
+platforms from one project — and if the target is iOS alone, that benefit goes unused while its
+costs are paid in full. For a text-first interface, TextMeshPro is a step down from the
+platform's own text rendering, and §8's layout would be rebuilt in a system less suited to it
+than the DOM or SwiftUI.
+
+**Unity is nonetheless the right call in three cases**, and they are not technical arguments to
+be talked out of:
+
+- **You already know Unity and do not know Swift.** Porting a simulation into a language you are
+  fluent in beats porting it into one you are learning. This is a real and sufficient reason.
+- **iOS is a stepping stone**, with Android or consoles behind it. Then the cross-platform
+  benefit is used after all, and the calculus inverts.
+- **The presentation is going to stop being text** — a rendered ship view, effects, anything the
+  DOM is poor at.
+
+**Native Swift** is the better fit purely on the merits for an iOS-only, text-first game: the
+best text rendering available, proper platform integration, and no engine overhead. It costs the
+same simulation port that Unity does.
+
+So the question that decides it is not architectural. It is: *which language would you rather
+maintain a second copy of the simulation in, and is iOS the destination or a waypoint?*
 
 ## 6. Repository layout
 
