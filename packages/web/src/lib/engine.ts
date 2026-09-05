@@ -12,26 +12,19 @@ import { init, step, DAYS } from "../../../sim/src/sim.ts";
 import { apply, unacked, type Command } from "../../../sim/src/commands.ts";
 import type { State } from "../../../sim/src/types.ts";
 
-/** Game-days per real second. §2 caps play at one game-year per real minute,
- *  which is 6 days/s — the ladder above that is a prototype affordance for
- *  watching 300 years go by, and is labelled as such in the UI. */
-export const SPEEDS = [
-  { label: "❚❚", days: 0,    note: "paused",                                  floor: 0 },
-  { label: "1×", days: 1,    note: "a day a second",                          floor: 0 },
-  { label: "2×", days: 2,    note: "two days a second",                       floor: 1 },
-  { label: "6×", days: 6,    note: "a year a minute — §2's cap",              floor: 1 },
-  { label: "FF", days: 120,  note: "beyond the design cap: prototype only",   floor: 2 },
-  { label: "▶▶", days: 1200, note: "beyond the design cap: prototype only",   floor: 3 },
-];
-
-/** §11 Q8's severity floor. The feed is the player's ambient awareness, but at
- *  speed the ship generates lines faster than anyone can read — it becomes
- *  unreadable exactly when it is being relied on. So the speed raises the floor:
- *  chatter is what you read at 1x and never see at full tilt, which makes
- *  slowing down feel DIFFERENT rather than just slower, and means the strip's
- *  content tells the player what speed they are at without showing a number. */
-export const LEVELS = ["chatter", "info", "warn", "critical"] as const;
-export const rank = (l: string) => LEVELS.indexOf(l as typeof LEVELS[number]);
+/** One game-day every 24 real seconds, so **one real second is one game hour**.
+ *
+ *  There is no speed control. §2 argues for a ladder up to a game-year a minute
+ *  and §11 Q8 builds a severity floor on top of it, but none of that can be
+ *  tuned from a spreadsheet — it has to be felt, and it cannot be felt while the
+ *  ship is being fast-forwarded past. So the prototype runs at one honest rate
+ *  until playing it says what the ladder should be.
+ *
+ *  A consequence worth knowing: a full 300-year voyage at this rate is about a
+ *  month of wall-clock time. That is fine — the point is what an hour feels
+ *  like, not reaching the destination. */
+export const SECONDS_PER_GAME_DAY = 24;
+export const DAYS_PER_SECOND = 1 / SECONDS_PER_GAME_DAY;
 
 /** How often the UI is told anything changed. 12/s is well under 60fps, and
  *  above the rate at which anyone reads a changing number. */
@@ -43,8 +36,9 @@ type Sub = (s: State) => void;
 
 export class Engine {
   state: State;
-  speedIx = 1;
-  /** set when a critical signal lands unacknowledged — §2's snap-back */
+  /** set when a critical signal lands unacknowledged — §2's snap-back.
+   *  With one fixed rate there is no speed to drop, so this is now purely the
+   *  visible half: the ticker pins the alert until it is acknowledged. */
   snapped = false;
   private subs: Sub[] = [];
   private carry = 0;
@@ -74,10 +68,11 @@ export class Engine {
    *  move smoothly at 1× instead of stepping once a second. */
   progress() { return Math.min(1, (this.state.day + this.carry) / DAYS); }
 
-  get speed() { return SPEEDS[this.speedIx]; }
-
-  setSpeed(ix: number) {
-    this.speedIx = Math.max(0, Math.min(SPEEDS.length - 1, ix));
+  /** Development only, and not reachable from the interface: run the simulation
+   *  forward without waiting for the wall clock. Screenshots and balance checks
+   *  need a year-200 ship; a player does not. */
+  fastForward(days: number) {
+    for (let i = 0; i < days && !this.state.dead; i++) step(this.state);
     this.publish();
   }
 
@@ -99,20 +94,14 @@ export class Engine {
       const dt = Math.min(0.25, (t - this.lastT) / 1000);   // clamp: tab was hidden
       this.lastT = t;
 
-      if (!this.state.dead && this.speed.days > 0) {
-        this.carry += dt * this.speed.days;
+      if (!this.state.dead) {
+        this.carry += dt * DAYS_PER_SECOND;
         let n = Math.min(Math.floor(this.carry), MAX_STEPS_PER_FRAME);
         this.carry -= n;
         while (n-- > 0 && !this.state.dead) {
           step(this.state);
-          // §2 snap-back: a critical signal drops the speed and pins the ticker.
-          // Checked per step, not per frame, or a fast-forward would run past it.
-          if (!this.snapped && unacked(this.state).length) {
-            this.snapped = true;
-            this.speedIx = Math.min(this.speedIx, 1);
-            this.carry = 0;
-            break;
-          }
+          // §2 snap-back: a critical signal pins the ticker until acknowledged.
+          if (!this.snapped && unacked(this.state).length) this.snapped = true;
         }
       }
 

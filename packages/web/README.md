@@ -43,14 +43,22 @@ of magnitude faster than the UI repaints, and neither notices the other.
 is *a specification, not an interface* — so `AT_RISK` becomes "Failing" and `maxCondition`
 becomes "Best after repair" in one place, and no component invents its own wording.
 
-## Speeds
+## One speed, on purpose
 
-The ladder runs `❚❚ · 1× · 2× · 6× · FF · ▶▶`. **6× is §2's cap** — one game-year per real
-minute, which puts a 300-year playthrough at five hours. The two beyond it are a prototype
-affordance for watching a whole voyage in a couple of minutes and are labelled as such.
+**One game-day every 24 real seconds** — so one real second is one game hour. There is no speed
+control.
 
-Each speed raises the feed's severity floor (§11 Q8), so what the ticker carries tells you how
-fast you are going without showing a number.
+§2 specifies a ladder up to a game-year a real minute, and §11 Q8 builds a severity floor on top
+of it so the feed stays readable at speed. Neither can be settled from a spreadsheet: what a
+ladder should offer depends on what an hour of this game actually feels like, and that cannot be
+felt while the ship is being fast-forwarded past. So the prototype runs at one honest rate until
+playing it says what the ladder should be, and the feed carries everything including the chatter.
+
+A 300-year voyage at this rate is about a month of wall clock. That is fine — the question is
+what an hour feels like, not whether you reach the destination.
+
+`engine.fastForward(days)` still exists for screenshots and balance checks. It is not reachable
+from the interface.
 
 ## Testing it from a script
 

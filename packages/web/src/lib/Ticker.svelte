@@ -10,10 +10,9 @@
    *  to be newer *than* — you can see the ship moving without opening the feed. */
   import type { State } from "../../../sim/src/types.ts";
   import { LEVEL_MARK, type Signal } from "../../../sim/src/signals.ts";
-  import { rank } from "./engine.ts";
 
-  let { ship, snapped, floor, onack, onopen }: {
-    ship: State; snapped: boolean; floor: number; onack: () => void; onopen: () => void;
+  let { ship, snapped, onack, onopen }: {
+    ship: State; snapped: boolean; onack: () => void; onopen: () => void;
   } = $props();
 
   const ROWS = 2;
@@ -21,10 +20,13 @@
   let stacked = $state(0);
 
   $effect(() => {
-    // §11 Q8: at speed, only what clears the floor reaches the strip. What is
-    // suppressed is still counted, so the +n badge shows how much went past.
+    // §11 Q8's severity floor went out with the speed ladder it was built on:
+    // it existed because at 8,760x the feed is unreadable, and there is no
+    // 8,760x any more. At one game-day per 24 seconds every signal is legible,
+    // including the chatter — which is the version of the feed the design says
+    // is worth reading.
     const all = ship.signals;
-    const feed = all.filter(x => rank(x.level) >= floor);
+    const feed = all;
     if (!feed.length) return;
 
     // An unacknowledged critical pins the strip. It stays in the top row and the
@@ -67,7 +69,7 @@
   {:else}
     <div class="line">
       <span class="mk">[  ][NAV][IDLE]</span>
-      <span class="msg dim">{floor > 0 ? "Nothing worth stopping for." : "Quiet."}</span>
+      <span class="msg dim">Quiet.</span>
     </div>
   {/if}
 </div>

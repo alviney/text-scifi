@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Engine, SPEEDS, rank } from "./lib/engine.ts";
+  import { Engine } from "./lib/engine.ts";
   import type { State } from "../../sim/src/types.ts";
   import { LEVEL_MARK } from "../../sim/src/signals.ts";
   import { num, year, when } from "./lib/view.ts";
@@ -16,7 +16,6 @@
   let running = $state(false);
   let saved = $state(peek());
   let ship = $state<State>(engine.state);
-  let speedIx = $state(engine.speedIx);
   let snapped = $state(false);
   let tab = $state("voyage");
   let feedOpen = $state(false);
@@ -33,7 +32,6 @@
     // two rates are deliberately not coupled.
     off = engine.subscribe(s => {
       ship = { ...s };            // new identity so $state sees the change
-      speedIx = engine.speedIx;
       snapped = engine.snapped;
     });
     engine.onSave = s => { save(s); saved = peek(); };
@@ -60,18 +58,13 @@
          onstart={o => { clear(); saved = null; begin(new Engine(o.seed, { inherited: o.inherited })); }}
          oncontinue={() => { const st = load(); if (st) begin(new Engine(1, { from: st })); }} />
 {:else}
-  <Ticker {ship} {snapped} floor={SPEEDS[speedIx].floor}
+  <Ticker {ship} {snapped}
           onack={() => engine.send({ kind: "ack" })}
           onopen={() => feedOpen = true} />
 
   <div class="bar2">
     <span class="yr">Y{num(year(ship.day))}</span>
-    <span class="speeds">
-      {#each SPEEDS as sp, i}
-        <button class="sp" aria-pressed={i === speedIx} title={sp.note}
-                onclick={() => engine.setSpeed(i)}>{sp.label}</button>
-      {/each}
-    </span>
+    <span class="clock">day {num(ship.day % 365 + 1)}</span>
     <span class="skins">
       {#each SKINS as s}
         <button class="sk" aria-pressed={s === skin} onclick={() => skin = s}
@@ -126,7 +119,7 @@
                 onclick={() => showAll = !showAll}>chatter</button>
       </div>
       <div class="scroll feed">
-        {#each [...ship.signals].filter(x => showAll || rank(x.level) >= SPEEDS[speedIx].floor).reverse() as sig}
+        {#each [...ship.signals].filter(x => showAll || x.level !== "chatter").reverse() as sig}
           <div class="line {sig.level}">
             <span class="mk">[{LEVEL_MARK[sig.level]}][{sig.fac}][{sig.code}]</span>
             <span>{sig.text}</span>
@@ -145,9 +138,7 @@
     border-bottom: 1px solid var(--rule); font-size: 11px;
   }
   .yr { color: var(--accent); flex: none; }
-  .speeds { display: flex; gap: 3px; flex: 1; min-width: 0; flex-wrap: nowrap; }
-  .sp { border: 1px solid var(--rule); color: var(--dim); padding: 1px 6px; font-size: 10px; }
-  .sp[aria-pressed="true"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+  .clock { flex: 1; min-width: 0; color: var(--dim); font-variant-numeric: tabular-nums; }
   .skins { display: flex; gap: 5px; flex: none; }
   .sk { width: 11px; height: 11px; border: 1px solid var(--rule); background: var(--c); opacity: .45; }
   .sk[aria-pressed="true"] { opacity: 1; outline: 1px solid var(--text); outline-offset: 1px; }

@@ -253,6 +253,11 @@ typing the game does not support.
 
 - Speed slider and snap-back controls — a status-bar readout only. Where the actual
   control lives on a phone is unresolved, and it is the most-used control in the game.
+  **The prototype now ships with no speed control at all**, running at one game-day per 24
+  real seconds (one real second is one game hour). What the ladder should offer depends on
+  what an hour of this game feels like, and that cannot be worked out while fast-forwarding
+  past it. §11 Q8's severity floor goes with it for now — it existed because the feed is
+  unreadable at 8,760x, and there is no 8,760x.
 - The §5c cycle timeline (six beds across 36 days, overlaps highlighted) is stubbed
   as a button.
 
