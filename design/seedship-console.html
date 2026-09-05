@@ -220,21 +220,44 @@ h1{
 .pod.awake{background:var(--d-accent);opacity:1}
 .pod.lost{background:none;box-shadow:inset 0 0 0 1px var(--d-faint);opacity:.3}
 
-/* ---- RULES hero: the mind you have built ----
-   61 dots, one per rule, linked into chains. Not readable in detail and
-   not meant to be: it shows shape, coverage and growth. */
-.mind{margin:-10px -10px 12px;padding:12px 10px 10px;border-bottom:1px solid var(--d-rule)}
-.mind canvas{display:block;width:100%;height:132px}
-.mindcap{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.11em;
-  text-transform:uppercase;color:var(--d-faint);margin-top:7px}
-.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:10px;color:var(--d-dim);margin-top:8px}
-.legend span{display:flex;align-items:center;gap:4px}
-.legend i{width:6px;height:6px;border-radius:50%;flex:none;font-style:normal}
-.legend .lg-ok{background:var(--d-accent)}
-.legend .lg-new{background:none;box-shadow:inset 0 0 0 1px var(--d-faint)}
-.legend .lg-bad{background:var(--d-crit)}
+/* ---- RULES hero: watch a rule actually fire ---- */
+.fire{margin:-10px -10px 12px;padding:12px 10px 11px;border-bottom:1px solid var(--d-rule);
+  min-height:132px;display:flex;flex-direction:column}
+.fire .lbl{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--d-faint);margin-bottom:9px}
+.fire .lbl .live{color:var(--d-accent)}
+.fire .when,.fire .then,.fire .out{opacity:0}
+.fire.go .when{animation:pop .4s ease forwards}
+.fire.go .arm{animation:grow .5s ease .38s forwards}
+.fire.go .then{animation:pop .4s ease .78s forwards}
+.fire.go .out{animation:pop .4s ease 1.25s forwards}
+@keyframes pop{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@keyframes grow{from{height:0}to{height:15px}}
+.fire .room{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--d-faint)}
+.fire .cond{font-size:13px;color:var(--d-text);line-height:1.35}
+.fire .arm{width:1px;height:0;background:var(--d-rule);margin:5px 0 5px 5px}
+.fire.go .arm{height:15px}
+.fire .doing{font-size:13px;color:var(--d-accent);line-height:1.35;
+  background:var(--d-panel2);border:1px solid var(--d-rule);border-radius:2px;padding:7px 9px}
+.fire .out{font-size:11.5px;margin-top:7px;color:var(--d-ok)}
+.fire .out.bad{color:var(--d-crit)}
+@media (prefers-reduced-motion:reduce){
+  .fire .when,.fire .then,.fire .out{opacity:1}
+  .fire .arm{height:15px}
+  .fire.go .when,.fire.go .then,.fire.go .out,.fire.go .arm{animation:none}
+}
 
-/* ---- vital signs: the one legitimate home for density ---- *//* ---- vital signs: the one legitimate home for density ---- */
+/* ---- rules per room: tidy, ordered, and the gap is the point ---- */
+.byroom{margin:2px 0 4px}
+.byroom .rw{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0}
+.byroom .rn{flex:none;width:7.4em;color:var(--d-dim)}
+.byroom .rb{flex:1;min-width:0;height:7px;background:var(--d-panel2);position:relative}
+.byroom .rb i{position:absolute;left:0;top:0;bottom:0;background:var(--d-accent);opacity:.75}
+.byroom .rc{flex:none;width:1.6em;text-align:right;font-variant-numeric:tabular-nums;color:var(--d-dim)}
+.byroom .rw.none .rn,.byroom .rw.none .rc{color:var(--d-crit)}
+.byroom .rw.none .rb i{background:var(--d-crit)}
+
+/* ---- vital signs: the one legitimate home for density ---- *//* ---- vital signs: the one legitimate home for density ---- *//* ---- vital signs: the one legitimate home for density ---- */
 .vital{border-bottom:1px solid var(--d-rule);padding:11px 0 10px}
 .vital .vh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .vital .vn{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--d-faint)}
@@ -764,21 +787,37 @@ svc  ^  ^   ^  ^   ^  ^</pre>
 
         <!-- ---------- AUTOMATION ---------- -->
         <section class="screen" id="s-auto" hidden>
-          <div class="mind">
-            <canvas id="mindcv" aria-hidden="true"></canvas>
-            <div class="mindcap"><span>your rules</span><span>11 chains</span><span>3 broken</span></div>
-            <div class="legend">
-              <span><i class="lg-ok"></i>working</span>
-              <span><i class="lg-new"></i>never fired</span>
-              <span><i class="lg-bad"></i>broken</span>
+          <div class="fire" id="fire">
+            <div class="lbl"><span id="fireWhen">now</span><span id="fireAgo"></span></div>
+            <div class="when">
+              <div class="room" id="fRoom">Life Support</div>
+              <div class="cond" id="fCond">Filters dropped below 10</div>
             </div>
+            <div class="arm"></div>
+            <div class="then"><div class="doing" id="fAct">Fetch 40 from Engineering</div></div>
+            <div class="out" id="fOut">&#10003; job raised</div>
           </div>
-          <p class="quiet" style="margin:0 0 10px">Sixty-one rules in eleven chains. <span class="acc">You were left thirteen</span> &mdash; the rest you built. Nothing here watches the reactor.</p>
+          <p class="quiet" style="margin:0 0 10px">Your rules, as they fire. When nothing is running it holds the last one.</p>
           <h2 class="scr-title">Automation <span>61 rules</span></h2>
           <p class="lead">Three rules need attention.</p>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Restock water</span><span class="vl">Never runs</span></button>
           <button class="row" data-go="rule"><span class="dot crit">○</span><span class="nm">Cargo bay heater</span><span class="vl">Fighting itself</span></button>
           <button class="row" data-go="rule"><span class="dot warn">◐</span><span class="nm">Service the reactor</span><span class="vl">Waiting 5 yrs</span></button>
+          <div class="sect">Where your rules are &middot; 61</div>
+          <div class="byroom">
+            <div class="rw"><span class="rn">Engineering</span><span class="rb"><i style="width:100%"></i></span><span class="rc">18</span></div>
+            <div class="rw"><span class="rn">Hydroponics</span><span class="rb"><i style="width:67%"></i></span><span class="rc">12</span></div>
+            <div class="rw"><span class="rn">Life Support</span><span class="rb"><i style="width:50%"></i></span><span class="rc">9</span></div>
+            <div class="rw"><span class="rn">Cargo Bay</span><span class="rb"><i style="width:33%"></i></span><span class="rc">6</span></div>
+            <div class="rw"><span class="rn">Quarters</span><span class="rb"><i style="width:28%"></i></span><span class="rc">5</span></div>
+            <div class="rw"><span class="rn">Medbay</span><span class="rb"><i style="width:22%"></i></span><span class="rc">4</span></div>
+            <div class="rw"><span class="rn">Drone Bay</span><span class="rb"><i style="width:17%"></i></span><span class="rc">3</span></div>
+            <div class="rw"><span class="rn">Maintenance</span><span class="rb"><i style="width:17%"></i></span><span class="rc">3</span></div>
+            <div class="rw"><span class="rn">Bridge</span><span class="rb"><i style="width:6%"></i></span><span class="rc">1</span></div>
+            <div class="rw none"><span class="rn">Reactor</span><span class="rb"><i style="width:2%"></i></span><span class="rc">0</span></div>
+          </div>
+          <p class="quiet">Nothing watches the reactor &mdash; the one thing on this ship that can kill everyone in an afternoon.</p>
+
           <div class="sect">Left by the departure crew &middot; 13</div>
           <div class="row static"><span class="dot ok">●</span><span class="nm">7 deliveries between rooms</span><span class="vl">working</span></div>
           <div class="row static"><span class="dot warn">◐</span><span class="nm">Replant a bed when empty</span><span class="vl">beds in phase</span></div>
@@ -1063,12 +1102,19 @@ svc  ^  ^   ^  ^   ^  ^</pre>
       </section>
 
       <section>
-        <h2>Rules: the mind you have built</h2>
-        <p>Two earlier attempts drew this as activity traces &mdash; lanes per consumable, then lanes per verb. Both were <em>bookkeeping</em>, and bookkeeping is not compelling. Counts of firings tell you the ship is busy; they do not make you feel anything.</p>
-        <p>The other three heroes each give something visceral: the journey, the ship as a place, two hundred lives breathing. So what is visceral about automation? <strong>It is you.</strong> These rules are your extended mind, and unlike everything else on the ship, <em>you made them</em>.</p>
-        <p class="callout">Sixty-one dots, one per rule, linked into the eleven chains they belong to. Not readable in detail, and not meant to be &mdash; it shows <strong>shape, coverage and growth</strong>.</p>
-        <p>Three things fall out of it that no list gives you. The <strong>blind spot</strong>: a whole empty region with &ldquo;no rules here&rdquo; sitting in it, because nothing you have written watches that part of the ship. The <strong>hollow dots</strong>: rules that have never once fired, which is a different failure from broken and has no other home. And the <strong>growth</strong> &mdash; you launched with thirteen of these and now there are sixty-one, so over a playthrough the constellation visibly thickens. Late game it should be dense and tangled, with old dead threads still hanging in it.</p>
-        <p>The caption carries the point the picture cannot: <em>you were left thirteen; the rest you built.</em></p>
+        <h2>Rules: watch one actually fire</h2>
+        <p>Three attempts failed before this one. Two were activity traces &mdash; bookkeeping, which is never compelling &mdash; and the third was a constellation of all sixty-one rules, which was <em>atmospheric but messy</em>: it gestured at shape without telling you a single true thing.</p>
+        <p class="callout">The answer was specificity. Show <strong>one rule, actually firing</strong>: the condition that tripped, the action taken, and whether it worked.</p>
+        <p>It plays in sequence &mdash; condition, a connector drawing down, the action, then the outcome stamping on. When nothing is running it holds the last firing and relabels itself <em>last &middot; just now</em>, so the panel is never empty and never claims to be live when it isn&rsquo;t.</p>
+        <p>What it buys: you learn what your rules <em>do</em> by watching them work, in exactly the sentence shape the builder uses. Failures land in front of you rather than in a list &mdash; <em>&ldquo;Fetch 300 from the Cargo Bay &nbsp;&#10005; no power for the crane&rdquo;</em> is the whole §7 trap caught in the act. And the cadence tracks the speed slider for free: at 1&times; a firing every few minutes, at 8,760&times; a blur.</p>
+        <p>It also shows the variety the earlier versions hid. Switching a heater on, making seals, raising a repair job &mdash; not everything is a delivery.</p>
+      </section>
+
+      <section>
+        <h2>Where your rules are</h2>
+        <p>The count moved out of the hero and became a plain ordered bar list, which is what it always wanted to be. Ten rooms, longest first, adding to sixty-one.</p>
+        <p>The last row is the payload: <strong>Reactor &nbsp;0</strong>, in red, at the bottom of a sorted list where it cannot be missed. <em>Nothing watches the reactor &mdash; the one thing on this ship that can kill everyone in an afternoon.</em></p>
+        <p>The constellation gestured at that with an empty patch and the words &ldquo;no rules here&rdquo;. This says it exactly, in order, with a number. <strong>Tidy beats atmospheric when the information is the point.</strong></p>
       </section>
 
       <section>
@@ -1156,8 +1202,6 @@ svc  ^  ^   ^  ^   ^  ^</pre>
     });
     var scr = document.getElementById("s-" + name);
     if (scr) scr.scrollTop = 0;
-    /* the canvas has no width while its screen is hidden, so draw on arrival */
-    if (name === "auto") requestAnimationFrame(drawMind);
   }
 
   var caps = {
@@ -1175,7 +1219,6 @@ svc  ^  ^   ^  ^   ^  ^</pre>
     if (!caps[name]) return;
     device.setAttribute("data-skin", name);
     cap.innerHTML = caps[name];
-    if (typeof drawMind === "function") drawMind();
     skinBtns.forEach(function(b){
       b.setAttribute("aria-pressed", b.getAttribute("data-skin-set") === name ? "true" : "false");
     });
@@ -1232,65 +1275,43 @@ svc  ^  ^   ^  ^   ^  ^</pre>
     idx = 0; paint(); start();
   });
 
-  /* ---- the mind: 61 rules, 11 chains, drawn as a constellation ---- */
-  var cv = document.getElementById("mindcv");
-  function drawMind(){
-    if (!cv) return;
-    var dpr = window.devicePixelRatio || 1;
-    var w = cv.clientWidth, h = 132;
-    if (!w) return;
-    cv.width = w * dpr; cv.height = h * dpr;
-    var g = cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,w,h);
-    var cs = getComputedStyle(cv);
-    var acc = cs.getPropertyValue("--d-accent").trim() || "#E8A33D";
-    var faint = cs.getPropertyValue("--d-faint").trim() || "#59503F";
-    var crit = cs.getPropertyValue("--d-crit").trim() || "#D0553F";
-
-    /* deterministic layout: 11 chains, clustered, left-weighted where the
-       player has automated and empty at the right where they have not */
-    var seed = 7;
-    function rnd(){ seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
-    var chains = [], nodes = [];
-    var sizes = [8,7,7,6,6,5,5,4,4,3,6];
-    for (var c = 0; c < sizes.length; c++){
-      var cx = 0.06 + rnd() * 0.60, cy = 0.16 + rnd() * 0.68;
-      var members = [];
-      for (var i = 0; i < sizes[c]; i++){
-        var n = { x:(cx + (rnd()-0.5)*0.15) * w, y:(cy + (rnd()-0.5)*0.34) * h, c:c };
-        n.x = Math.max(8, Math.min(w-8, n.x)); n.y = Math.max(8, Math.min(h-8, n.y));
-        members.push(nodes.length); nodes.push(n);
-      }
-      chains.push(members);
+  /* ---- watch a rule fire ----
+     Cycles the real firings. When nothing is running it holds the last one,
+     relabelled, so the panel is never empty and never claims to be live. */
+  var firings = [
+    {room:"Life Support", cond:"Filters dropped below 10",       act:"Fetch 40 from Engineering",     ok:true,  out:"job raised"},
+    {room:"Cargo Bay",    cond:"Temperature fell below 15\u00B0",  act:"Switch the heater on",          ok:true,  out:"done"},
+    {room:"Quarters",     cond:"Food dropped below 40",          act:"Fetch 60 from Hydroponics",     ok:true,  out:"job raised"},
+    {room:"Engineering",  cond:"Metal ore dropped below 100",    act:"Fetch 300 from the Cargo Bay",  ok:false, out:"no power for the crane"},
+    {room:"Engineering",  cond:"Seals dropped below 30",         act:"Make 60 seals",                 ok:true,  out:"started"},
+    {room:"Reactor",      cond:"Condition fell into failing",    act:"Raise a repair job",            ok:false, out:"nobody can do it"}
+  ];
+  var fireEl = document.getElementById("fire");
+  if (fireEl) {
+    var fWhen = document.getElementById("fireWhen"), fAgo = document.getElementById("fireAgo"),
+        fRoom = document.getElementById("fRoom"), fCond = document.getElementById("fCond"),
+        fAct = document.getElementById("fAct"), fOut = document.getElementById("fOut");
+    var fi = 0, fHold = null;
+    function showFiring(){
+      var f = firings[fi];
+      fRoom.textContent = f.room;
+      fCond.textContent = f.cond;
+      fAct.textContent = f.act;
+      fOut.textContent = (f.ok ? "\u2713 " : "\u2715 ") + f.out;
+      fOut.className = "out" + (f.ok ? "" : " bad");
+      fWhen.textContent = "now"; fWhen.className = "live"; fAgo.textContent = "";
+      fireEl.classList.remove("go");
+      void fireEl.offsetWidth;                 /* restart the animation */
+      fireEl.classList.add("go");
+      clearTimeout(fHold);
+      fHold = setTimeout(function(){          /* it becomes the last thing that ran */
+        fWhen.textContent = "last"; fWhen.className = ""; fAgo.textContent = "just now";
+      }, 2300);
+      fi = (fi + 1) % firings.length;
     }
-    var broken = [4, 23, 44], never = [9, 17, 31, 52];
-
-    g.lineWidth = 1;
-    chains.forEach(function(m, ci){
-      g.strokeStyle = (ci === 2) ? crit : faint;
-      g.globalAlpha = (ci === 2) ? 0.5 : 0.28;
-      for (var i = 1; i < m.length; i++){
-        g.beginPath();
-        g.moveTo(nodes[m[i-1]].x, nodes[m[i-1]].y);
-        g.lineTo(nodes[m[i]].x, nodes[m[i]].y);
-        g.stroke();
-      }
-    });
-    g.globalAlpha = 1;
-    nodes.forEach(function(n, i){
-      var bad = broken.indexOf(i) > -1, nu = never.indexOf(i) > -1;
-      g.beginPath(); g.arc(n.x, n.y, bad ? 2.8 : 2.2, 0, Math.PI*2);
-      if (bad){ g.fillStyle = crit; g.fill(); }
-      else if (nu){ g.strokeStyle = faint; g.lineWidth = 1; g.stroke(); }
-      else { g.fillStyle = acc; g.globalAlpha = 0.42 + (i % 5) * 0.12; g.fill(); g.globalAlpha = 1; }
-    });
-    /* the blind spot: nothing out here */
-    g.fillStyle = faint; g.globalAlpha = .8;
-    g.font = '9px "IBM Plex Mono", monospace';
-    g.fillText("no rules here", w * 0.74, h * 0.52);
-    g.globalAlpha = 1;
+    showFiring();
+    setInterval(showFiring, 5200);
   }
-  drawMind();
-  window.addEventListener("resize", drawMind);
 
   /* 200 colonists, 8 banks of 25. 6 awake, 7 lost. */
   var banksEl = document.getElementById("banks");

@@ -48,7 +48,32 @@ A held badge is also kept separate from the room's status dot. The Cargo Bay rea
 holding blocked ore, because its *equipment* is fine — the block is a logistics problem, and
 collapsing the two would make the status dot mean two different things.
 
-### The Rules hero is the mind, not a report
+### The Rules hero: watch one rule actually fire
+
+Three attempts failed first. Two were activity traces (lanes per consumable, then lanes per verb)
+— bookkeeping, which is never compelling. The third was a constellation of all 61 rules:
+atmospheric but messy, gesturing at shape without stating a single true thing.
+
+The answer was **specificity**. Show one rule firing: the room, the condition that tripped, the
+action taken, and whether it worked — played in sequence. When nothing is running it holds the
+last firing and relabels itself *last · just now*, so the panel is never empty and never claims
+to be live when it isn't.
+
+What it buys:
+
+- The player learns what rules **do** by watching them, in the same sentence shape the builder uses.
+- Failures land in front of you rather than in a list. *"Fetch 300 from the Cargo Bay ✕ no power
+  for the crane"* is the whole §7 trap caught in the act.
+- Cadence tracks the speed slider for free — a firing every few minutes at 1×, a blur at 8,760×.
+- It shows the variety the traces hid: switching a heater on, making seals, raising a repair job.
+
+The **count** moved out of the hero into a plain ordered bar list, ten rooms longest-first adding
+to 61. The last row is the payload: **Reactor 0**, red, at the bottom of a sorted list where it
+cannot be missed. Tidy beats atmospheric when the information is the point.
+
+Superseded: the constellation, and the earlier note about grouping lanes by verb.
+
+### (superseded) The Rules hero is the mind, not a report
 
 Two attempts drew it as activity traces — lanes per consumable, then lanes per verb. Both were
 **bookkeeping**, and bookkeeping is not compelling: counts of firings say the ship is busy, they
