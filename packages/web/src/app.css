@@ -47,7 +47,13 @@ body {
      bare `1fr` column lets content push wider than the container — that is the
      exact bug that made the mockup scroll sideways on a phone, and hiding the
      overflow only masks it. */
-  display: grid; grid-template-rows: auto auto auto minmax(0,1fr) auto;
+  /* FOUR rows, one per child: ticker, leg strip, the scrolling panel, the tab
+     bar. This said five while the clock had a bar of its own, and kept saying
+     it after the clock was folded into the leg strip — so the panel landed in
+     an `auto` row, grew to its full content height, and pushed the tab bar off
+     the bottom of the screen. On a phone the tabs were simply not there. The
+     row count is not decoration: it has to match the children. */
+  display: grid; grid-template-rows: auto auto minmax(0,1fr) auto;
   grid-template-columns: minmax(0,1fr);
   height: 100dvh; max-width: 560px; margin: 0 auto;
   background: var(--bg); border-inline: 1px solid var(--rule);

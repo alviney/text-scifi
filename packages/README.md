@@ -721,3 +721,17 @@ help while nothing is carrying material there. The haul is the bottleneck, at ev
 5. **Not every note can be attributed.** The board names people for work-completion signals
    only. A bay-full warning or a survey result is the ship talking, and inventing a
    signature for it was deliberately avoided.
+
+## The tab bar vanished, and the grid said why
+
+The shell is `grid-template-rows` over its children: ticker, leg strip, panel, tab bar. It
+said **five** rows while the clock had a bar of its own, and kept saying five after the clock
+was folded into the leg strip. So the scrolling panel landed in an `auto` row, grew to its
+full content height, and pushed the tab bar past the bottom of a 100dvh shell. On desktop it
+looked like a long page; on a phone the tabs were simply not there.
+
+A row count is not decoration — it has to match the children. Worth a check whenever a child
+is added to or removed from a grid-shell.
+
+Asserted rather than eyeballed, at 390x664 and 430x932: `nav` sits flush with the viewport
+bottom, `document.scrollHeight` does not exceed the viewport, and all four labels are present.

@@ -10,11 +10,9 @@
    *  legible without reading a number. */
   import type { Encounter, State } from "../../../sim/src/types.ts";
   import type { Command } from "../../../sim/src/commands.ts";
-  import { DAYS, START_RODS } from "../../../sim/src/sim.ts";
   import { classReading, confidence, estimate, estimateComposition,
            trueMass, worthScanning, SCAN_HOURS } from "../../../sim/src/encounters.ts";
-  import { fuel, hours, num, power, MATERIAL, MATERIAL_COLOUR, units,
-           ROOM_OF_FAC } from "../lib/view.ts";
+  import { hours, num, MATERIAL, MATERIAL_COLOUR, units, ROOM_OF_FAC } from "../lib/view.ts";
   import { seasonOver } from "../../../sim/src/sim.ts";
   import { LEGS, PREP_DAYS } from "../../../sim/src/legs.ts";
   import { shapeOf, drawRock } from "../lib/rock.ts";
@@ -45,10 +43,7 @@
    *  ship talking to itself and does not belong on a noticeboard. */
   const board = $derived([...ship.signals].filter(g => g.level !== "chatter").reverse().slice(0, 12));
 
-  const p = $derived(power(ship));
-  const f = $derived(fuel(ship));
   const yr = $derived(ship.day / 365);
-  const left = $derived(300 - Math.floor(yr));
 
   /** THE HERO IS THE SEASON, NOT A ROLLING HORIZON.
    *
@@ -367,44 +362,6 @@
       </div>
     {/if}
 
-    <div class="pad">
-      <div class="label">Voyage</div>
-      <div class="big">Year {num(Math.floor(yr))} <span class="dim">of 300</span></div>
-      <div class="track"><i bind:this={bar}></i></div>
-      <div class="sentence dim">
-        Behind you: {num(ship.counters.encountersTaken)} rocks taken,
-        {num(ship.counters.encountersMissed)} missed,
-        {num(ship.colony.diedAwake + ship.colony.diedFrozen)} people dead.
-        Ahead: {num(left)} years.
-      </div>
-      {#if ship.phase === "transit"}
-        <div class="sentence faint">Nothing ahead. This is the Long Dark.</div>
-      {:else}
-        <div class="sentence faint">
-          {cluster.filter(e => !worked(e)).length} of {cluster.length} objects left in
-          {LEGS[ship.leg].name} · {ship.drones} drone{ship.drones === 1 ? "" : "s"} to
-          work them · tap one on the rail to survey it
-        </div>
-      {/if}
-    </div>
-
-    <div class="hr pad">
-      <div class="label">Fuel</div>
-      <div class="big">{num(ship.rods, 1)} <span class="dim">rods</span></div>
-      <div class="sentence dim">
-        {#if !f.onTrack}
-          <span class="crit">Short.</span> {num(f.needed)} rods to finish the voyage at
-          this burn, and {num(ship.rods, 1)} aboard.
-        {:else}
-          On track: {num(f.needed)} more rods will finish the voyage.
-          Started with {START_RODS}, {num(ship.counters.rodsMade)} made since.
-        {/if}
-      </div>
-      <div class="two">
-        <div><div class="label">Made</div><div class:crit={p.short}>{num(p.made)} kW</div></div>
-        <div><div class="label">Needed</div><div class="dim">{num(p.needed)} kW</div></div>
-      </div>
-    </div>
 </div>
 
 <style>
