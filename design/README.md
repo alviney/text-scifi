@@ -113,10 +113,34 @@ with the Rooms delivery marker: the same mark meant cargo in transit on one scre
 abstraction on the next, so the lanes read as transfers rather than rules firing. The trace is
 now a scrolling time axis (90 days, newest at the right), which cannot be misread as a journey.
 
+### The cutaway, rebuilt against the real simulation
+
+`packages/web` now renders this hero from live state, and the first attempt got it wrong in a
+way worth recording: it was drawn on a canvas as a single line of ten dots. That lost three
+things the design was carrying — the two-deck shape that makes it read as a ship rather than a
+grid, the bays as real tap targets with the same destinations as the list below, and the
+distinction between a marker travelling and a badge sitting still.
+
+It is DOM again, and the rules above hold literally: a consignment's position on the spine is
+its actual progress between its actual endpoints, and held cargo is badged on the room holding
+it with the room's own status dot left alone.
+
+One addition the mockup could not have: the mockup's caption said *"shifting it needs the crane,
+and there's no power spare to run one"*, because that was the state being depicted. Live, there
+are three different reasons a haul sits still — the crane is broken, the bus has no headroom, or
+nobody has picked the job up — and printing the wrong one sends the player to the wrong screen.
+
 ### The ticker
 
-One feed item at the top of **every** screen, always. New items replace the old one, so
-the ship can be monitored from anywhere without navigating to look.
+**Two** feed items at the top of **every** screen, always — newest on top, the one before it
+dimmed underneath. New items replace the old, so the ship can be monitored from anywhere
+without navigating to look.
+
+It was one item until the strip was made twice as tall, at which point a long signal filled the
+extra height by wrapping and breaking words across lines. Two single-line rows spend that height
+on a second signal instead, which is the better trade: it gives the newest item something to be
+newer *than*, so you can see the ship moving without opening the feed. Each row truncates with an
+ellipsis — never reflowing matters more than never truncating, and the full text is one tap away.
 
 A serious alert turns the strip red and **holds it** — rotation stops until acknowledged.
 
@@ -195,6 +219,14 @@ Two conventions worth preserving:
 
 ### Skins
 
+**Hazard is locked in and the selector is gone.** All five palettes stay defined in the
+prototype's `app.css`, unused, for when this is revisited — the point of the skin rule is that
+reinstating one costs nothing.
+
+One implementation note that only shows up on a wide screen: the chosen palette has to sit on
+`:root`, not on the app shell. The shell is capped at 560px, so a palette scoped to it leaves
+the page's own ground painted in whatever `:root` still says.
+
 Five interchangeable treatments, switchable in the page. Every skin defines the same
 token set, so **no screen markup changes between them** — only colour, typeface and
 shadow. If a skin needs different markup, it is a redesign, not a skin.
@@ -229,6 +261,11 @@ typing the game does not support.
 
 - Speed slider and snap-back controls — a status-bar readout only. Where the actual
   control lives on a phone is unresolved, and it is the most-used control in the game.
+  **The prototype now ships with no speed control at all**, running at one game-day per 24
+  real seconds (one real second is one game hour). What the ladder should offer depends on
+  what an hour of this game feels like, and that cannot be worked out while fast-forwarding
+  past it. §11 Q8's severity floor goes with it for now — it existed because the feed is
+  unreadable at 8,760x, and there is no 8,760x.
 - The §5c cycle timeline (six beds across 36 days, overlaps highlighted) is stubbed
   as a button.
 

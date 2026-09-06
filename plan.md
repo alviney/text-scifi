@@ -40,6 +40,63 @@ The ending is a **narrative outcome** based on ship and colony state at arrival.
 
 ---
 
+## 1b. The voyage is five harvest seasons
+
+Three hundred years is not playable, and it is not interesting either — the Long Dark is by
+design a long stretch of nothing. So the ship is only **awake five times**, and each leg has the
+same three beats:
+
+| Beat | What it is |
+|------|------------|
+| **Prep** | The crew are already on the Medbay tables, coming round over 3–5 days. You have no hands yet, so all you can do is read the ship and queue work. |
+| **Season** | ~90 days working a cluster of asteroids. Real time, by hand, every job given out by name. |
+| **Transit** | Everyone goes back under. Decades pass. Nothing pulls you out of it. |
+
+**The AI does not come online alone.** There is nothing it can do without hands, so it wakes
+with the first crew — who were rostered before you were switched on. The prep window *is* their
+recovery, which is why it is short and why the season starts by itself when the first of them
+stands up. There is no button: you had the days you had.
+
+**At the end of a season you choose who wakes at the next one.** Four berths, decades from now,
+inheriting whatever you leave on the shelves. That is the only decision that reaches across a
+transit, and it is made blind.
+
+### Rations, and why the first season is about lettuce
+
+The ship launches with **700 rations and no grow beds**. Four people on full rations eat 1,080
+over a ninety-day season, so the locker buys about sixty days.
+
+The racks are empty on purpose. **A grow bed is built, not inherited** — 20 parts and a day of
+someone's time — and one bed feeds roughly one and a half people. So the first crew's real job
+is not the asteroids, it is putting up the thing that feeds the *second* crew.
+
+Two levers, and they fight each other:
+
+- **Cut rations** (full / short / half). Buys days, costs morale, which costs work rate — which
+  costs you the beds you were cutting rations to build. The pressure compounds rather than
+  simply pinching.
+- **Shift crew effort** toward hydroponics, at the cost of everything else.
+
+Measured on the first leg: three beds up by day 109 still finished the season with 33 rations in
+hand. That is the shape wanted — solvable, and only just.
+
+### ⚠ The Long Dark is a placeholder
+
+Transit currently **suspends deterioration**: the reactor throttles, systems go cold, cryo runs
+on trickle, nothing wears. Fuel still burns, because the banks still have to be kept cold.
+
+This is not a designed mechanic, it is the absence of one. Simulating an unattended crossing
+honestly kills the ship every time — the reactor sags, the banks go cold, and a hundred people
+die before the second cluster, none of which the player can act on. That is a cutscene that
+kills you, not a difficulty curve.
+
+What the ship does with itself for sixty years is a real open question. An earlier attempt
+answered it with "leave a watch awake and automate their work", and the readiness gate in
+`packages/sim/src/legs.ts` is what survives of it — a checklist the player had to pass before
+going dark. It is written and unused, kept because the question will come back.
+
+---
+
 ## 2. Game Loop
 
 ```
@@ -67,6 +124,35 @@ The ending is a **narrative outcome** based on ship and colony state at arrival.
 - Default (minimum) speed: **1 game-hour = 1 real-minute** (a game-day = 24 real-minutes).
 - Continuous slider up to ~**1 game-year per real-minute** (~8,760x).
 - At high speeds, simulation still runs per-hour resolution. Revisit if performance demands batching.
+
+**Built, and the hour is not negotiable.**
+
+The prototype was first written stepping in **days**, which looked like a harmless
+simplification and was not. Everything that takes time then had to be a whole number of days,
+so §6b's one-hour survey had nowhere to live and was bodged onto the client's interpolated
+clock instead. That put one duration in the game outside the simulation — and **durations only
+mean anything relative to each other.** A six-hour repair and a thirty-six-hour rebuild have to
+be the same kind of number, owned by the same clock, or the progress bars are decoration.
+
+So the tick is the game-hour, as this section always said. Day-scale processes — wear, power,
+industry, the colony — still run once a day on the rollover, so nothing about the balance moved;
+the hour is simply where **work and progress** live now.
+
+| Job | Game-hours |
+|-----|-----------:|
+| Survey an object | 1 |
+| Carry a consignment | 3 |
+| Service a machine | 6 |
+| Fabricate a fuel rod | 12 |
+| Build a drone | 24 |
+| Replace a machine | 36 |
+
+**Performance was never the reason to avoid it**: 40 game-years is 350,000 hourly ticks and runs
+in **22 ms**. The concern in the line above is unfounded — no batching needed.
+
+The render loop still interpolates *within* the hour, which is the second layer above doing its
+job. Without it a one-hour survey has no bar at all — it is a single tick, so it would jump
+from empty to done. The simulation owns the duration; the client only smooths between ticks.
 
 **Frame jacking & alert snap-back:**
 - Speed is a continuous spectrum — "frame jacking" is just the high end of the slider.
@@ -408,6 +494,45 @@ starves. Every rule fired correctly.
 
 > **The room reporting the problem is not the room that has it.**
 
+#### Built, and what it took (§4 → `packages/sim/src/logistics.ts`)
+
+The layer works and produces every behaviour above. Getting there took five corrections, and
+all five are worth keeping because each one looked reasonable and quietly killed the ship.
+
+| Mistake | What it did | The rule that replaced it |
+|---|---|---|
+| Replacement needs all three materials in the room | Rooms never hold electronics, so only Engineering could be replaced. Replacements 281 → **17** | Precision half from the shop, fitting half from the room |
+| One shelf per room, shared by everything | Water and volatiles have no sink, so they accumulate and crowd out the silicon. 1,295 ice starved electronics for 4,745 days | A keep-ceiling: surplus water is left in space |
+| The shop's shelf holds its own output | A fabricator at full tilt fills the room with parts and bounces incoming ore. **3% of landed ore reached the shop** | Cap production at a target — the diagram above already separates in from out |
+| Fetch whenever below threshold | Fired 14,519 times in 46 years for 23 hauls, against an empty source. This is the **THRASH** state from the failure gallery, shipped as default behaviour | Don't send anyone to fetch what isn't there |
+| One parts threshold for every room | Life Support has thirteen assets, the Bridge two, both stocked to 20 — less than one high-complexity replacement | Size the buffer to the room: `20 + 4 × assets` |
+
+That fourth row is the one to remember. **440,697 asset-days** of replacement were blocked for
+want of parts in the room, and **not one** for want of electronics or rare compounds — so for
+an entire voyage the binding constraint was never the choke point §7 designs around. A
+logistics layer does not just add difficulty; it moves where the difficulty *is*.
+
+**What it costs, and what it buys.** A well-run ship went from arriving every time with 190 of
+200 alive to arriving 80% of the time with 160. The optimum service threshold moved from 60 to
+55, because deliveries compete for the crew that does the maintenance.
+
+The interesting part is what happened to the *shape* of the decision. Before logistics, a
+diligent player (service at 70) and a steady one (55) landed within twenty colonists of each
+other, and the sweep's plateau meant the choice barely mattered. Now:
+
+| | Arrived | Alive | Services |
+|---|--:|--:|--:|
+| Steady, service at 55 | **80%** | **160** | 47,589 |
+| Diligent, service at 70 | 35% | 70 | 84,770 |
+
+**Diligence is now half as good as restraint**, because the 37,000 extra repair jobs come out
+of the same crew the hauls need, and a ship that cannot move ore browns out however well
+maintained it is. That is the first place in this design where two kinds of work genuinely
+compete for the same scarce thing, and it is worth more than the difficulty it added.
+
+Still untuned: the logistics numbers themselves — bulk load size, transit times, and the room
+thresholds. The maintenance side is now well understood and should be left alone.
+
 Other consequences worth keeping: a vented or lost room takes its stores with it, and the
 storage caps in §6b now apply *per room* rather than to one global pool, which is a tighter
 constraint and makes Cargo Bay overflow a genuine bottleneck during Act I.
@@ -460,16 +585,145 @@ across its assets. That's the whole green/amber/red rule.
 Each asset also carries **`maxCondition`**, starting at 100.
 
 - A repair restores `condition` up to `maxCondition` — never past it.
-- Every repair costs a little `maxCondition` (refurbishment loss): ~0.5 for routine
-  servicing, ~2-3 for a `FAULTED` rebuild.
+- Every repair costs a little `maxCondition` (**refurbishment loss**), and the cost is
+  **mostly proportional to how much wear it recovers**:
+
+```
+loss = 0.05 + 0.022 × (wear recovered)      + 2.0 for a FAULTED rebuild
+```
+
+**Why proportional, and not a flat cost per repair.** An earlier draft charged a flat ~0.5
+per service. Simulating it (`packages/`) showed that inverts the whole premise: servicing at
+75 recovers 25 points for the same price as servicing at 32 recovers 68, so **frequent
+maintenance burned an asset's life four times faster than neglect**. Across full 300-year
+runs the neglectful strategy genuinely beat the diligent one. The optimal way to play was to
+ignore the ship.
+
+Proportional loss removes that. Total ceiling erosion now tracks **total wear**, not visit
+count, so every service threshold lands near the same ~56-year service life:
+
+| Service at | Services/yr | Ceiling lost/yr | Service life |
+|-----------:|------------:|----------------:|-------------:|
+| 75 | 1.20 | 0.72 | 56 yr |
+| 55 | 0.67 | 0.69 | 58 yr |
+| 32 | 0.44 | 0.68 | 59 yr |
+
+The small fixed overhead still discourages pointless fiddling, and a faulted rebuild carries a
+real penalty on top. **The decision moves to where it belongs — fault risk.** Waiting saves
+nothing on the ceiling and exposes the asset to the `AT_RISK` failure roll, so diligence is
+rewarded by *avoided faults* rather than by the repair counter.
 
 Everything the difficulty curve needs falls out of that one decaying ceiling:
+
+#### An asset awaiting replacement must still be maintained
+
+Once `maxCondition` falls past the replacement line the instinct is to stop servicing — the
+ceiling is nearly gone, so why spend the work? Simulating that produced the single worst bug
+in the design.
+
+A high-wear asset in free-fall reaches zero **long before the replacement arrives**. The
+reactor at `ageFactor` 1.9 sheds ~118 condition points a year, so the moment it was abandoned
+it fell from 65 to 25 in months, output collapsed to 649 kW, and the cryo banks went dark
+before the new unit was installed. One year of not touching it cost **182 colonists**, in a
+single cascade, on an otherwise well-run ship.
+
+> **Keep patching it until the replacement is actually in.** The ceiling is already written
+> off, so there is nothing left to protect.
+
+Correcting this took a diligent ship from 2,943 faults and 182 dead to **0 faults and 200 of
+200 alive** — the first demonstration that §1's *Perfect arrival* is reachable at all.
 
 - Old kit needs servicing **more often** — less headroom above the `AT_RISK` line.
 - Eventually `maxCondition` drops below the `DEGRADED` line and the asset is a permanent
   liability. The only fix is **replacement**, which costs manufacturing throughput, which
   costs asteroid material, which is the scarcest thing in the game.
 - No separate "ageing system" to tune. One number, monotonically falling.
+
+#### Where to set the service threshold
+
+The proportional refurbishment model implies an *interior* optimum — service too late and
+assets fail, too early and the fixed overhead per visit erodes ceilings for nothing. Sweeping
+the threshold across 140 playthroughs (`packages/harness/sweep.ts`, 10 seeds × 14 thresholds)
+confirms it, and the shape matters more than the peak:
+
+| Service at | Survivors | End cond | Faults | Services | Replaced | Brownout |
+|-----------:|----------:|---------:|-------:|---------:|---------:|---------:|
+| 20 | 100 | 46 | 906 | 10,812 | 290 | 34% |
+| 30 | 100 | 53 | 195 | 15,874 | 270 | 33% |
+| 40 | 100 | 60 | 19 | 19,440 | 266 | 34% |
+| 50 | 145 | 58 | 18 | 24,849 | 269 | 13% |
+| **60** | **190** | **69** | 23 | 38,976 | 281 | **5%** |
+| 70 | 160 | 72 | 26 | 68,049 | 318 | 6% |
+| 80 | 160 | 66 | 33 | 105,198 | 344 | 9% |
+| 85 | 150 | 57 | 45 | 129,165 | 350 | 12% |
+
+**The optimum is 55–65, peaking at 60**, and it is a *plateau, not a knife edge* — 55, 60 and
+65 all land on 190 survivors. That is the shape we want: a player who reasons "keep things
+above about sixty" is playing well, and does not have to find an exact number to avoid being
+punished.
+
+Two different mechanisms bracket it, and they are not symmetrical.
+
+**Below 45 — output, not failure, and it is one asset.** The obvious reading is that late
+servicing kills through faults, and faults do collapse across that range (906 at threshold 20
+down to 19 at 40). But survivors do not move at all: 100 lost at 20, and still 100 lost at 40
+with faults essentially eliminated. Brownout sits at 33–34% throughout. What kills the colony
+is that reactor output *scales with condition*, so a ship kept permanently in the thirties runs
+a third of the voyage short of power and the cryo banks pay for it.
+
+> **The reactor doesn't have to break to kill you. It just has to be worn.**
+
+**That penalty belongs entirely to the reactor.** Playing the prototype revealed that the whole
+low end of this table was measuring one asset. Re-running the sweep with the reactor protected
+by its own rule at 55 — and *nothing else changed* — moves every threshold from 20 to 65 onto
+the same 190 survivors, and drops brownout from 33% to 4%:
+
+| Service at | 20 | 30 | 40 | 50 | 60 | 70 | 85 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Survivors, reactor at 40 | 100 | 100 | 100 | 145 | 190 | 160 | 150 |
+| Survivors, reactor at 55 | **190** | **190** | **190** | **190** | 190 | 160 | 150 |
+
+The high end is untouched, because that failure has nothing to do with the reactor. So the
+honest statement is: **service the reactor above 55 and the rest of the ship's threshold barely
+matters until you start over-servicing.** The spread across the range falls from 90 colonists to
+40 once the reactor is covered.
+
+This is a good property, not a flaw. It gives the game a genuine hierarchy — one machine whose
+threshold is worth more than the other forty-one combined — and it means the first thing a
+player learns is also the most valuable thing they will ever learn.
+
+**Above 70 — overhead, not wear.** Total ceiling erosion tracks total wear, so servicing early
+does not waste much *per visit* — but the small fixed cost is charged per visit, and visits
+explode. Threshold 85 runs 129,165 services against 60's 38,976, a 3.3× increase to recover the
+same wear, and the fixed component alone drives replacements from 281 to 350. The extra
+replacements consume rare compounds, and the choke point does the rest.
+
+#### Uniform thresholds beat differentiated ones
+
+The natural follow-up is to service the critical path — reactor, life support, cryo — earlier
+than everything else. Tested, and it does nothing:
+
+| Policy | Survivors | End cond | Services |
+|--------|----------:|---------:|---------:|
+| **uniform 60** | 190 | **69** | **38,976** |
+| critical 75, rest 50 | 190 | 60 | 43,266 |
+| critical 80, rest 45 | 190 | 63 | 46,540 |
+| critical 70, rest 55 | 190 | 62 | 41,596 |
+
+Every arm reaches the same 190 survivors, and uniform 60 gets there with the best end condition
+and the fewest services.
+
+This looks like it contradicts the reactor result above, and it does not — the two together say
+something sharper than either alone. **Differentiation only pays where the base threshold leaves
+the reactor exposed.** At a base of 45–55 the reactor is already above the ~49 line where output
+crosses the baseline, so raising it further buys nothing. At a base of 20–40 it is not, and
+protecting it alone is worth 90 colonists. There is a cliff, not a gradient, and it sits at the
+reactor's output curve rather than anywhere in the maintenance model.
+
+**Design consequence:** don't build per-asset service thresholds into the automation UI. One
+ship-wide number is not a simplification — above ~50 it is the better policy, and it keeps the
+player's first automation rule to a single slider. The reactor gets its protection from the
+inherited rule the ship launches with (§5c), which is where a new player needs it.
 
 #### Degradation rate
 
@@ -715,6 +969,36 @@ unsettling late game than equipment simply breaking faster.
 
 **UI consequence:** values sourced from a degraded sensor should render marked — `47%?`, or
 dimmed — so uncertainty is visible without being explained. Fits the CLI aesthetic exactly.
+
+#### Which instruments routine repairs quietly fix, and which they don't
+
+Simulating this (`packages/harness/gauges.ts`) drew a line that turns out to matter:
+
+- **A sensor bolted to a machine is mitigated for free.** It gets checked while the machine is
+  open, so any player doing routine maintenance never experiences condition drift at all.
+  Measured, it makes **no difference whatsoever** — which is why the first implementation of
+  this mechanic appeared to do nothing.
+- **A gauge on a store is not.** Nothing routine touches it. No machine's service visit takes
+  it apart, and calibrating it is a deliberate job the player has to decide to do.
+
+That asymmetry is the mechanic:
+
+> **The instrument that lies is the one nothing gives you a reason to check — and its lie is
+> what removes the reason to check it.** A gauge reading high looks like a store that is fine.
+
+The cost of never calibrating, over a full voyage, against a ship that does it yearly:
+
+| | end condition | fuel rods left | drones | colonists lost |
+|---|---:|---:|---:|---:|
+| Calibrated yearly | 56 | 55 | 4.8 | 48 |
+| Never calibrated | 48 | **25** | **2.1** | **67** |
+
+Half the fuel reserve, half the drone fleet, and nineteen more people — from an instrument
+that never announced a problem. Both ships still arrive, which is the right shape: this is not
+a fail state, it is a **quiet tax on inattention**.
+
+So machine sensors are flavour and atmosphere; **store gauges are the mechanic.** The
+`47%?` marker matters most where §8 shows it on Stores.
 
 ### The other failure: nobody comes
 
@@ -1042,6 +1326,23 @@ Rule 12 is the single maintenance rule aboard, on the one asset that kills you f
 there as a **worked example to copy** — the shape of the thing the player must now do 45 more
 times.
 
+> **Its threshold has to be at least 55, and this is not a free choice.**
+>
+> The prototype was first played with rule 12 set to service the reactor at condition 40, on
+> the reasoning that an inadequate inherited rule is the point. It is not survivable. Reactor
+> output crosses the 890 kW baseline at condition **49**, and the reactor sheds a point every
+> six days — so a rule that waits for 40 leaves the ship underpowered for about **58 days on
+> every cycle**, against the cryo banks' 21-day thermal grace. Touching nothing, the first bank
+> went dark on **day 317** and 100 colonists were dead inside fifteen months.
+>
+> That is not "goes wrong slowly", it is a game that is lost before the player has learned what
+> a rule is. 55 is the lowest value that is not a death sentence, and it is still the worst
+> threshold in the viable 55–65 band — so there is something left to improve, and the player
+> now lives long enough to find it.
+>
+> The general principle is worth stating: **an inherited rule may be suboptimal, but it must
+> not be fatal.** The curriculum only teaches if the student survives the first lesson.
+
 <!-- TODO: Should the inherited rules carry authorship in the UI ("set by Marchetti, y0")?
      Cheap, and it makes them feel like a legacy rather than a default. -->
 
@@ -1136,6 +1437,207 @@ are core gameplay.
 | Silicates        | Silicon                | Electronics, solar panels         |
 | Volatiles        | Chemical compounds     | Fuel, medical supplies, fertiliser|
 | Rare elements    | Rare compounds         | Advanced electronics, medical     |
+
+### Built: water had none of those sinks, for a long time
+
+That first row — *drinking, hydroponics, O₂, drone propellant* — was written at the
+start and was not true of the simulation until now. Water arrived, sat in the Cargo
+Bay against a 400-unit cap, and did nothing. Air was a pure function of the oxygen
+generator and the power bus. Grow beds drew nothing. Food was rations and crops. The
+only consumer was drone propellant, and that was **netted off inside `harvest()`**
+before anything reached the bay — so the largest single use of water in the game
+happened inside a return value, with no transaction to see and nothing that could
+run out.
+
+The scale of the hole, measured across a full voyage at a full fleet:
+
+| | units |
+|---|---|
+| Total mass harvested | 135,744 |
+| Of which water (26% — C-types are 45% ice, comets 65%) | 34,818 |
+| Spent as propellant, invisibly | 14,400 |
+| **With no sink at all** | **20,418** |
+| What the bay would actually hold | 400 |
+
+So the most abundant material on the route was the one thing the ship did not need.
+A quarter of every haul was scenery, and a comet — one object in ten — was the worst
+thing you could be offered. `logistics.ts` capped ice at 400 not because water is
+worthless but because, being worthless, it filled the bay and starved the fabricator:
+1,295 units of ice once blocked electronics for 4,745 days.
+
+**What water does now.** Three sinks, deliberately different in character:
+
+| Sink | Rate | Character |
+|---|---|---|
+| Crew | 0.9 / person / day | Small, unavoidable. Make-up water the scrubbers cannot reclaim — nobody is modelled drinking. |
+| Grow beds | 1.6 / bed / day | Large, optional, and yours to choose. A dry bed grows **nothing**, not less. |
+| The fleet | 6 / sortie, 144 / wave | Spent up front, from the Cargo Bay, before the wave launches. |
+
+The tank lives in **Life Support**, so it obeys §4 like every other material: it is one
+room's shelf, and it only refills because somebody carried ice up from the bay. There
+is an inherited rule (`LS-01`, threshold 120 — about a fortnight) but the player starts
+with no rules at all, so leg 1 is hauled by hand or not at all.
+
+A dry loop is a *slower* death than a broken one. The scrubbers limp on what they can
+reclaim, so air falls at half the rate of a failed generator, and being half-supplied
+costs half as much again — the tank running low is felt before it runs out.
+
+**Measured, leg 1, four crew and three beds, no rules written:** 886 units drawn against
+a 1,200 tank, ending about a quarter full with the low-water warning inside the last
+fortnight. Short the tank deliberately and the failure is graded rather than sudden:
+
+| Tank | Warns | Dry | Lowest air | Dead |
+|---|---|---|---|---|
+| 1,200 | — | — | 100% | 0 |
+| 600 | d50 | d75 | 32% | 0 |
+| 300 | d15 | d40 | 0% | 1 |
+| 120 | d5 | d18 | 0% | 3 |
+
+The warning always arrives with time to act on it. 900 was tried first and rejected:
+it ended the season with **fourteen units** in the tank, which is not a lesson, it is a
+coin toss — waking a fifth person killed a player who had done everything the departure
+board asked.
+
+**The one thing that had to go ahead of the ore.** Making the fleet burn water from the
+bay coupled two ends of §4 that had never touched: the bay fills with ore nobody has
+hauled to the shop, ice cannot land because there is no shelf left, and the fleet stops
+flying. Measured, that cost **15 of 26 encounters** in the first season. So the crew now
+top a three-wave propellant reserve *before* they load cargo — a full bay costs you cargo,
+as it always did, but it never costs you the fleet. Encounters went back to 24.2/26,
+exactly the figure before water existed.
+
+### Built: five objects a season, not twenty-six
+
+The per-leg object counts were never designed. A hundred objects trickling across
+three hundred years got **bunched** into five clusters when the voyage became five
+harvest seasons, and nobody re-asked how many a season should have — so leg 1 had
+twenty-six.
+
+The interface is where it showed. On a ninety-day rail at phone width, twenty-six
+objects is fifteen pixels each: the diamonds touch, size stops being readable, and
+the one thing the map exists to say — *a big one is coming* — cannot be said.
+
+Five each now, with **the same total mass** held by making each object
+proportionally richer (leg richness 2.5 → 13.0, and so on down the route; 168,000
+units over the voyage either way). The display divisor moved 200 → 1,000 so a rock
+still reads 1–19.
+
+| | Before | After |
+|---|---|---|
+| Objects, leg 1 | 26 | 5 |
+| A typical Departure Belt rock | 2,400 | 12,480 |
+| Objects worked per season | 24.2 of 26 | 5.0 of 5 |
+| Reads on the map as | 12 | 12 |
+
+**What it exposed, which is the more interesting half.** The shop refines 40 ore a
+day — 3,600 in a ninety-day season. One typical Departure Belt rock carries about
+3,182 ore. So **one rock is now nine tenths of a season's refining**, and the other
+four are surplus the ship physically cannot process:
+
+| Leg | One typical rock | Seasons of refining it represents |
+|---|---|---|
+| The Departure Belt | 12,480 | 0.9 |
+| Kestrel Drift | 4,128 | 0.3 |
+| The Deep Field | 2,688 | 0.2 |
+| Anvil Scatter | 4,128 | 0.3 |
+| Arrival Debris | 10,176 | 0.7 |
+
+Measured, 50% of a cluster's mass is now left in space for want of bay room and
+another 29% declined at the keep-ceiling. Sweeping the Cargo Bay from 2,000 to
+14,000 moved the landed share from 21% to 41% and changed **parts made and food
+left not at all** — 70 and 194 at every size. The bay is not the bottleneck; the
+shop is, and the surplus is material nobody could have used.
+
+**That is a mechanic waiting to be picked up, not a bug to tune away.** Five rocks
+and capacity for one makes *which rock you work* the decision of the season, which
+is precisely what surveying is for — the rescan button currently buys you a better
+estimate of something you were going to take anyway. The simulation still works
+every object it passes, automatically, so the choice does not exist yet. Building
+it is the obvious next move and is deliberately not made here.
+
+### Built: the noticeboard, and why hauling is the whole opening
+
+§8's feed is a ticker: it rotates and forgets. The nav panel now carries a
+**bulletin** underneath it — the same signals, kept up, filed by the place they came
+from and the day inside the season. `emit()` gained an optional author, so the ones
+that came out of somebody finishing a job carry their name: §3 opens on the claim
+that *"Okonkwo took the hull repair" is a story and "crew member 4 took the hull
+repair" is a log line*, and the feed had been emitting the log line.
+
+Building it turned up the sharpest number in the project. Working leg 1's five
+objects with nobody moving material:
+
+| | obj 1 | obj 2 | obj 3 | obj 4 | obj 5 |
+|---|---|---|---|---|---|
+| units landed | **1,519** | 120 | 96 | 96 | 72 |
+
+The bay fills on the first rock and never drains, because deliveries only come from
+standing rules and the player starts with none. Four fifths of a season goes past the
+window. Standing one haul job from the Cargo Bay to Engineering:
+
+| | Landed | Parts in the shop |
+|---|---|---|
+| No hauling | 1,963 | 70 |
+| Hauling by hand | **7,055** | **289** |
+
+**3.6× the material and 4× the parts for keeping the ore moving.** That is §1b's
+manual day-to-day earning its place — it is not busywork around the real game, it *is*
+most of your season — and it is the clearest case yet for what the first automation the
+player writes should be. The ship already says so: `BAY-FULL` fires with the tonnage
+left behind.
+
+### Built: volatiles, the other material with nothing to spend it on
+
+Same hole, one row down. Volatiles are **19% of every haul** and sat at a 250-unit
+keep-cap for the same reason water did — the table above says *fuel, medical supplies,
+fertiliser* and none of it was modelled.
+
+They are consumed **raw**. The cracking step in §6's recipe table (10 volatiles → 7
+chemical compounds) would add a tenth material to a game that is trying to lose some,
+and nothing downstream could tell the difference, so the yield is folded into the rates
+rather than modelled as a stage.
+
+Two sinks, and deliberately not the same shape as water's:
+
+| Sink | Room | Rate | What running out costs |
+|---|---|---|---|
+| **Fertiliser** | Hydroponics | 0.6 / bed / day | Yield. Beds drop to 55% and keep going. |
+| **Medical supplies** | Medbay | 25 per wake | Everything, and only this. Nobody else comes round. |
+
+That difference is the point. Water is a **gate** on a grow bed — no water, no crop.
+Volatiles are a **lever** — no fertiliser, a bad crop. And the medical sink is the
+opposite again: an absolute stop on the one decision §3 says the whole game turns on.
+Waking somebody has always cost colonist-years and days in the Medbay, but it has never
+cost *material*, so there was no reason to harvest for the crew rather than for the
+machines. Now there is.
+
+**The rostered crew who come round at the start of a leg are free.** They were prepped
+before the ship went dark, which the go-dark decision already implies — and it is what
+stops an empty Medbay being a hard lock with no crew, no wakes and no way back.
+Improvising a wake mid-season is what draws on the stores, which is exactly the
+difference the planning loop wants to charge for.
+
+**Measured, leg 1.** Both stocks are one season's worth, so the first leg teaches the
+readouts and leg 2 cannot be started on what the ship left Earth with:
+
+| Fertiliser at start | Warns | Food left | Fed | Beds | Died |
+|---|---|---|---|---|---|
+| 240 | — | 158 | 100% | 3 | 0 |
+| 120 | d73 | 35 | 100% | 3 | 0 |
+| 40 | d29 | 0 | 82% | 3 | 0 |
+| 0 | d5 | 0 | 71% | 3 | 0 |
+
+| Medical at start | Wakes taken | Refused | Crew | Warns |
+|---|---|---|---|---|
+| 250 (10 wakes) | 6 | 0 | 10 | — |
+| 100 (4 wakes) | 4 | 2 | 8 | d50 |
+| 50 (2 wakes) | 2 | 4 | 6 | d30 |
+| 0 | 0 | 6 | 4 | d10 |
+
+Note what does **not** happen in either table: nobody dies. Losing fertiliser costs
+harvest at every level including zero; losing medical stock stops the roster growing and
+breaks nothing else. 200 fertiliser was tried first and ended leg 1 with fifteen units,
+the same coin toss the 900-unit water tank was rejected for.
 
 ### Production Chains (3-4 steps deep)
 
@@ -1385,6 +1887,30 @@ window to scramble, and the window itself is costing you equipment.
 **Power Distribution is the dependency that matters.** If it goes `FAULTED`, the player
 loses load-shedding control entirely: priorities stop being honoured and brownouts hit
 whatever they hit. Repair it first.
+
+> **Built, and it was load-bearing in a way this section understates.**
+>
+> The prototype was first written without any shedding at all — 890 kW was treated as a hard
+> floor. That single omission turned §4's death spiral from a mechanic into a **soft lock**:
+> a ship that dipped below 890 could never get back above it, and one run entered the spiral
+> around year 80 and spent the remaining 220 years at the scrap floor, holding 617 rare
+> compounds it could not use because it had no metal.
+>
+> | Output | Load | Headroom | Banks lit | State |
+> |-------:|-----:|---------:|----------:|-------|
+> | 1000 | 890 | 110 | 8 | nominal |
+> | 830 | 830 | 0 | 8 | non-essentials shed |
+> | 780 | 728 | 52 | 8 | shed and dimmed |
+> | 700 | 678 | 22 | 7 | cascade brownout |
+>
+> **Shedding moves the cryo cliff from 890 kW to 728.** That 162 kW is the entire window §1's
+> *"degrades gracefully"* promise is made of, and without it the promise is false — the ship
+> goes from fine to unrecoverable with nothing in between.
+>
+> Lever 2 above ("shed empty rooms, ~70 kW") also turns out to be more than a nicety. Headroom
+> at a perfect reactor is 110 kW and §4's Loading Crane takes 30 of it, so adding the logistics
+> layer cut industrial throughput by **27%** on its own. Reclaiming the empty rooms is what
+> pays for the crane.
 
 #### Cryo banks — the decision
 
@@ -1857,6 +2383,48 @@ A countable, visible resource that only ever spends the ending.
 
 ---
 
+### Surveying: what you know, and what it costs to know more
+
+Built in the prototype, and it turned the Voyage tab from a readout into
+something with a decision in it.
+
+Every object ahead carries a **size** of its own — averaging 1.0 within its act, so the act
+still sets the act's yield — and the hero draws each one at a diameter set by its *estimated*
+haul. A big rock coming is legible without reading a number, which is the whole reason the
+markers are there.
+
+**What the ship can tell you has two sources, and they behave differently.**
+
+| Source | Costs | Behaves like |
+|--------|-------|--------------|
+| Proximity | nothing, arrives on its own | slow, certain, out of your hands |
+| A survey | one game-hour of the Comms Array | immediate, repeatable, yours to spend |
+
+```
+confidence = 0.15 + 0.55 × nearness + 0.18 × scans     capped at 0.97
+```
+
+Neither reaches certainty alone. **The cap matters**: an instrument that reports an exact
+figure is lying, and *"2,607 to 2,607 units"* reads as a bug rather than as knowledge. There is
+always a range.
+
+Each object also carries a fixed **bias** — the direction its estimate is wrong in, drawn once
+when the route is built. Without it the reading would jitter every time the screen redrew;
+with it, surveying visibly *converges* on the truth, which is what a survey should feel like.
+
+**The rescan is a button the player presses, and that is deliberate.** It is the first thing in
+the game that is a pure decision: nothing forces it, nothing schedules it, and the only cost is
+an hour and the attention it took to notice the rock. It fires a signal when it completes, so
+the answer arrives in the feed like everything else rather than by the number silently changing.
+
+Two consequences worth keeping:
+
+- **The Comms Array finally matters.** It is 20 kW and `sheddable` in §6's load table, which
+  made it the most disposable thing on the ship. Break it or shed it and you go blind to what
+  is ahead — a real cost for the cheapest saving on the bus.
+- **A one-hour action needs an hourly clock**, and it exposed that the prototype did not have
+  one. See §2 below.
+
 ## 7. Manufacturing
 
 **Manufacturing is the ship's only closed loop.** Every other system drains — equipment
@@ -2189,6 +2757,12 @@ Complexity tracks sophistication, not danger — it's what drives replacement co
 gives **~1,300 rare compounds** for 246 replacements against the 1,378 §7 assumed — 6% under,
 comfortably inside the tolerance of the §6b encounter target.
 
+> **Do not charge this twice.** The 14/5/2 figures are the *total* rare-compound cost of a
+> replacement, and most of it is already the electronics inside the unit (1 rare compound
+> each). Adding the electronics cost on top of the table figure makes the economy ~60% short
+> and locks the ship into an unrecoverable death spiral — which is exactly what happened the
+> first time the prototype implemented it.
+
 ---
 
 ## 8. Interface Design
@@ -2326,7 +2900,20 @@ and `[CRT][RCT][POWR]` are the two ends of the game in the same shape.
 - Reference: [Refactoring Guru — Behavioral Patterns](https://refactoring.guru/design-patterns/behavioral-patterns)
 
 ### Tech Stack
-<!-- TODO: Decide on framework and UI library -->
+
+**See `ARCHITECTURE.md`** — moved out of this document, because a second client (web first,
+then iOS) makes the subject *portability* rather than framework choice, which is more than a
+subsection can carry.
+
+The short version: the simulation is a **standalone TypeScript library with no UI knowledge**
+— deterministic, seeded, integer-ticked, plain-data state. The web client is Svelte over the
+DOM, because §8's interface is text and the DOM renders text better than a canvas does. The web
+build stays the primary version; iOS ships as a Capacitor build of the same codebase, with a
+native client deferred until something specific proves the WebView inadequate.
+
+The split pays off immediately regardless of the second client: a headless core makes a
+300-year playthrough run in seconds, which turns this document's tuned numbers into a **test
+suite** rather than a spreadsheet argument.
 
 **Considerations:**
 - Needs to support the multi-pane CLI aesthetic efficiently.
@@ -2341,8 +2928,6 @@ and `[CRT][RCT][POWR]` are the two ends of the game in the same shape.
 | Vue | Good middle ground | — |
 | Vanilla + Web Components | Maximum control over aesthetic | More boilerplate |
 
-<!-- TODO: Evaluate terminal-style CSS frameworks / component libraries -->
-<!-- TODO: State management approach — how to handle the game world state? -->
 
 ---
 
@@ -2433,6 +3018,13 @@ These features would use an LLM to replace/supplement the text bank with dynamic
    what you read at 1× and never see at 8,760×, which makes slowing down feel *different*
    rather than just slower.
 
+   **Built, and it was needed.** The prototype's feed at speed is wall-to-wall `EQ-SVC`
+   chatter — a well-run ship services something most days, so the interesting lines are buried
+   by definition. Each speed on the ladder now carries a floor (`1×` everything, `2×`/`6×` info
+   and up, fast-forward warnings only, full tilt criticals only), and the ticker's `+n` badge
+   still counts what was suppressed so nothing goes missing silently. Reading the feed at 1×
+   and at full speed are now genuinely different activities, which was the goal.
+
 9. **Solar panels don't work in interstellar space.**
    §6 originally had "solar panels can be manufactured to supplement". Between stars there is
    no meaningful sunlight — for the ~298 middle years of a 300-year journey a solar array
@@ -2449,6 +3041,22 @@ These features would use an LLM to replace/supplement the text bank with dynamic
    something that works mid-journey. **(b) isn't exclusive with it** and is worth adding on
    top — an arrival-phase power windfall would give the endgame a distinct texture. The
    catalogue's "Solar Array Control" is renamed "Aux Array Control" pending this.
+
+10. **Should anything be permanently irreplaceable?**
+   Today every one of the 42 assets can be replaced outright, the reactor included — there is
+   no "cannot be replaced" flag anywhere in the design or the prototype. The reactor only
+   *feels* unreplaceable because three things stack on it: the catalogue's highest wear rate
+   (1.8x base), `high` complexity so it is one of only six assets costing rare compounds
+   directly, and the fact that its condition gates the whole ship rather than one room.
+   That is scarcity through the material economy, not through a rule.
+
+   The consequence is that a perfectly played ship could in principle run forever, and arrival
+   is simply when the clock stops. An irreplaceable asset — the pressure hull is the obvious
+   candidate, since it is already catalogued as passive plating — would give the voyage a
+   terminal shape and make late-game decisions about *what to save* real.
+
+   **Deferred deliberately.** Leaving it means all the §4 tuning stands as measured. Revisit
+   if the endgame turns out to lack pressure once the arrival sequence exists.
 
 ---
 
