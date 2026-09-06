@@ -796,6 +796,20 @@ with the wave holding on a full bay it made a season exactly one rock, always, w
 make it more. There are now destination chips on every room's shelf, and the same chips inside
 the hold notice on the Voyage tab, one tap from the problem.
 
+### The object plate was a fixed 150px, and the launch control went through it
+
+`.objd` was `height: 150px` — set to match the map above it, two equal plates — so adding a
+Delta-v row and a button pushed the survey bar out through the bottom of the band and the
+goals row rendered on top of it. `min-height` instead: the art column is a grid item and
+stretches to whatever the info column needs, so the plates stay equal at whatever height the
+band settles on.
+
+Worth the same check as the tab bar that vanished: **a fixed height is a promise about content
+that has not been written yet.** Asserted rather than eyeballed, across five states — out of
+range, in range, and the fleet holding station, at 320, 390 and 430 wide — no box overlaps the
+one below it, nothing inside the plate spills out of it, and the band grows 200px to 263px
+when the fleet is out.
+
 ### What it cost elsewhere
 
 `validate.ts` went from 5 encounters to 0 the moment the mechanic landed, because its autopilot

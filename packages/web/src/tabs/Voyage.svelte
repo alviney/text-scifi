@@ -447,7 +447,7 @@
 
 <style>
   /* §6b — the launch control. The one button that decides a season. */
-  .fleet { margin-top: 7px; display: grid; gap: 5px; }
+  .fleet { margin-top: 7px; display: grid; gap: 4px; }
   .wrow { display: flex; align-items: center; gap: 7px; }
   .wrow .small, .fleet .small { font-size: 10px; color: var(--faint); }
   .dv { font-size: 11px; font-weight: 600; color: var(--dim);
@@ -455,7 +455,7 @@
   .dv.cheap { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
   .dv.dear { color: var(--warn, #E8A33D);
              border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
-  .launch { width: 100%; padding: 7px; font: inherit; font-size: 11px; letter-spacing: .06em;
+  .launch { width: 100%; padding: 6px; font: inherit; font-size: 11px; letter-spacing: .06em;
             text-transform: uppercase; color: var(--bg); background: var(--accent);
             border: 0; cursor: pointer; }
   .launch:disabled { background: transparent; color: var(--faint);
@@ -515,7 +515,12 @@
   .obj:hover .dot { border-color: var(--text); }
 
   /* BAND 2 — the object, matched to the hero so the two read as equal plates. */
-  .objd { display: grid; grid-template-columns: minmax(0,1fr) 25%; height: 150px;
+  /* MIN-height, not height. This was a fixed 150px to match the map above it —
+     two equal plates — and the launch control pushed the survey bar straight
+     through the bottom of it and under the goals row. The art column is a grid
+     item and stretches to whatever the info column needs, so the plates stay
+     equal at whatever height the band settles on. */
+  .objd { display: grid; grid-template-columns: minmax(0,1fr) 25%; min-height: 150px;
           border-bottom: 1px solid var(--rule); }
   .objd .info { padding: 10px 12px; display: flex; flex-direction: column; min-width: 0; }
   .objd .art { position: relative; border-left: 1px solid var(--rule); background: var(--panel); }
