@@ -56,9 +56,11 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
   background:var(--d-panel);border-bottom:1px solid var(--d-rule);font-size:10.5px}
 .tick .mk{color:var(--d-faint);white-space:pre;flex:none}
 .tick .msg{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.phz{display:flex;gap:8px;align-items:baseline;padding:6px 12px;
-  border-bottom:1px solid var(--d-rule);font-size:10.5px}
-.phz .tag{color:var(--d-faint);letter-spacing:.08em;text-transform:uppercase;flex:none}
+/* The strip's own bottom edge is the voyage indicator: five segments, one lit.
+   It replaces the border rather than sitting under it, so five legs cost the
+   layout two pixels instead of a row. */
+.phz{position:relative;display:flex;gap:8px;align-items:baseline;padding:6px 12px 8px;
+  font-size:10.5px}
 .phz .nm{color:var(--d-accent);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .phz .st{color:var(--d-dim);flex:none;font-variant-numeric:tabular-nums}
 .body{padding:12px}
@@ -89,14 +91,12 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
 .ends{position:absolute;left:12px;right:12px;bottom:8px;display:flex;justify-content:space-between;
   font-size:9px;color:var(--d-faint);letter-spacing:.08em;text-transform:uppercase}
 
-.pct{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.pct{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
 .pct .n{font-size:24px;color:var(--d-accent);line-height:1}
 
-.voy{display:flex;gap:3px}
-.voy i{flex:1;height:3px;background:var(--d-rule);font-style:normal}
+.voy{position:absolute;left:0;right:0;bottom:0;display:flex;gap:2px}
+.voy i{flex:1;height:2px;background:var(--d-rule);font-style:normal}
 .voy i.now{background:var(--d-accent)}
-.voy-cap{display:flex;justify-content:space-between;font-size:9px;color:var(--d-faint);
-  letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
 
 .rows{margin-top:14px;border-top:1px solid var(--d-rule)}
 .row{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:9px;align-items:baseline;
@@ -128,8 +128,11 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
       <div class="dev">
         <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
           <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
-        <div class="phz"><span class="tag">Leg 1 of 5</span><span class="nm">The Departure Belt</span>
-          <span class="st">day 34</span></div>
+        <div class="phz">
+          <span class="nm">The Departure Belt</span>
+          <span class="st">day 34</span>
+          <span class="voy"><i class="now"></i><i></i><i></i><i></i><i></i></span>
+        </div>
 
         <div class="hero">
           <canvas id="sky"></canvas>
@@ -148,9 +151,6 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
         <div class="body">
           <div class="pct"><span class="n">38%</span>
             <span class="say">56 days of cluster left</span></div>
-
-          <div class="voy"><i class="now"></i><i></i><i></i><i></i><i></i></div>
-          <div class="voy-cap"><span>y2 belt</span><span>y283 debris</span></div>
 
           <div class="rows">
             <div class="row past"><span class="g">◆</span><span>Metal, 2,600</span><span class="amt">d12</span>
@@ -179,6 +179,9 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
         the distinction the survey mechanic turns on.</li>
         <li><b>Worked rocks stay on the rail behind you</b>, filled and grey. The season visibly
         accumulates rather than resetting.</li>
+        <li><b>Five legs are two pixels.</b> The voyage indicator is the bottom edge of the
+        leg strip rather than a row of its own — present, countable, and never competing with
+        the season it sits above.</li>
         <li><b>Three parallax layers</b> at different speeds and brightnesses. Distant stars
         barely move; the near ones cross in seconds. The ship holds station in the middle of the
         strip and the season moves past it, so the drift reads as the leg passing rather than as
@@ -193,6 +196,12 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
         <div class="t" style="margin-top:14px">The clock row</div>
         <p><em>Y2 day 34 09:00</em> is gone entirely. The day is in the phase strip and the hour
         is not a decision — it earns its place on a screen with a running job on it, not here.</p>
+        <div class="t" style="margin-top:14px">"Leg 1 of 5"</div>
+        <p>Gone from the strip. The five segments underneath say the same thing in a form you
+        do not have to read, and the leg's <em>name</em> is the part worth the width.</p>
+        <div class="t" style="margin-top:14px">The voyage caption</div>
+        <p><em>y2 belt / y283 debris</em> went with it. Three hundred years is context, not a
+        number anyone acts on from this screen.</p>
         <div class="t" style="margin-top:14px">Studies B and C</div>
         <p>The vertical approach and the arc dial are retired. Both are in git if the object
         count per leg turns out to be too high for a rail.</p>
