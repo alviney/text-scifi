@@ -124,6 +124,65 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
   font-size:10.5px;color:var(--d-faint);line-height:1.5}
 .standing b{color:var(--d-dim);font-weight:400}
 
+/* ---- preview variant: no bars. State is glyph + coloured value only. ----- */
+.obj.bare{padding:9px 0}
+.obj.bare .g{font-size:12px}
+.obj.bare .v{font-size:12px}
+.obj.bare .t{color:var(--d-text)}
+
+/* ---- the detail window --------------------------------------------------- */
+.back{display:block;width:100%;text-align:left;padding:8px 12px;color:var(--d-dim);
+  border-bottom:1px solid var(--d-rule);font-size:10.5px;font-family:var(--d-font);
+  background:none;border-left:0;border-right:0;border-top:0}
+.dt-h{padding:12px 12px 10px}
+.dt-h .kicker{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--d-faint)}
+.dt-h h3{margin:3px 0 2px;font-size:18px;font-weight:500;letter-spacing:-.01em}
+.dt-h .state{font-size:12px;color:var(--d-dim);font-variant-numeric:tabular-nums}
+.dt-h .state b{font-weight:400}
+.dt-h.crit h3{color:var(--d-text)} .dt-h.crit .state b{color:var(--d-crit)}
+.dt-h.behind .state b{color:var(--d-warn)}
+.dt-h.met .state b{color:var(--d-ok)}
+
+.quote{margin:0;padding:12px;border-top:1px solid var(--d-rule);
+  border-bottom:1px solid var(--d-rule);background:var(--d-panel)}
+.quote p{margin:0;font-size:12.5px;line-height:1.6;color:var(--d-text)}
+.quote cite{display:block;margin-top:8px;font-style:normal;font-size:10.5px;color:var(--d-faint)}
+
+.sec{padding:11px 12px;border-bottom:1px solid var(--d-rule)}
+.sec .lab{margin-bottom:5px}
+.sec p{margin:0;font-size:11.5px;line-height:1.55;color:var(--d-dim)}
+.sec p .a{color:var(--d-text)}
+.sec.risk p{color:var(--d-crit)}
+
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font-size:11.5px}
+.kv .k{color:var(--d-dim);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kv .val{color:var(--d-text);font-variant-numeric:tabular-nums;text-align:right}
+.kv .val.ok{color:var(--d-ok)} .kv .val.warn{color:var(--d-warn)} .kv .val.no{color:var(--d-faint)}
+
+.logline{display:grid;grid-template-columns:34px minmax(0,1fr);gap:9px;font-size:11.5px;
+  padding:6px 0;border-bottom:1px solid var(--d-rule);align-items:baseline}
+.logline:last-child{border-bottom:0}
+.logline .d{color:var(--d-faint);font-variant-numeric:tabular-nums;font-size:10.5px}
+.logline .w{color:var(--d-dim)}
+.logline .w b{color:var(--d-text);font-weight:400}
+.logline.now .w b{color:var(--d-accent)}
+
+.act{display:block;width:100%;margin:12px 0 0;padding:9px;text-align:center;font-size:11.5px;
+  font-family:var(--d-font);background:none;border:1px solid var(--d-accent);color:var(--d-accent)}
+.act.ghost{border-color:var(--d-rule);color:var(--d-dim);margin-top:6px}
+
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}
+@media (max-width:1000px){.trio{grid-template-columns:minmax(0,1fr);max-width:min(400px,100%)}}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start;
+  max-width:760px}
+@media (max-width:760px){.pair{grid-template-columns:minmax(0,1fr);max-width:min(400px,100%)}}
+.cap{font-family:var(--d-font);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--pg-accent);font-weight:700;margin:0 0 8px}
+.capsub{font-size:13px;color:var(--pg-dim);margin:0 0 12px;max-width:40ch}
+h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+  margin:0 0 6px;color:var(--pg-text)}
+.sectlede{font-size:14.5px;color:var(--pg-dim);max-width:62ch;margin:0 0 20px}
+
 @media (prefers-reduced-motion:no-preference){
   .rock.next .d{animation:pulse 2.6s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
@@ -132,31 +191,33 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
 
 <div class="wrap">
   <div class="eyebrow">Seedship · interface study</div>
-  <h1>Where am I in this leg?</h1>
-  <p class="standfirst">One bar is the season. The ship travels it, the objects sit where they
-  fall, and the stars drift past behind — <b>drifting background means time passing</b>, which is
-  the one thing this screen is for.</p>
-  <p class="standfirst">Showing <b>Leg 1, The Departure Belt. Day 34 of 90. Five objects, two
-  behind and three ahead.</b></p>
+  <h1>Stage goals</h1>
+  <p class="standfirst">The map answers <em>where am I</em>. Under it sit five things the
+  departure crew expect of this stage — and tapping one is the only place on this screen with
+  room for <b>a voice</b>.</p>
+  <p class="standfirst">Two ways to preview them, three ways to open them. Same moment
+  throughout: <b>Leg 1, The Departure Belt. Day 34 of 90. Two goals met, three to go.</b></p>
 
   <div class="rule"></div>
 
-  <div class="split">
+  <h3 class="sect">The preview</h3>
+  <p class="sectlede">Same five goals, same states. The question is whether the bar earns its
+  row — <b>x/y already says how far through you are</b>, and the bar says it again in a form
+  that costs vertical space on a phone.</p>
+
+  <div class="pair">
     <div>
+      <p class="cap">P1 · With bars</p>
+      <p class="capsub">The bar carries "how close" pre-attentively; the number is confirmation.</p>
       <div class="dev">
         <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
           <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
-        <div class="phz">
-          <span class="nm">The Departure Belt</span>
-          <span class="st">day 34</span>
-          <span class="voy"><i class="now"></i><i></i><i></i><i></i><i></i></span>
-        </div>
-
+        <div class="phz"><span class="nm">The Departure Belt</span><span class="st">day 34</span>
+          <span class="voy"><i class="now"></i><i></i><i></i><i></i><i></i></span></div>
         <div class="hero">
-          <canvas id="sky"></canvas>
+          <canvas class="sky"></canvas>
           <div class="rail">
-            <div class="line"></div><div class="fill"></div>
-            <div class="ship">➤</div>
+            <div class="line"></div><div class="fill"></div><div class="ship">➤</div>
             <div class="rock taken" style="left:13%"><span class="d" style="width:13px;height:13px"></span><span class="t">d12</span></div>
             <div class="rock taken" style="left:31%"><span class="d" style="width:9px;height:9px"></span><span class="t">d28</span></div>
             <div class="rock known next" style="left:46%"><span class="d" style="width:19px;height:19px"></span><span class="t">d41</span></div>
@@ -165,166 +226,241 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
           </div>
           <div class="ends"><span>day 0</span><span>day 90</span></div>
         </div>
-
         <div class="body">
-          <div class="brief-h">
-            <span class="n">Stage goals</span>
-            <span class="sum">2/5</span>
-          </div>
-
-          <div class="obj key crit">
-            <div class="top">
-              <span class="g">○</span><span class="t">Feed yourselves</span><span class="v">1/3</span>
-              <span class="track"><i style="width:33%"></i></span>
-            </div>
-          </div>
-
-          <div class="obj key behind">
-            <div class="top">
-              <span class="g">◐</span><span class="t">Leave a full locker</span><span class="v">610/900</span>
-              <span class="track"><i style="width:68%"></i></span>
-            </div>
-          </div>
-
-          <div class="obj met">
-            <div class="top">
-              <span class="g">●</span><span class="t">Bank the rare earths</span><span class="v">84/60</span>
-              <span class="track"><i style="width:100%"></i></span>
-            </div>
-          </div>
-
-          <div class="obj near">
-            <div class="top">
-              <span class="g">◐</span><span class="t">Work the belt</span><span class="v">2/5</span>
-              <span class="track"><i style="width:40%"></i></span>
-            </div>
-          </div>
-
-          <div class="obj met">
-            <div class="top">
-              <span class="g">●</span><span class="t">Hand over a sound ship</span><span class="v">81/70</span>
-              <span class="track"><i style="width:100%"></i></span>
-            </div>
-          </div>
-
-          <div class="standing">
-            <b>Standing, all five legs</b><br>
-            200 of 200 still alive · 14 pilots left in the bank · fuel for 298 more years
-          </div>
+          <div class="brief-h"><span class="n">Stage goals</span><span class="sum">2/5</span></div>
+          <div class="obj key crit"><div class="top"><span class="g">○</span><span class="t">Feed yourselves</span><span class="v">1/3</span><span class="track"><i style="width:33%"></i></span></div></div>
+          <div class="obj key behind"><div class="top"><span class="g">◐</span><span class="t">Leave a full locker</span><span class="v">610/900</span><span class="track"><i style="width:68%"></i></span></div></div>
+          <div class="obj met"><div class="top"><span class="g">●</span><span class="t">Bank the rare earths</span><span class="v">84/60</span><span class="track"><i style="width:100%"></i></span></div></div>
+          <div class="obj near"><div class="top"><span class="g">◐</span><span class="t">Work the belt</span><span class="v">2/5</span><span class="track"><i style="width:40%"></i></span></div></div>
+          <div class="obj met"><div class="top"><span class="g">●</span><span class="t">Hand over a sound ship</span><span class="v">81/70</span><span class="track"><i style="width:100%"></i></span></div></div>
+          <div class="standing"><b>Standing, all five legs</b><br>200 of 200 still alive · 14 pilots left in the bank · fuel for 298 more years</div>
         </div>
         <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
       </div>
     </div>
 
     <div>
-      <h2>The map</h2>
-      <ul class="notes">
-        <li><b>The bar is the season.</b> Marker size is the estimated haul, so the big one at
-        d41 reads before any number does. Hollow means never surveyed — unknown rather than
-        merely uncertain.</li>
-        <li><b>Worked rocks stay on the rail behind you</b>, filled and grey. The season visibly
-        accumulates rather than resetting.</li>
-        <li><b>Five legs are two pixels</b>, along the bottom edge of the leg strip.</li>
-        <li><b>Three parallax layers.</b> Speed and brightness both fall off with distance, and
-        the ship holds station mid-strip, so the drift reads as the leg passing rather than the
-        ship flying.</li>
-      </ul>
-
-      <h2>Stage goals</h2>
-      <p class="notes" style="list-style:none;padding-left:0;margin-bottom:14px">Targets, not a
-      score. §1 says the outcome spectrum is narrative and has no points in it, so these are
-      <b>what the departure crew expect of this stage</b> — goals you can fall short of and still
-      arrive, just with less.</p>
-      <ul class="notes">
-        <li><b>Every goal reads <span style="font-family:var(--d-font)">x/y</span></b>, including
-        the header. One shape for "how far through" whether the unit is beds, rations, rocks or
-        condition — so the column scans as a column instead of five sentences.</li>
-        <li><b>Two scales, again.</b> Five stage goals you can still act on, and one standing
-        line for the things that run the whole voyage. The voyage line has no bars because
-        nothing you do this week moves it much.</li>
-        <li><b>The red stripe is the hierarchy.</b> Two objectives end the run if you ignore
-        them — food and the locker. The other three cost you an outcome, not the colony. That is
-        what makes "critical" mean something rather than decorating every row.</li>
-        <li><b>State is glyph, colour and bar together</b> — <span style="font-family:var(--d-font)">● ◐ ○</span>
-        never carry it on colour alone.</li>
-        <li><b>Every target is a quantity the simulation already has.</b> Beds built, rations in
-        the locker, rare compounds banked, objects worked, reactor condition. Nothing here is a
-        new mechanic — it is the existing state, told as expectations.</li>
-        <li><b>Deadline is implied, not printed.</b> Every stage goal means "before you go
-        dark", so saying it on each row would be five copies of one sentence.</li>
-      </ul>
-
-      <h2>Dropped, and easy to put back</h2>
-      <div class="gone">
-        <div class="t">Three ahead</div>
-        <p>The phase strip said <em>day 34 · 3 ahead</em>. The rail already shows three hollow
-        diamonds to the right of the ship, so the count was the picture written out in words.</p>
-        <div class="t" style="margin-top:14px">The clock row</div>
-        <p><em>Y2 day 34 09:00</em> is gone entirely. The day is in the phase strip and the hour
-        is not a decision — it earns its place on a screen with a running job on it, not here.</p>
-        <div class="t" style="margin-top:14px">"Leg 1 of 5"</div>
-        <p>Gone from the strip. The five segments underneath say the same thing in a form you
-        do not have to read, and the leg's <em>name</em> is the part worth the width.</p>
-        <div class="t" style="margin-top:14px">The voyage caption</div>
-        <p><em>y2 belt / y283 debris</em> went with it. Three hundred years is context, not a
-        number anyone acts on from this screen.</p>
-        <div class="t" style="margin-top:14px">The goal sub-lines</div>
-        <p><em>"Nothing grows in the dark. The next crew eat what you plant."</em> and the other
-        two went with the rename. A goal that needs a sentence under it is a goal whose label is
-        wrong — and the sentences pushed the fifth row off a short screen.</p>
-        <div class="t" style="margin-top:14px">38% and the object list</div>
-        <p>Everything below the map went. The percentage was the rail read back as a number, and
-        the list was the rail read back as words — the same thing three times. What is under the
-        map should be what the map cannot say.</p>
-        <div class="t" style="margin-top:14px">Studies B and C</div>
-        <p>The vertical approach and the arc dial are retired. Both are in git if the object
-        count per leg turns out to be too high for a rail.</p>
+      <p class="cap">P2 · No bars</p>
+      <p class="capsub">Glyph and coloured value carry the state. Five goals in 150px instead of
+      250, and the map keeps the weight.</p>
+      <div class="dev">
+        <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
+          <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
+        <div class="phz"><span class="nm">The Departure Belt</span><span class="st">day 34</span>
+          <span class="voy"><i class="now"></i><i></i><i></i><i></i><i></i></span></div>
+        <div class="hero">
+          <canvas class="sky"></canvas>
+          <div class="rail">
+            <div class="line"></div><div class="fill"></div><div class="ship">➤</div>
+            <div class="rock taken" style="left:13%"><span class="d" style="width:13px;height:13px"></span><span class="t">d12</span></div>
+            <div class="rock taken" style="left:31%"><span class="d" style="width:9px;height:9px"></span><span class="t">d28</span></div>
+            <div class="rock known next" style="left:46%"><span class="d" style="width:19px;height:19px"></span><span class="t">d41</span></div>
+            <div class="rock" style="left:70%"><span class="d" style="width:11px;height:11px"></span><span class="t">d63</span></div>
+            <div class="rock" style="left:87%"><span class="d" style="width:16px;height:16px"></span><span class="t">d78</span></div>
+          </div>
+          <div class="ends"><span>day 0</span><span>day 90</span></div>
+        </div>
+        <div class="body">
+          <div class="brief-h"><span class="n">Stage goals</span><span class="sum">2/5</span></div>
+          <div class="obj bare key crit"><div class="top"><span class="g">○</span><span class="t">Feed yourselves</span><span class="v">1/3</span></div></div>
+          <div class="obj bare key behind"><div class="top"><span class="g">◐</span><span class="t">Leave a full locker</span><span class="v">610/900</span></div></div>
+          <div class="obj bare met"><div class="top"><span class="g">●</span><span class="t">Bank the rare earths</span><span class="v">84/60</span></div></div>
+          <div class="obj bare near"><div class="top"><span class="g">◐</span><span class="t">Work the belt</span><span class="v">2/5</span></div></div>
+          <div class="obj bare met"><div class="top"><span class="g">●</span><span class="t">Hand over a sound ship</span><span class="v">81/70</span></div></div>
+          <div class="standing"><b>Standing, all five legs</b><br>200 of 200 still alive · 14 pilots left in the bank · fuel for 298 more years</div>
+        </div>
+        <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
       </div>
     </div>
   </div>
+
+  <div class="rule"></div>
+
+  <h3 class="sect">The detail window</h3>
+  <p class="sectlede">Tapping a goal is the one place on this screen with room for a voice.
+  plan.md §5c already asks whether inherited things should carry authorship — <em>"set by
+  Marchetti, y0"</em> — and calls it cheap, and the thing that makes them feel like a legacy
+  rather than a default. A goal is exactly that: somebody decided it, before you existed, and
+  wrote down why. Three ways to spend that.</p>
+
+  <div class="trio">
+
+    <div>
+      <p class="cap">D1 · The charter</p>
+      <p class="capsub">Leads with the person who set it. Warmest, and the only one that gives
+      the ship a history.</p>
+      <div class="dev">
+        <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
+          <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
+        <button class="back">‹ Stage goals</button>
+        <div class="dt-h crit">
+          <div class="kicker">Goal 1 · critical</div>
+          <h3>Feed yourselves</h3>
+          <div class="state"><b>1 of 3 beds running</b> · 56 days left</div>
+        </div>
+        <blockquote class="quote">
+          <p>Three racks. Not two. Two feeds a crew that is careful; three feeds a crew that
+          makes mistakes, and they will.</p>
+          <cite>Adeyemi · Chief Botanist · logged at departure</cite>
+        </blockquote>
+        <div class="sec">
+          <div class="lab">Where you are</div>
+          <div class="kv">
+            <span class="k">Bed 1 — planted d19</span><span class="val ok">running</span>
+            <span class="k">Bed 2 — on the board</span><span class="val warn">18h left</span>
+            <span class="k">Bed 3</span><span class="val no">not started</span>
+            <span class="k">Parts in Hydroponics</span><span class="val">24</span>
+          </div>
+        </div>
+        <div class="sec risk">
+          <div class="lab">If you go dark short</div>
+          <p>Nothing grows in transit. Kestrel Drift wakes to whatever the locker holds.</p>
+        </div>
+        <div class="sec" style="border-bottom:0">
+          <button class="act">Build a bed — 20 parts, 24h</button>
+        </div>
+        <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
+      </div>
+    </div>
+
+    <div>
+      <p class="cap">D2 · The log</p>
+      <p class="capsub">The goal as a running record. Story comes from what happened and who did
+      it, not from a quote.</p>
+      <div class="dev">
+        <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
+          <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
+        <button class="back">‹ Stage goals</button>
+        <div class="dt-h crit">
+          <div class="kicker">Goal 1 · critical</div>
+          <h3>Feed yourselves</h3>
+          <div class="state"><b>1 of 3 beds running</b> · 56 days left</div>
+        </div>
+        <div class="sec">
+          <div class="lab">Against this goal</div>
+          <div class="logline"><span class="d">d0</span><span class="w">Set by <b>Adeyemi</b>, Chief Botanist. Three racks.</span></div>
+          <div class="logline"><span class="d">d8</span><span class="w"><b>Sorokin</b> fit for duty</span></div>
+          <div class="logline"><span class="d">d14</span><span class="w">40 parts carried to Hydroponics</span></div>
+          <div class="logline"><span class="d">d19</span><span class="w"><b>Bed 1 planted.</b> First crop d55.</span></div>
+          <div class="logline now"><span class="d">d33</span><span class="w"><b>Bed 2 started</b> — Sorokin, 18h left</span></div>
+        </div>
+        <div class="sec">
+          <div class="lab">Still needed</div>
+          <p><span class="a">Two beds.</span> 40 parts, two days of somebody's time, and the
+          days to grow the first crop before you go dark.</p>
+        </div>
+        <div class="sec" style="border-bottom:0">
+          <button class="act">Build a bed — 20 parts, 24h</button>
+          <button class="act ghost">Open Hydroponics</button>
+        </div>
+        <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
+      </div>
+    </div>
+
+    <div>
+      <p class="cap">D3 · The consequence</p>
+      <p class="capsub">Leads with what missing it costs. Coldest, most useful under pressure,
+      and the least characterful.</p>
+      <div class="dev">
+        <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
+          <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
+        <button class="back">‹ Stage goals</button>
+        <div class="dt-h crit">
+          <div class="kicker">Goal 1 · critical</div>
+          <h3>Feed yourselves</h3>
+          <div class="state"><b>1 of 3 beds</b> · short by 2</div>
+        </div>
+        <div class="sec risk">
+          <div class="lab">Go dark at one bed</div>
+          <p>Kestrel Drift wakes four people into a locker with 610 rations. They eat 12 a day.
+          The locker is empty on day 51 of a 90-day season.</p>
+        </div>
+        <div class="sec">
+          <div class="lab">Go dark at three</div>
+          <p>They wake into a galley that feeds them, and spend the season on the belt instead
+          of on the racks.</p>
+        </div>
+        <div class="sec">
+          <div class="lab">The gap</div>
+          <div class="kv">
+            <span class="k">Beds short</span><span class="val warn">2</span>
+            <span class="k">Parts needed</span><span class="val">40</span>
+            <span class="k">Crew-hours</span><span class="val">48</span>
+            <span class="k">Days left</span><span class="val">56</span>
+          </div>
+        </div>
+        <div class="sec" style="border-bottom:0">
+          <button class="act">Build a bed — 20 parts, 24h</button>
+        </div>
+        <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+
+  <h3 class="sect">Where I'd land</h3>
+  <p class="sectlede"><b>P2 and D1.</b> The bar is the only thing on the overview saying what
+  <span style="font-family:var(--d-font)">x/y</span> already said, and dropping it hands the
+  weight back to the map — which is the thing this screen is named after. D1 because it is the
+  only version that could not be generated from the numbers: a person, a sentence, and a reason,
+  written before the ship left.</p>
+  <p class="sectlede">D2's log is the one worth stealing from. <b>"Bed 1 planted — first crop
+  d55"</b> against a name is a better record of a season than any summary, and it is all state
+  the simulation already emits to the feed. It could sit under D1's quote rather than replacing
+  it.</p>
+  <p class="sectlede">D3 is right about one thing the others miss: <b>the consequence should be
+  arithmetic, not adjectives.</b> "Empty on day 51" is worth more than "the next crew go
+  hungry", and it is a number the simulation can actually produce.</p>
+
 </div>
 
 <script>
 (function(){
-  var cv = document.getElementById("sky");
-  if (!cv) return;
-  var ctx = cv.getContext("2d");
+  var canvases = Array.prototype.slice.call(document.querySelectorAll(".sky"));
+  if (!canvases.length) return;
   var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   var dpr = Math.min(2, window.devicePixelRatio || 1);
   // Three depth layers. Speed and brightness both fall off with distance, which
   // is what makes it read as depth rather than as noise moving at one rate.
   var LAYERS = [
-    { n: 34, speed: 0.030, size: 1.0, alpha: 0.30 },
-    { n: 22, speed: 0.075, size: 1.4, alpha: 0.55 },
-    { n: 12, speed: 0.150, size: 2.0, alpha: 0.85 }
+    { speed: 0.030, size: 1.0, alpha: 0.30, n: 34 },
+    { speed: 0.075, size: 1.4, alpha: 0.55, n: 22 },
+    { speed: 0.150, size: 2.0, alpha: 0.85, n: 12 }
   ];
-  var stars = [];
-  function size(){
-    cv.width = cv.clientWidth * dpr;
-    cv.height = cv.clientHeight * dpr;
-    stars = [];
-    LAYERS.forEach(function(L){
-      for (var i = 0; i < L.n; i++)
-        stars.push({ x: Math.random() * cv.width, y: Math.random() * cv.height, L: L });
-    });
-  }
-  size();
-  if (window.ResizeObserver) new ResizeObserver(size).observe(cv);
   var colour = getComputedStyle(document.documentElement)
                  .getPropertyValue("--d-faint").trim() || "#4F6070";
+  var fields = canvases.map(function(cv){
+    var f = { cv: cv, ctx: cv.getContext("2d"), stars: [] };
+    f.size = function(){
+      cv.width = cv.clientWidth * dpr;
+      cv.height = cv.clientHeight * dpr;
+      f.stars = [];
+      LAYERS.forEach(function(L){
+        for (var i = 0; i < L.n; i++)
+          f.stars.push({ x: Math.random() * cv.width, y: Math.random() * cv.height, L: L });
+      });
+    };
+    f.size();
+    if (window.ResizeObserver) new ResizeObserver(f.size).observe(cv);
+    return f;
+  });
   function draw(){
-    ctx.clearRect(0, 0, cv.width, cv.height);
-    for (var i = 0; i < stars.length; i++){
-      var s = stars[i];
-      if (!reduced){
-        s.x -= s.L.speed * dpr * 2.2;
-        if (s.x < -2){ s.x = cv.width + 2; s.y = Math.random() * cv.height; }
+    for (var j = 0; j < fields.length; j++){
+      var f = fields[j], ctx = f.ctx, cv = f.cv;
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      for (var i = 0; i < f.stars.length; i++){
+        var st = f.stars[i];
+        if (!reduced){
+          st.x -= st.L.speed * dpr * 2.2;
+          if (st.x < -2){ st.x = cv.width + 2; st.y = Math.random() * cv.height; }
+        }
+        ctx.globalAlpha = st.L.alpha;
+        ctx.fillStyle = colour;
+        ctx.fillRect(st.x, st.y, st.L.size * dpr, st.L.size * dpr);
       }
-      ctx.globalAlpha = s.L.alpha;
-      ctx.fillStyle = colour;
-      ctx.fillRect(s.x, s.y, s.L.size * dpr, s.L.size * dpr);
+      ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = 1;
     if (!reduced) requestAnimationFrame(draw);
   }
   draw();
