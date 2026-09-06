@@ -83,9 +83,9 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
   font-size:9px;color:var(--d-faint);letter-spacing:.08em;text-transform:uppercase}
 
 /* ---- detail: the object, same height as the hero -------------------------- */
-.obj-d{display:grid;grid-template-columns:25% minmax(0,1fr);height:150px;
+.obj-d{display:grid;grid-template-columns:minmax(0,1fr) 25%;height:150px;
   border-bottom:1px solid var(--d-rule)}
-.obj-d .art{position:relative;border-right:1px solid var(--d-rule);background:var(--d-bg)}
+.obj-d .art{position:relative;border-left:1px solid var(--d-rule);background:var(--d-bg)}
 .obj-d .art canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .obj-d .art .tagd{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:8.5px;
   letter-spacing:.1em;text-transform:uppercase;color:var(--d-faint)}
@@ -100,8 +100,10 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
 .conf .pc{font-size:10px;color:var(--d-faint);white-space:nowrap}
 .obj-d .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:baseline;
   gap:8px;font-size:10.5px;color:var(--d-dim)}
-.obj-d .scan{font-family:var(--d-font);font-size:10.5px;background:none;color:var(--d-accent);
-  border:1px solid var(--d-accent);padding:4px 9px;cursor:pointer}
+.obj-d .foot .why{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.obj-d .scan{flex:none;white-space:nowrap;font-family:var(--d-font);font-size:10.5px;
+  background:none;color:var(--d-accent);border:1px solid var(--d-accent);padding:4px 9px;
+  cursor:pointer}
 
 /* ---- collapsed goals: one line ------------------------------------------- */
 .goals1{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:9px;align-items:baseline;
@@ -139,8 +141,10 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
   <p class="standfirst">Four bands, each doing one job: <b>where the season is</b>, <b>what is
   coming</b>, <b>what is expected</b>, and <b>what has happened</b>. The goals collapse to a
   single line so the object gets the room instead.</p>
-  <p class="standfirst">Left is mid-season. Right is <b>the moment the game starts</b> — nothing
-  has happened yet, so the board holds one long dispatch rather than a stream.</p>
+  <p class="standfirst">Left is mid-season, every note signed by the crew member who filed it.
+  Right is <b>the moment the game starts</b>: nobody has done anything yet, so the board holds a
+  single letter from <b>Mission Control</b> instead — the one note in the game the crew did not
+  write.</p>
 
   <div class="rule"></div>
 
@@ -170,10 +174,6 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
         </div>
 
         <div class="obj-d">
-          <div class="art">
-            <canvas class="rock3d" data-seed="7" data-lit="1"></canvas>
-            <div class="tagd">d41</div>
-          </div>
           <div class="info">
             <div class="lab">Next object · 7 days</div>
             <h4>Metal</h4>
@@ -181,9 +181,13 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
             <div class="conf"><span class="bar"><i style="width:86%"></i></span>
               <span class="pc">86% · 2 scans</span></div>
             <div class="foot">
-              <span>Biggest of the season</span>
+              <span class="why">Biggest of the season</span>
               <button class="scan">Rescan 1h</button>
             </div>
+          </div>
+          <div class="art">
+            <canvas class="rock3d" data-seed="7" data-lit="1"></canvas>
+            <div class="tagd">d41</div>
           </div>
         </div>
 
@@ -205,8 +209,9 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
               season runs 56.</div>
           </div>
           <div class="note">
-            <div class="nh"><span class="src">Cargo Bay</span><span>d28</span></div>
-            <div class="nb">Second object worked. <b>880 units aboard</b>, mostly ice.</div>
+            <div class="nh"><span class="src">Cargo Bay · Vasquez</span><span>d28</span></div>
+            <div class="nb">Second object worked and the crane is back in its cradle.
+              <b>880 units aboard</b>, mostly ice. Smaller than the array read it.</div>
           </div>
         </div>
         <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
@@ -216,8 +221,8 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
     <!-- ============================ game start ============================ -->
     <div>
       <p class="cap">Day 0 · the ship wakes you</p>
-      <p class="capsub">Nothing has happened yet. The board holds one thing, and it is the
-      only long-form text in the game.</p>
+      <p class="capsub">Nothing has happened yet. The board holds one thing, from Earth, and it
+      is the only long-form text in the game.</p>
       <div class="dev">
         <div class="tick"><span class="mk">[!!][NAV][SEA-WAKE]</span>
           <span class="msg">The Departure Belt ahead. 4 coming round.</span></div>
@@ -239,10 +244,6 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
         </div>
 
         <div class="obj-d">
-          <div class="art">
-            <canvas class="rock3d" data-seed="3" data-lit="0"></canvas>
-            <div class="tagd">d12</div>
-          </div>
           <div class="info">
             <div class="lab">Next object · 12 days</div>
             <h4 class="unk">Unsurveyed</h4>
@@ -250,9 +251,13 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
             <div class="conf"><span class="bar"><i style="width:15%"></i></span>
               <span class="pc">15% · no scans</span></div>
             <div class="foot">
-              <span>Nothing but a return off the array</span>
+              <span class="why">Array return only</span>
               <button class="scan">Rescan 1h</button>
             </div>
+          </div>
+          <div class="art">
+            <canvas class="rock3d" data-seed="3" data-lit="0"></canvas>
+            <div class="tagd">d12</div>
           </div>
         </div>
 
@@ -264,19 +269,20 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
         <div class="board">
           <div class="lab">Bulletin</div>
           <div class="note dispatch">
-            <div class="nh"><span class="src">Departure board · Okonkwo</span><span>y0</span></div>
+            <div class="nh"><span class="src">Mission Control</span><span>y0</span></div>
             <div class="nb">
               <p>You are reading this because the ship has reached the Departure Belt and brought
-              you up to meet it.</p>
-              <p>Two hundred of us are asleep below you and there are three hundred years ahead.
-              You will not be awake for most of them. The route touches rock five times; between
-              those you go dark with the rest of us. Whatever the ship is when you next open your
-              eyes is whatever you left it as.</p>
-              <p>Four are on the Medbay tables now and will be up within five days. Adeyemi is one
-              of them. Take her seriously about the racks.</p>
+              you up to meet it. By our clocks that is thirty-one years after we let go of you.
+              Nobody here is expecting an answer.</p>
+              <p>Two hundred are asleep in your holds and there are three hundred years ahead of
+              them. You will not be awake for most of it either. The route touches rock five
+              times; between those you go dark with them, and whatever the ship is when you next
+              open your eyes is whatever you left it as.</p>
+              <p>Four are on the Medbay tables now and will be fit inside five days. Adeyemi has
+              the racks. Take her seriously about them.</p>
               <p>The locker holds seven hundred rations and it does not refill. Plant three beds
-              before you go dark. Everything else is negotiable.</p>
-              <div class="sign">— Okonkwo, Departure Board</div>
+              before you go dark. Everything else we are content to leave to you.</p>
+              <div class="sign">— Halloran, Mission Control</div>
             </div>
           </div>
         </div>
@@ -297,13 +303,16 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
     picture.</li>
     <li><b>Goals collapse to one line.</b> "Critical tasks 2/5" is the whole summary; the five
     rows and their detail live one tap in. That buys the room the object needed.</li>
-    <li><b>The bulletin is not the ticker.</b> The ticker rotates and forgets; the board keeps
-    things up, with a source and a day, and each note is something a person did or noticed. It
-    is where the season becomes a record rather than a stream.</li>
-    <li><b>Opening dispatch.</b> At day 0 there is no history to post, so the board holds a
-    single letter instead — premise, the five legs, the crew already thawing, and the one goal
-    that matters, all from somebody with a name. It is the only long-form text in the game, and
-    it never appears again.</li>
+    <li><b>Every note has an author.</b> The ticker is the ship talking — it rotates and
+    forgets. The board is the crew talking: a room, a name, a day, and something that person
+    did or noticed. Nothing gets posted there by the ship itself, which is what stops the
+    season reading as a log and starts it reading as a record.</li>
+    <li><b>One exception, once.</b> At day 0 no crew member has done anything yet, so the only
+    thing on the board is a letter from <b>Mission Control</b> — the people who built you and
+    then watched you leave, thirty-one years ago by their clocks, all of them long past caring
+    whether you answer. Premise, the five legs, the crew already thawing, and the one goal that
+    matters. It is the only long-form text in the game and the only note the crew did not
+    write.</li>
   </ul>
 </div>
 
