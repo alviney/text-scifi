@@ -91,21 +91,39 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
 .ends{position:absolute;left:12px;right:12px;bottom:8px;display:flex;justify-content:space-between;
   font-size:9px;color:var(--d-faint);letter-spacing:.08em;text-transform:uppercase}
 
-.pct{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
-.pct .n{font-size:24px;color:var(--d-accent);line-height:1}
+/* ---- the brief: what the departure crew expect of this season ------------ */
+.brief-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.brief-h .n{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--d-faint)}
+.brief-h .sum{font-size:10.5px;color:var(--d-dim);font-variant-numeric:tabular-nums}
 
-.voy{position:absolute;left:0;right:0;bottom:0;display:flex;gap:2px}
-.voy i{flex:1;height:2px;background:var(--d-rule);font-style:normal}
-.voy i.now{background:var(--d-accent)}
+.obj{padding:8px 0;border-top:1px solid var(--d-rule)}
+.obj:first-of-type{border-top:0;padding-top:0}
+.obj .top{display:grid;grid-template-columns:13px minmax(0,1fr) auto;gap:8px;align-items:baseline}
+.obj .g{font-size:11px;line-height:1.2}
+.obj .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.obj .v{font-variant-numeric:tabular-nums;font-size:11px;color:var(--d-dim);white-space:nowrap}
+.obj .m{grid-column:2/-1;font-size:10px;color:var(--d-faint);margin-top:1px}
+.obj .track{grid-column:2/-1;height:3px;background:var(--d-panel2);margin-top:6px;overflow:hidden}
+.obj .track i{display:block;height:100%;background:var(--d-dim)}
 
-.rows{margin-top:14px;border-top:1px solid var(--d-rule)}
-.row{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:9px;align-items:baseline;
-  padding:7px 0;border-bottom:1px solid var(--d-rule)}
-.row .g{color:var(--d-accent);font-size:11px}
-.row.past{color:var(--d-faint)} .row.past .g{color:var(--d-faint)}
-.row .sub{grid-column:2/-1;font-size:10px;color:var(--d-dim);margin-top:-2px}
-.row.past .sub{color:var(--d-faint)}
-.row .amt{font-variant-numeric:tabular-nums;color:var(--d-dim);font-size:11px}
+/* State is carried by glyph, colour AND bar together — never colour alone. */
+.obj.met .g{color:var(--d-ok)}      .obj.met .track i{background:var(--d-ok)}
+.obj.met .v{color:var(--d-ok)}
+.obj.near .g{color:var(--d-dim)}    .obj.near .track i{background:var(--d-dim)}
+.obj.behind .g{color:var(--d-warn)} .obj.behind .track i{background:var(--d-warn)}
+.obj.behind .v{color:var(--d-warn)}
+.obj.crit .g{color:var(--d-crit)}   .obj.crit .track i{background:var(--d-crit)}
+.obj.crit .v{color:var(--d-crit)}
+.obj.crit .t{color:var(--d-text)}
+
+/* The two that end the run if they fail get a stripe, not just a colour. */
+.obj.key{border-left:2px solid var(--d-crit);padding-left:9px;margin-left:-11px}
+.obj.key.met{border-left-color:var(--d-ok)}
+
+.standing{margin-top:12px;padding-top:9px;border-top:1px solid var(--d-rule);
+  font-size:10.5px;color:var(--d-faint);line-height:1.5}
+.standing b{color:var(--d-dim);font-weight:400}
+
 @media (prefers-reduced-motion:no-preference){
   .rock.next .d{animation:pulse 2.6s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
@@ -149,20 +167,62 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
         </div>
 
         <div class="body">
-          <div class="pct"><span class="n">38%</span>
-            <span class="say">56 days of cluster left</span></div>
+          <div class="brief-h">
+            <span class="n">The brief · this season</span>
+            <span class="sum">2 met · 3 to go</span>
+          </div>
 
-          <div class="rows">
-            <div class="row past"><span class="g">◆</span><span>Metal, 2,600</span><span class="amt">d12</span>
-              <span class="sub">worked · 2,610 aboard</span></div>
-            <div class="row past"><span class="g">◆</span><span>Ice, 900</span><span class="amt">d28</span>
-              <span class="sub">worked · 880 aboard</span></div>
-            <div class="row"><span class="g">◆</span><span>Rare earths, 3,900–4,300</span><span class="amt">7d</span>
-              <span class="sub">surveyed twice · 86% confidence</span></div>
-            <div class="row"><span class="g">◇</span><span>Unknown, 700–2,100</span><span class="amt">29d</span>
-              <span class="sub">never surveyed</span></div>
-            <div class="row"><span class="g">◇</span><span>Probably stone, 2,400–4,200</span><span class="amt">44d</span>
-              <span class="sub">surveyed once · 61% confidence</span></div>
+          <div class="obj key crit">
+            <div class="top">
+              <span class="g">○</span>
+              <span class="t">Feed yourselves</span>
+              <span class="v">1 of 3 beds</span>
+              <span class="m">Nothing grows in the dark. The next crew eat what you plant.</span>
+              <span class="track"><i style="width:33%"></i></span>
+            </div>
+          </div>
+
+          <div class="obj key behind">
+            <div class="top">
+              <span class="g">◐</span>
+              <span class="t">Leave a full locker</span>
+              <span class="v">610 / 900</span>
+              <span class="m">56 days left at this burn. Short rations buy time and cost morale.</span>
+              <span class="track"><i style="width:68%"></i></span>
+            </div>
+          </div>
+
+          <div class="obj met">
+            <div class="top">
+              <span class="g">●</span>
+              <span class="t">Bank the rare earths</span>
+              <span class="v">84 / 60</span>
+              <span class="track"><i style="width:100%"></i></span>
+            </div>
+          </div>
+
+          <div class="obj near">
+            <div class="top">
+              <span class="g">◐</span>
+              <span class="t">Work the belt</span>
+              <span class="v">2 of 5</span>
+              <span class="m">Three ahead. The big one is seven days out.</span>
+              <span class="track"><i style="width:40%"></i></span>
+            </div>
+          </div>
+
+          <div class="obj met">
+            <div class="top">
+              <span class="g">●</span>
+              <span class="t">Hand over a sound ship</span>
+              <span class="v">81 · needs 70</span>
+              <span class="track"><i style="width:100%"></i></span>
+            </div>
+          </div>
+
+          <div class="standing">
+            <b>Standing, all five legs</b><br>
+            200 of 200 still alive · 14 pilots left in the bank · fuel for 298 more years
           </div>
         </div>
         <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
@@ -170,22 +230,38 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
     </div>
 
     <div>
-      <h2>What's on it</h2>
+      <h2>The map</h2>
       <ul class="notes">
-        <li><b>The bar is the season.</b> 38% is not a mood, it is 56 days and three rocks.</li>
-        <li><b>Marker size is the estimated haul.</b> The big one at d41 reads before any number
-        does — that is the whole reason objects are on screen rather than only in the list.</li>
-        <li><b>Hollow means never surveyed.</b> Unknown rather than merely uncertain, which is
-        the distinction the survey mechanic turns on.</li>
+        <li><b>The bar is the season.</b> Marker size is the estimated haul, so the big one at
+        d41 reads before any number does. Hollow means never surveyed — unknown rather than
+        merely uncertain.</li>
         <li><b>Worked rocks stay on the rail behind you</b>, filled and grey. The season visibly
         accumulates rather than resetting.</li>
-        <li><b>Five legs are two pixels.</b> The voyage indicator is the bottom edge of the
-        leg strip rather than a row of its own — present, countable, and never competing with
-        the season it sits above.</li>
-        <li><b>Three parallax layers</b> at different speeds and brightnesses. Distant stars
-        barely move; the near ones cross in seconds. The ship holds station in the middle of the
-        strip and the season moves past it, so the drift reads as the leg passing rather than as
-        the ship flying.</li>
+        <li><b>Five legs are two pixels</b>, along the bottom edge of the leg strip.</li>
+        <li><b>Three parallax layers.</b> Speed and brightness both fall off with distance, and
+        the ship holds station mid-strip, so the drift reads as the leg passing rather than the
+        ship flying.</li>
+      </ul>
+
+      <h2>The brief</h2>
+      <p class="notes" style="list-style:none;padding-left:0;margin-bottom:14px">Targets, not a
+      score. §1 says the outcome spectrum is narrative and has no points in it, so these read as
+      <b>what the departure crew expect of this season</b> — a brief you can fall short of and
+      still arrive, just with less.</p>
+      <ul class="notes">
+        <li><b>Two scales, again.</b> Five season targets you can still act on, and one standing
+        line for the things that run the whole voyage. The voyage line has no bars because
+        nothing you do this week moves it much.</li>
+        <li><b>The red stripe is the hierarchy.</b> Two objectives end the run if you ignore
+        them — food and the locker. The other three cost you an outcome, not the colony. That is
+        what makes "critical" mean something rather than decorating every row.</li>
+        <li><b>State is glyph, colour and bar together</b> — <span style="font-family:var(--d-font)">● ◐ ○</span>
+        never carry it on colour alone.</li>
+        <li><b>Every target is a quantity the simulation already has.</b> Beds built, rations in
+        the locker, rare compounds banked, objects worked, reactor condition. Nothing here is a
+        new mechanic — it is the existing state, told as expectations.</li>
+        <li><b>Deadline is implied, not printed.</b> Every season target means "before you go
+        dark", so saying it on each row would be five copies of the same sentence.</li>
       </ul>
 
       <h2>Dropped, and easy to put back</h2>
@@ -202,6 +278,10 @@ h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:
         <div class="t" style="margin-top:14px">The voyage caption</div>
         <p><em>y2 belt / y283 debris</em> went with it. Three hundred years is context, not a
         number anyone acts on from this screen.</p>
+        <div class="t" style="margin-top:14px">38% and the object list</div>
+        <p>Everything below the map went. The percentage was the rail read back as a number, and
+        the list was the rail read back as words — the same thing three times. What is under the
+        map should be what the map cannot say.</p>
         <div class="t" style="margin-top:14px">Studies B and C</div>
         <p>The vertical approach and the arc dial are retired. Both are in git if the object
         count per leg turns out to be too high for a rail.</p>
