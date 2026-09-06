@@ -1506,6 +1506,55 @@ top a three-wave propellant reserve *before* they load cargo — a full bay cost
 as it always did, but it never costs you the fleet. Encounters went back to 24.2/26,
 exactly the figure before water existed.
 
+### Built: five objects a season, not twenty-six
+
+The per-leg object counts were never designed. A hundred objects trickling across
+three hundred years got **bunched** into five clusters when the voyage became five
+harvest seasons, and nobody re-asked how many a season should have — so leg 1 had
+twenty-six.
+
+The interface is where it showed. On a ninety-day rail at phone width, twenty-six
+objects is fifteen pixels each: the diamonds touch, size stops being readable, and
+the one thing the map exists to say — *a big one is coming* — cannot be said.
+
+Five each now, with **the same total mass** held by making each object
+proportionally richer (leg richness 2.5 → 13.0, and so on down the route; 168,000
+units over the voyage either way). The display divisor moved 200 → 1,000 so a rock
+still reads 1–19.
+
+| | Before | After |
+|---|---|---|
+| Objects, leg 1 | 26 | 5 |
+| A typical Departure Belt rock | 2,400 | 12,480 |
+| Objects worked per season | 24.2 of 26 | 5.0 of 5 |
+| Reads on the map as | 12 | 12 |
+
+**What it exposed, which is the more interesting half.** The shop refines 40 ore a
+day — 3,600 in a ninety-day season. One typical Departure Belt rock carries about
+3,182 ore. So **one rock is now nine tenths of a season's refining**, and the other
+four are surplus the ship physically cannot process:
+
+| Leg | One typical rock | Seasons of refining it represents |
+|---|---|---|
+| The Departure Belt | 12,480 | 0.9 |
+| Kestrel Drift | 4,128 | 0.3 |
+| The Deep Field | 2,688 | 0.2 |
+| Anvil Scatter | 4,128 | 0.3 |
+| Arrival Debris | 10,176 | 0.7 |
+
+Measured, 50% of a cluster's mass is now left in space for want of bay room and
+another 29% declined at the keep-ceiling. Sweeping the Cargo Bay from 2,000 to
+14,000 moved the landed share from 21% to 41% and changed **parts made and food
+left not at all** — 70 and 194 at every size. The bay is not the bottleneck; the
+shop is, and the surplus is material nobody could have used.
+
+**That is a mechanic waiting to be picked up, not a bug to tune away.** Five rocks
+and capacity for one makes *which rock you work* the decision of the season, which
+is precisely what surveying is for — the rescan button currently buys you a better
+estimate of something you were going to take anyway. The simulation still works
+every object it passes, automatically, so the choice does not exist yet. Building
+it is the obvious next move and is deliberately not made here.
+
 ### Built: volatiles, the other material with nothing to spend it on
 
 Same hole, one row down. Volatiles are **19% of every haul** and sat at a 250-unit

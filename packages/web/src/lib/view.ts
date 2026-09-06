@@ -135,14 +135,15 @@ export const roomOf = (a: Asset) => (a.room === "node" ? "Life Support" : a.room
 /** §6b: the haul, at a scale a player can hold in their head.
  *
  *  The simulation counts mass in abstract units, and a haul is 1,080-3,720 of
- *  them in the Departure Belt. Nobody remembers that, which means nobody can
- *  COMPARE two rocks — and the size of a rock is the whole point of surveying
- *  it. Dividing by 200 puts every object on the route between 2 and 19 without
- *  touching the economy, and the leg still reads off the number: a fat belt
- *  rock is 18, a Deep Field rock is 5.
+ *  them. Nobody remembers that, which means nobody can COMPARE two rocks — and
+ *  the size of a rock is the whole point of surveying it. Dividing puts every
+ *  object on the route between 1 and 19 without touching the economy, and the
+ *  leg still reads off the number: a fat belt rock is 19, a Deep Field rock is
+ *  2. The divisor moved from 200 to 1,000 when a season went from twenty-six
+ *  objects to five and each one got proportionally bigger.
  *
  *  This is a display scale and lives here on purpose. The sim is not told. */
-export const UNIT_SCALE = 200;
+export const UNIT_SCALE = 1000;
 export const units = (n: number) => Math.max(0, Math.round(n / UNIT_SCALE));
 
 /** One colour per material, used identically wherever a composition is drawn.

@@ -82,16 +82,18 @@
   const mass = (e: Encounter) => estimate(trueMass(e), e, conf(e));
   const scanning = (e: Encounter) => ship.scans.some(x => x.enc === e.id);
 
-  /** Marker size is the estimated haul, clamped so the smallest is still a
-   *  tappable target and the biggest does not swallow its neighbours.
+  /** Marker size is the estimated haul, and it is sized off the DISPLAY units
+   *  rather than raw mass on purpose: the number under the map and the size of
+   *  the diamond should be saying the same thing.
    *
-   *  The clamp is tighter than the study's because the study drew five objects
-   *  and a real leg has twenty-six. At 430px that is fifteen pixels of rail
-   *  each, so a 22px diamond does not read as "big", it reads as "overlapping".
-   *  An object already worked shrinks to a tick: the weight on this rail should
-   *  be on what is still ahead of you. */
+   *  This was calibrated against the old twenty-six-object schedule and every
+   *  rock pinned the ceiling once a season went down to five bigger ones — five
+   *  identical diamonds, which is the one thing this map exists not to be. With
+   *  five objects there is about eighty pixels of rail each, so a 20-unit rock
+   *  can afford to look like a 20-unit rock. An object already worked shrinks to
+   *  a tick: the weight belongs on what is still ahead of you. */
   const px = (e: Encounter) =>
-    worked(e) ? 4 : Math.max(6, Math.min(13, 4 + mass(e).mid / 260));
+    worked(e) ? 5 : Math.max(8, Math.min(26, 7 + units(mass(e).mid) * 0.95));
 
   $effect(() => {
     if (!sky) return;

@@ -630,3 +630,41 @@ is one hour — anything in a harness that means "once a day" has to latch on th
 before, not a new one: the autopilot never goes dark, so after leg 1 there are no encounters,
 volatiles run out, `autoWake` hits the medical gate and the ship depopulates faster. The
 player path (`season.ts`) is unchanged at 24.2/26 encounters, 165 meals, nobody dead.
+
+## Five objects a season
+
+The per-leg object counts were never designed — a hundred objects spread across three
+hundred years got bunched into five clusters and kept their counts, so leg 1 had 26. The
+interface is what exposed it: twenty-six objects on a ninety-day rail at phone width is
+fifteen pixels each, the diamonds touch, and the map cannot say the one thing it exists to
+say.
+
+Five each now, total mass held constant by making each proportionally richer (168,000 units
+over the voyage, before and after). Display divisor 200 → 1,000 so a rock still reads 1–19.
+The season probe goes from 24.2/26 objects worked to 5.0/5, food ends higher (205 vs 165),
+nobody dies, determinism holds.
+
+### What it exposed: the shop, not the bay
+
+One typical Departure Belt rock now carries ~3,182 ore. The shop refines 40 ore a day, so a
+90-day season is 3,600 — **one rock is nine tenths of a season's refining.** The other four
+are surplus.
+
+Sweeping the Cargo Bay cap from 2,000 to 14,000:
+
+```
+  bay cap   landed   lost to full bay   declined   parts made   food
+     2000     21%               50%         29%           70    194
+     4000     24%               44%         32%           70    194
+     6000     27%               39%         34%           70    194
+     9000     32%               33%         34%           70    194
+    14000     41%               24%         35%           70    194
+```
+
+Parts and food are **identical at every size**. Raising the bay lands more material and
+changes nothing, because the material was never the constraint. The cap stays at 2,000.
+
+This is a mechanic waiting to be picked up rather than a number to tune. Five rocks and
+capacity for one makes *which rock you work* the decision of the season — which is exactly
+what surveying is for, and right now the rescan button buys a better estimate of something
+you were going to take anyway, because the sim works every object it passes automatically.

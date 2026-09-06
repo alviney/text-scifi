@@ -53,12 +53,33 @@ export type Leg = {
  *  is what you are waiting for. */
 export const PREP_DAYS = 20;
 
+/** FIVE OBJECTS A SEASON, NOT TWENTY-SIX.
+ *
+ *  The counts here were inherited from the old continuous schedule — a hundred
+ *  objects trickling across three hundred years — and simply bunched into five
+ *  clusters when the voyage became five harvest seasons. Nobody re-asked how
+ *  many objects a season should HAVE.
+ *
+ *  Twenty-six is the wrong answer and the interface is where it showed: on a
+ *  ninety-day rail at phone width that is fifteen pixels an object, so the
+ *  diamonds touch, size stops being readable, and the one thing the map exists
+ *  to say — "a big one is coming" — cannot be said. A season is meant to be a
+ *  handful of decisions you can hold in your head, not a conveyor.
+ *
+ *  Five each, so a season is five rocks you can name. The material economy is
+ *  held where it was by making each one proportionally richer: the same mass
+ *  arrives, in lumps four to five times bigger, which is a real change of
+ *  character rather than a rescale. A single haul can now exceed what the Cargo
+ *  Bay will hold, so what you can CARRY starts to matter as much as what you can
+ *  reach — see packages/README.md for what that measured. */
+export const OBJECTS_PER_LEG = 5;
+
 export const LEGS: Leg[] = [
-  { n: 0, year:   2, days: 90, objects: 26, richness: 2.5, name: "The Departure Belt" },
-  { n: 1, year:  62, days: 90, objects: 18, richness: 1.2, name: "Kestrel Drift" },
-  { n: 2, year: 141, days: 90, objects: 14, richness: 1.0, name: "The Deep Field" },
-  { n: 3, year: 214, days: 90, objects: 18, richness: 1.2, name: "Anvil Scatter" },
-  { n: 4, year: 283, days: 90, objects: 24, richness: 2.2, name: "Arrival Debris" },
+  { n: 0, year:   2, days: 90, objects: OBJECTS_PER_LEG, richness: 13.0, name: "The Departure Belt" },
+  { n: 1, year:  62, days: 90, objects: OBJECTS_PER_LEG, richness:  4.3, name: "Kestrel Drift" },
+  { n: 2, year: 141, days: 90, objects: OBJECTS_PER_LEG, richness:  2.8, name: "The Deep Field" },
+  { n: 3, year: 214, days: 90, objects: OBJECTS_PER_LEG, richness:  4.3, name: "Anvil Scatter" },
+  { n: 4, year: 283, days: 90, objects: OBJECTS_PER_LEG, richness: 10.6, name: "Arrival Debris" },
 ];
 
 export const isCritical = (a: Asset) => CRITICAL_ORDER[a.id] !== undefined;
