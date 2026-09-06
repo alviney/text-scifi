@@ -22,6 +22,8 @@ export type Stores = {
 export type Encounter = {
   id: number;
   year: number;
+  /** which harvest season it belongs to */
+  leg: number;
   cls: string;
   /** the act's yield multiplier */
   richness: number;
@@ -80,6 +82,13 @@ export type State = {
   scans: { enc: number; work: number; done: number }[];
   /** cached each day so the hourly work loop knows whether the crane can run */
   craneUp?: boolean;
+  /** Which of the five legs, and where in it. See legs.ts. */
+  leg: number;
+  phase: import("./legs.ts").Phase;
+  /** hour the current phase began, for the transit progress readout */
+  phaseFrom: number;
+  /** Who the player rostered for the next cluster, chosen as they go dark. */
+  nextCrew: import("./crew.ts").Role[];
   rules: import("./rules.ts").Rule[];
   board: import("./rules.ts").Task[];
   /** §8's feed. A bounded window, not a ledger — totals live in counters. */
@@ -119,11 +128,14 @@ export type Settings = {
    *  makes that a decision — and on for the balance harness, which is measuring
    *  a fully-staffed, fully-automated ship. */
   autoWake: boolean;
+  /** 1 = full rations, 0.75 = short, 0.5 = half. Buys days, costs morale. */
+  rations: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   replaceAt: 62, droneTarget: 6, botanistShare: 0.25, prioritise: true,
   shedEmptyRooms: true, autoRetire: true, crewSelfAssign: false, autoWake: false,
+  rations: 1,
 };
 
 /** An autopilot: a scripted player, used by the balance harness.

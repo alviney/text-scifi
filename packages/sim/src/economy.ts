@@ -10,8 +10,13 @@ export const YIELD = { ore: 0.6, rare: 0.3, sil: 0.5 };
 
 /** Rare compounds held back for replacements and fuel rods, never spent on electronics. */
 export const RARE_RESERVE = 60;
-/** Electronics are made to a target, not endlessly. */
-export const ELEC_TARGET = 200;
+/** Electronics are made to a target, not endlessly.
+ *
+ *  Raised from 200 once the voyage became five legs: a sixty-year crossing with
+ *  no material coming aboard needs ~225 electronics, so a hard ceiling of 200
+ *  made the readiness gate impossible to pass by arithmetic rather than by play.
+ *  A cap that cannot be reached is a bug, not a balance choice. */
+export const ELEC_TARGET = 400;
 
 /** Refine whatever raw material is on hand, limited by throughput per day. */
 export function refine(s: Stores, oreCap: number, rareCap: number, silCap: number,
@@ -38,7 +43,7 @@ export function refine(s: Stores, oreCap: number, rareCap: number, silCap: numbe
  *
  *  §4's own diagram separates the input buffer from the output buffer. Capping
  *  production is the cheap way to honour that without modelling two shelves. */
-export const PARTS_TARGET = 300;
+export const PARTS_TARGET = 500;
 
 /** Metal parts: 4 refined metal -> 1 part. */
 export function makeParts(s: Stores, cap: number, target = PARTS_TARGET) {

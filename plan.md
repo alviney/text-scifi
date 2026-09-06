@@ -40,6 +40,63 @@ The ending is a **narrative outcome** based on ship and colony state at arrival.
 
 ---
 
+## 1b. The voyage is five harvest seasons
+
+Three hundred years is not playable, and it is not interesting either — the Long Dark is by
+design a long stretch of nothing. So the ship is only **awake five times**, and each leg has the
+same three beats:
+
+| Beat | What it is |
+|------|------------|
+| **Prep** | The crew are already on the Medbay tables, coming round over 3–5 days. You have no hands yet, so all you can do is read the ship and queue work. |
+| **Season** | ~90 days working a cluster of asteroids. Real time, by hand, every job given out by name. |
+| **Transit** | Everyone goes back under. Decades pass. Nothing pulls you out of it. |
+
+**The AI does not come online alone.** There is nothing it can do without hands, so it wakes
+with the first crew — who were rostered before you were switched on. The prep window *is* their
+recovery, which is why it is short and why the season starts by itself when the first of them
+stands up. There is no button: you had the days you had.
+
+**At the end of a season you choose who wakes at the next one.** Four berths, decades from now,
+inheriting whatever you leave on the shelves. That is the only decision that reaches across a
+transit, and it is made blind.
+
+### Rations, and why the first season is about lettuce
+
+The ship launches with **700 rations and no grow beds**. Four people on full rations eat 1,080
+over a ninety-day season, so the locker buys about sixty days.
+
+The racks are empty on purpose. **A grow bed is built, not inherited** — 20 parts and a day of
+someone's time — and one bed feeds roughly one and a half people. So the first crew's real job
+is not the asteroids, it is putting up the thing that feeds the *second* crew.
+
+Two levers, and they fight each other:
+
+- **Cut rations** (full / short / half). Buys days, costs morale, which costs work rate — which
+  costs you the beds you were cutting rations to build. The pressure compounds rather than
+  simply pinching.
+- **Shift crew effort** toward hydroponics, at the cost of everything else.
+
+Measured on the first leg: three beds up by day 109 still finished the season with 33 rations in
+hand. That is the shape wanted — solvable, and only just.
+
+### ⚠ The Long Dark is a placeholder
+
+Transit currently **suspends deterioration**: the reactor throttles, systems go cold, cryo runs
+on trickle, nothing wears. Fuel still burns, because the banks still have to be kept cold.
+
+This is not a designed mechanic, it is the absence of one. Simulating an unattended crossing
+honestly kills the ship every time — the reactor sags, the banks go cold, and a hundred people
+die before the second cluster, none of which the player can act on. That is a cutscene that
+kills you, not a difficulty curve.
+
+What the ship does with itself for sixty years is a real open question. An earlier attempt
+answered it with "leave a watch awake and automate their work", and the readiness gate in
+`packages/sim/src/legs.ts` is what survives of it — a checklist the player had to pass before
+going dark. It is written and unused, kept because the question will come back.
+
+---
+
 ## 2. Game Loop
 
 ```

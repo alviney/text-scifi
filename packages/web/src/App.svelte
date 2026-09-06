@@ -6,6 +6,7 @@
   import { clock, num, year, when } from "./lib/view.ts";
   import Ticker from "./lib/Ticker.svelte";
   import Start from "./lib/Start.svelte";
+  import Phase from "./lib/Phase.svelte";
   import { save, load, peek, clear } from "./lib/save.ts";
   import Voyage from "./tabs/Voyage.svelte";
   import Facilities from "./tabs/Facilities.svelte";
@@ -62,6 +63,8 @@
   <Ticker {ship} {snapped}
           onack={() => engine.send({ kind: "ack" })}
           onopen={() => feedOpen = true} />
+
+  <Phase {ship} />
 
   <div class="bar2">
     <span class="yr">Y{num(year(ship.day))}</span>

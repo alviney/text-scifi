@@ -9,6 +9,18 @@ import { effort, makeDistinct, mourn, nextRole, type Person } from "./crew.ts";
 
 export const CREW_TARGET = 8;
 export const FOOD_PER_CREW_PER_DAY = 3;
+
+/** What the first crew are sent up with.
+ *
+ *  Deliberately not enough. Four people on full rations eat 1,080 over a
+ *  ninety-day season, so a locker of 700 buys about sixty days — and the gap is
+ *  the whole early game: build grow beds, or go hungry, or both. */
+export const STARTING_RATIONS = 700;
+
+/** How thin you are willing to spread it. Cutting rations buys days and costs
+ *  morale, which costs work rate, which costs you the beds you were trying to
+ *  build — the pressure is meant to compound rather than simply pinch. */
+export const RATION_LEVELS = [1, 0.75, 0.5] as const;
 export const BED_CYCLE_DAYS = 36;
 export const BED_YIELD = 155;
 export const COLONISTS = 200;
@@ -39,7 +51,7 @@ export type Colony = {
  *  player does, and it is meant to be a decision rather than a default. */
 export const newColony = (): Colony => ({
   awake: 0, frozen: COLONISTS, banks: BANKS,
-  food: 400, fed: 100, air: 100, diedAwake: 0, diedFrozen: 0, cold: 0,
+  food: STARTING_RATIONS, fed: 100, air: 100, diedAwake: 0, diedFrozen: 0, cold: 0,
 });
 
 /** Crew capacity is not a constant — it is however many people are alive and
@@ -47,6 +59,23 @@ export const newColony = (): Colony => ({
  *  manage today: a tired, unhappy or injured person works slower, by name. */
 export function labour(c: Colony): number {
   return c.awake * 0.36 * (c.fed / 100) * (c.air / 100);
+}
+
+/** What the galley makes against what the watch eats, per day.
+ *
+ *  This is the number that decides whether a ship left alone for sixty years is
+ *  still crewed at the end of it, and it is not obvious: more people awake means
+ *  more mouths AND more hands in the grow beds, so the margin does not move the
+ *  way you expect. It needs showing, not deriving. */
+export function foodBalance(s: State, botanistShare: number, dimmed = false) {
+  const ration = s.settings.rations;
+  const beds = s.assets.filter(a => a.id.startsWith("bed") && !a.faulted).length;
+  const jobs = crewLabour(s.crew, s.colony) * botanistShare / 0.6;
+  const produced = beds * (BED_YIELD / BED_CYCLE_DAYS) * Math.min(1, jobs) * (dimmed ? 0.6 : 1);
+  const eaten = s.crew.filter(c => !c.asleep).length * FOOD_PER_CREW_PER_DAY * ration;
+  return { produced, eaten, beds, margin: eaten > 0 ? produced / eaten : Infinity,
+           /** days of locker left at the current burn, ignoring what grows */
+           daysLeft: eaten > produced ? s.colony.food / (eaten - produced) : Infinity };
 }
 
 export function crewLabour(crew: Person[], c: Colony): number {
@@ -64,9 +93,14 @@ export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
   const perDay = beds.length * (BED_YIELD / BED_CYCLE_DAYS) * Math.min(1, botanistJobs)
                * (b.dimmed ? 0.6 : 1);
   c.food += perDay;
-  c.food -= c.awake * FOOD_PER_CREW_PER_DAY;
+  const ration = s.settings.rations;
+  c.food -= c.awake * FOOD_PER_CREW_PER_DAY * ration;
   if (c.food < 0) { c.food = 0; c.fed = Math.max(0, c.fed - 1.2); }
-  else c.fed = Math.min(100, c.fed + 2);
+  else c.fed = Math.min(100, c.fed + 2 * ration);
+  // Short commons is felt as morale, not as starvation, until the locker is
+  // actually empty. That is what makes it a lever rather than a countdown.
+  if (ration < 1) for (const p of s.crew)
+    if (!p.asleep) p.happiness = Math.max(0, p.happiness - 0.10 * (1 - ration) * 4);
 
   // ---- air: the ship-wide generator plus the node in the room you are in ----
   const o2 = s.assets.find(a => a.id === "o2gen")!;

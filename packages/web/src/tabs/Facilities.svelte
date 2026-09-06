@@ -14,7 +14,8 @@
            ROOMS, roomOf } from "../lib/view.ts";
   import { MAXCOND_FLOOR } from "../../../sim/src/sim.ts";
   import Cutaway from "../lib/Cutaway.svelte";
-  import { PART_COST, ELEC_COST, RARE_COST } from "../../../sim/src/catalogue.ts";
+  import { PART_COST, ELEC_COST, RARE_COST, MAX_BEDS, BED_PARTS,
+           BED_HOURS } from "../../../sim/src/catalogue.ts";
 
   let { ship, send }: { ship: State; send: (c: Command) => void } = $props();
 
@@ -22,6 +23,8 @@
   let pick: string | null = $state(null);
   let details = $state(false);
   const lg = $derived(logistics(ship));
+  const beds = $derived(ship.assets.filter(a => a.id.startsWith("bed")).length);
+  const queuedBed = $derived(ship.board.some(t => t.kind === "buildBed"));
 
   const inRoom = (r: string) => ship.assets.filter(a => roomOf(a) === r);
   const asset = $derived(pick ? ship.assets.find(a => a.id === pick) ?? null : null);
@@ -91,6 +94,24 @@
     <div class="big">{room}</div>
     <div class="sentence dim">{roomLine(inRoom(room))}</div>
   </div>
+
+  {#if room === "Hydroponics"}
+    <!-- The racks are empty at launch. Everything the colony eats after the
+         locker runs out comes from beds this crew put up by hand. -->
+    <div class="pad hr">
+      <div class="label">Grow beds</div>
+      <div class="big">{beds} <span class="dim">of {MAX_BEDS} racks</span></div>
+      <div class="sentence dim">
+        Each bed feeds about one and a half people. The locker does not refill.
+      </div>
+      <button class="act" disabled={beds >= MAX_BEDS || queuedBed}
+              onclick={() => send({ kind: "buildBed" })}>
+        {beds >= MAX_BEDS ? "All racks running"
+         : queuedBed ? "Already on the board"
+         : `Build a bed — ${BED_PARTS} parts, ${BED_HOURS}h`}
+      </button>
+    </div>
+  {/if}
 
   <!-- §4: there is no ship-wide inventory. This shelf is the room's own, and
        anything it needs from anywhere else has to be carried here. -->

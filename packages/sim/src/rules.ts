@@ -13,7 +13,7 @@ export type Rule = {
   watch: string;
   kind: "condition" | "stock" | "roomstock";
   threshold: number;
-  action: "service" | "replace" | "makeRod" | "makeDrone" | "deliver";
+  action: "service" | "replace" | "makeRod" | "makeDrone" | "deliver" | "buildBed";
   inherited: boolean;                  // left by the departure crew (§5c)
   fires: number;
   lastFired: number;                   // day, -1 for never
@@ -46,7 +46,7 @@ export type Task = {
  *  an hour. At one real second per game-hour these are 6 to 60 seconds of
  *  watching — long enough to feel, short enough to sit through. */
 export const WORK: Record<Rule["action"], number> = {
-  service: 6, replace: 36, makeRod: 12, makeDrone: 24, deliver: 3,
+  service: 6, replace: 36, makeRod: 12, makeDrone: 24, deliver: 3, buildBed: 24,
 };
 
 export function newTask(s: State, t: Omit<Task, "id" | "work" | "done">): Task {

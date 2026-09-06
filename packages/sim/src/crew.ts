@@ -110,7 +110,8 @@ export function makePerson(r: Rng, role: Role, day: number, n: number): Person {
     skill: Math.round(range(r, 45, 85)),
     happiness: Math.round(range(r, 70, 95)),
     rest: 100, health: 100,
-    traits, closeTo: [], wokeOn: day, fitOn: day + THAW_DAYS, asleep: false, asked: false,
+    traits, closeTo: [], wokeOn: day,
+    fitOn: day + Math.round(range(r, THAW_MIN, THAW_MAX)), asleep: false, asked: false,
   };
 }
 
@@ -161,8 +162,12 @@ export function effort(c: Person): number {
 export const ageFactor = (age: number) =>
   age <= 60 ? 1 : Math.max(0.15, 1 - (age - 60) / 30);
 
-/** §3: freezing is cheap and instant; the cost gate is on waking them up. */
-export const THAW_DAYS = 5;
+/** §3: freezing is cheap and instant; the cost gate is on waking them up.
+ *
+ *  Staggered per person, so the season does not begin with everyone standing up
+ *  at once — the first days are a trickle of hands, and who comes round first is
+ *  not yours to choose. */
+export const THAW_MIN = 3, THAW_MAX = 5;
 
 export const RETIRE_AGE = 65;
 export const END_AGE = 88;

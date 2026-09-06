@@ -47,7 +47,7 @@ body {
      bare `1fr` column lets content push wider than the container — that is the
      exact bug that made the mockup scroll sideways on a phone, and hiding the
      overflow only masks it. */
-  display: grid; grid-template-rows: auto auto minmax(0,1fr) auto;
+  display: grid; grid-template-rows: auto auto auto minmax(0,1fr) auto;
   grid-template-columns: minmax(0,1fr);
   height: 100dvh; max-width: 560px; margin: 0 auto;
   background: var(--bg); border-inline: 1px solid var(--rule);

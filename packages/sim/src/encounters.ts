@@ -1,5 +1,6 @@
 import { type Rng, next, pick, range } from "./rng.ts";
 import type { Encounter, Stores } from "./types.ts";
+import { LEGS } from "./legs.ts";
 
 /** §6b object classes: frequency and composition. */
 export const CLASSES = ["C", "S", "M", "Comet", "Exotic"] as const;
@@ -12,26 +13,31 @@ const COMP: Record<string, Record<keyof Pick<Stores,"ice"|"vol"|"sil"|"ore"|"rar
   Exotic: { ice: .00, vol: .10, sil: .20, ore: .25, rare: .45 },
 };
 
-/** §6b three-act route: departure belt, the Long Dark, arrival debris.
+/** §6b's route, bunched into the five harvest seasons (legs.ts).
  *
- *  Each object also gets a `size` and a `bias`. Size makes rocks differ within
- *  an act, so "a big one is coming" is a thing the player can see rather than a
- *  uniform stream of identical diamonds; it averages 1.0 so the act's richness
- *  still sets the act's yield. Bias is the direction this object's estimate is
- *  wrong in — fixed at build time so a survey converges on the truth instead of
- *  jittering every time the screen redraws. */
-export function buildSchedule(r: Rng, actII = 40): Encounter[] {
+ *  It used to be a hundred objects trickling across three hundred years, which
+ *  meant the ship had to be awake for all three hundred. Same hundred objects,
+ *  same acts, same total yield — they now arrive in five clusters of about
+ *  ninety days each, and the ship sleeps between them. */
+export function buildSchedule(r: Rng): Encounter[] {
   const out: Encounter[] = [];
-  const act = (from: number, to: number, n: number, richness: number) => {
-    for (let i = 0; i < n; i++) {
-      const year = from + ((i + range(r, 0.2, 0.8)) / n) * (to - from);
-      out.push({ id: out.length, year, cls: pick(r, [...CLASSES], FREQ), richness,
-                 size: range(r, 0.45, 1.55), bias: range(r, -1, 1), scans: 0 });
+  for (const leg of LEGS) {
+    for (let i = 0; i < leg.objects; i++) {
+      // Spread through the cluster, but unevenly — a season with a lull in the
+      // middle and two objects arriving together reads as a place, not a metronome.
+      const t = (i + range(r, 0.05, 0.95)) / leg.objects;
+      out.push({
+        id: out.length,
+        year: leg.year + (t * leg.days) / 365,
+        leg: leg.n,
+        cls: pick(r, [...CLASSES], FREQ),
+        richness: leg.richness,
+        size: range(r, 0.45, 1.55),
+        bias: range(r, -1, 1),
+        scans: 0,
+      });
     }
-  };
-  act(0, 50, 30, 2.5);        // Act I  — big, well-surveyed, cheap to reach
-  act(50, 260, actII, 1.0);   // Act II — the Long Dark
-  act(260, 300, 30, 1.0);     // Act III
+  }
   out.sort((a, b) => a.year - b.year);
   out.forEach((e, i) => { e.id = i; });
   return out;

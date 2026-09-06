@@ -42,7 +42,8 @@ export function buildAssets(): Asset[] {
 
   for (const [id, room, cls, mult] of CAT) add(id, room, cls, mult);
   for (let i = 1; i <= 10; i++) add(`lsn${i}`, "node", "med", 0.7);   // LifeSupportNode x10
-  for (let i = 1; i <= 6; i++) add(`bed${i}`, "Hydroponics", "low", 0.6); // Grow Bed x6
+  // NO grow beds. The ship launches with rations and empty racks — the first
+  // thing the first crew build is the thing that feeds the second crew.
   return out;
 }
 
@@ -78,3 +79,18 @@ export function assetName(id: string): string {
 
 /** The ten addresses in §4. "node" is not a room — the nodes are distributed. */
 export const ROOM_OF = (id: string, room: string) => (room === "node" ? "Life Support" : room);
+
+
+/** A grow bed is built, not inherited. §6's cycle is 155 units over 36 days, so
+ *  one bed feeds roughly one and a half people indefinitely — which makes "how
+ *  many did you get up before the season ended" the question the early game is
+ *  actually about. */
+export const MAX_BEDS = 6;
+export const BED_PARTS = 20;
+export const BED_HOURS = 24;
+
+export function newBed(n: number): Asset {
+  return { id: `bed${n}`, room: "Hydroponics", cls: "low",
+           baseWear: BASE_WEAR_PER_DAY * 0.6,
+           cond: 100, maxCond: 100, faulted: false, repairs: 0, sensorCond: 100 };
+}

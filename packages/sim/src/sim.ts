@@ -1,7 +1,8 @@
 import { type Rng, rng, chance } from "./rng.ts";
 import type { Asset, Policy, Settings, State } from "./types.ts";
 import { DEFAULT_SETTINGS } from "./types.ts";
-import { buildAssets, assetName, RARE_COST, PART_COST, ELEC_COST } from "./catalogue.ts";
+import { buildAssets, assetName, newBed, BED_PARTS, MAX_BEDS,
+         RARE_COST, PART_COST, ELEC_COST } from "./catalogue.ts";
 import { buildSchedule, harvest, classReading, confidence, trueMass } from "./encounters.ts";
 import { emptyStores, refine, makeParts, canMakeRod, makeRod, canMakeDrone, makeDrone,
          RARE_RESERVE, ELEC_TARGET } from "./economy.ts";
@@ -10,7 +11,13 @@ import { CRANE_KW, HOLD, SHOP, capOf, daysOf, deposit, isBulk, land, loadOf, new
 import { BASELINE_KW, bus, emptyRoomSaving, reactorOutput, rodsPerDay } from "./power.ts";
 import { type Task, inheritedRules, playerRules, evaluate, reportedCondition } from "./rules.ts";
 import { newColony, tickColony, crewLabour } from "./colony.ts";
-import { newCrew, tickCrew, hasAwake, effort, onDuty, POOL, type Person } from "./crew.ts";
+import { newCrew, tickCrew, hasAwake, effort, onDuty, makeDistinct, POOL,
+         type Person, type Role } from "./crew.ts";
+
+/** Who the departure crew rostered for the first season. Not the player's
+ *  choice — they were picked before you were switched on. */
+export const FIRST_CREW: Role[] = ["engineer", "engineer", "botanist", "pilot"];
+import { LEGS, PREP_DAYS } from "./legs.ts";
 import { emit } from "./signals.ts";
 import { apply } from "./commands.ts";
 
@@ -24,7 +31,8 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   const s: State = {
     day: 0, rngState: 0, assets: buildAssets(), rods: START_RODS, drones: START_DRONES,
     stores: emptyStores(), rooms: newRooms(), shipments: [],
-    schedule: buildSchedule(r, actII), next: 0, scans: [], hour: 0,
+    schedule: buildSchedule(r), next: 0, scans: [], hour: 0,
+    leg: 0, phase: "prep", phaseFrom: 0, nextCrew: [...FIRST_CREW],
     gauges: { parts: 100, rods: 100, rareCmp: 100, drones: 100 }, colony: newColony(),
     crew: [], requests: [], memorial: [], pool: { ...POOL }, nextCrewId: 0, nextTaskId: 0,
     rules: [], board: [], signals: [], acked: 0, settings: { ...DEFAULT_SETTINGS },
@@ -35,6 +43,10 @@ export function init(seed: number, actII = 40, p?: Policy): State {
     dead: null,
   };
   s.rngState = r.s;
+  // The clock starts at the first cluster's prep window, not at launch. The
+  // first two years of the voyage are the same nothing as the other 298.
+  s.hour = Math.round((LEGS[0].year * 365 - PREP_DAYS) * 24);
+  s.day = Math.floor(s.hour / 24);
   // The ship departs with a working stock, not empty shelves — and §4 says that
   // stock has to be SOMEWHERE. The shop holds what it made; the rooms hold a
   // handful of parts each, which is the buffer that runs out first.
@@ -55,6 +67,7 @@ export function init(seed: number, actII = 40, p?: Policy): State {
                    botanistShare: p.botanistShare, prioritise: p.prioritise,
                    shedEmptyRooms: true, autoRetire: true,
                    crewSelfAssign: true, autoWake: true };
+    s.phase = "season";
     s.crew = newCrew(r);
     for (const c of s.crew) s.pool[c.role]--;
     s.nextCrewId = s.crew.length;
@@ -64,8 +77,24 @@ export function init(seed: number, actII = 40, p?: Policy): State {
     if (p.automate) s.rules.push(...playerRules(s.assets, p.serviceAt, p.replaceAt,
       p.criticalServiceAt, id => CRITICAL_ORDER[id] !== undefined));
   }
-  emit(s, "info", "Voyage", "DEPART",
-       "Seedship under way. 200 asleep, nobody awake, 300 years to target.");
+  // The AI does not come round alone and wait two years for company. There is
+  // nothing it can do without hands, so the ship wakes it and the first crew
+  // together — they are already on the Medbay tables, coming round over the next
+  // three to five days, and the prep window IS their recovery.
+  if (!p) {
+    for (const role of FIRST_CREW) {
+      s.pool[role]--;
+      const person = makeDistinct(r, role, s.day, s.nextCrewId++, s.crew);
+      s.crew.push(person);
+    }
+    s.colony.awake = s.crew.length;
+    s.colony.frozen -= s.crew.length;
+    s.rngState = r.s;
+    emit(s, "critical", "Voyage", "SEA-WAKE",
+         `${LEGS[0].name} ahead. ${s.crew.length} coming round in the Medbay.`);
+    emit(s, "info", "Quarters", "RAT-LOCKER",
+         `${s.colony.food.toFixed(0)} rations aboard. Nothing is growing yet.`);
+  }
   return s;
 }
 
@@ -85,6 +114,9 @@ export const MAXCOND_FLOOR = 30;
 
 /** An asset nobody wrote a rule for is noticed only by someone walking past it,
  *  and only once it is visibly bad. This is the cost of not automating. */
+/** What a dormant ship draws: the cryo banks and nothing else. */
+export const DORMANT_KW = 420;
+
 export const NOTICE_AT = 30;
 export const NOTICE_CHANCE = 0.003;
 
@@ -142,6 +174,8 @@ function replace(s: State, a: Asset): boolean {
 /** Can this job even be started today? A blocked job stays on the board getting
  *  older, which is §4's point: nothing is broken and nothing is moving. */
 function canStart(s: State, task: Task, craneUp: boolean): boolean {
+  if (task.kind === "buildBed")
+    return s.rooms["Hydroponics"].parts >= BED_PARTS || s.rooms[SHOP].parts >= BED_PARTS;
   if (task.kind === "deliver") {
     const what = task.what as MatKey;
     if (isBulk(what) && !craneUp) return false;
@@ -157,6 +191,18 @@ function canStart(s: State, task: Task, craneUp: boolean): boolean {
 /** The work is done — now do the thing. Returns false if it cannot be completed
  *  for want of materials, in which case the job waits, finished but unfulfilled. */
 function finish(s: State, task: Task, p: Settings): boolean {
+  if (task.kind === "buildBed") {
+    const shop = s.rooms[SHOP], hyd = s.rooms["Hydroponics"];
+    const from = hyd.parts >= BED_PARTS ? hyd : shop;
+    if (from.parts < BED_PARTS) return false;
+    from.parts -= BED_PARTS;
+    const n = s.assets.filter(a => a.id.startsWith("bed")).length + 1;
+    if (n > MAX_BEDS) return true;
+    s.assets.push(newBed(n));
+    emit(s, "info", "Hydroponics", "HYD-BED",
+         `Grow bed ${n} planted. ${n} of ${MAX_BEDS} racks running.`);
+    return true;
+  }
   if (task.kind === "makeRod") {
     if (!canMakeRod(s.stores)) return false;
     makeRod(s.stores); s.rods++; s.counters.rodsMade++;
@@ -214,13 +260,54 @@ export function step(s: State): State {
   if (s.dead) return s;
   s.hour++;
   hourly(s);
-  if (s.hour % 24 === 0) { s.day++; daily(s); }
+  if (s.hour % 24 === 0) { s.day++; daily(s); openSeason(s); arrive(s); }
   if (s.hour >= HOURS && !s.dead) {
     s.dead = "arrived";
     emit(s, "info", "Voyage", "ARRIVE",
          `Target reached. ${s.colony.frozen + s.colony.awake} of 200 alive.`);
   }
   return s;
+}
+
+/** Have we reached the next cluster? Transit ends by arriving, never by
+ *  anything going wrong — nothing pulls you out of the dark, which is exactly
+ *  why the gate before it has to be strict. */
+/** Prep is the crew's recovery, so it ends when the first of them stands up.
+ *  There is no button: you had the days you had. */
+function openSeason(s: State): void {
+  if (s.phase !== "prep") return;
+  if (!s.crew.some(c => !c.asleep && s.day >= c.fitOn)) return;
+  s.phase = "season"; s.phaseFrom = s.hour;
+  const leg = LEGS[s.leg];
+  emit(s, "info", "Voyage", "SEA-OPEN",
+       `${leg.name}. ${s.schedule.filter(e => e.leg === s.leg).length} objects over ${leg.days} days.`);
+}
+
+/** The cluster is behind you when the last object has passed. */
+export function seasonOver(s: State): boolean {
+  const last = s.schedule.filter(e => e.leg === s.leg).at(-1);
+  return !!last && s.day / 365 > last.year;
+}
+
+function arrive(s: State): void {
+  if (s.phase !== "transit") return;
+  const next = LEGS[s.leg + 1];
+  if (!next || s.day < next.year * 365 - PREP_DAYS) return;
+  s.leg++; s.phase = "prep"; s.phaseFrom = s.hour;
+  // The roster chosen as the last crew went under comes round now.
+  const r: Rng = { s: s.rngState };
+  for (const role of s.nextCrew) {
+    if (s.pool[role] <= 0 || s.colony.frozen <= 0) continue;
+    s.pool[role]--;
+    s.crew.push(makeDistinct(r, role, s.day, s.nextCrewId++, s.crew));
+    s.colony.frozen--;
+  }
+  s.colony.awake = s.crew.length;
+  s.rngState = r.s;
+  const alive = s.colony.frozen + s.colony.awake;
+  emit(s, "critical", "Voyage", "SEA-WAKE",
+       `${next.name} ahead. Year ${Math.floor(s.day / 365)}, ${alive} of 200 alive. ` +
+       `${s.crew.length} coming round.`);
 }
 
 /** Everything that happens on the hour: work gets done, surveys come back. */
@@ -285,6 +372,29 @@ function hourly(s: State): void {
 /** One day of wear, power, industry and people. */
 function daily(s: State): void {
   if (s.dead) return;
+
+  // THE LONG DARK IS A SKIP, FOR NOW.
+  //
+  // With nobody awake and no automation there is nothing between a
+  // seventy-year crossing and a dead ship: the reactor sags, the banks go cold,
+  // and a hundred people die before the second cluster. The player cannot act on
+  // any of it, which makes it a cutscene that kills you.
+  //
+  // So the ship goes properly dormant — throttled reactor, systems cold, cryo on
+  // trickle. Nothing runs, so nothing wears. Fuel still burns, because the banks
+  // still have to be kept cold and that is the one bill you cannot defer.
+  //
+  // This is a PLACEHOLDER for a mechanic that is not designed yet: what the ship
+  // does with itself for sixty years is a real question, and answering it with
+  // "an unattended ship dies" is not an answer, it is the absence of one.
+  if (s.phase === "transit") {
+    s.rods -= rodsPerDay(DORMANT_KW, s.assets.find(a => a.id === "reactor")!.cond);
+    if (s.rods <= 0) {
+      emit(s, "critical", "Reactor", "FUEL-OUT", "Fuel exhausted in the dark.", "reactor");
+      s.dead = "out of fuel";
+    }
+    return;
+  }
   const r: Rng = { s: s.rngState };
   const p = s.settings;
   const reactor = reactorOf(s);

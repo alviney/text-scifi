@@ -28,8 +28,10 @@ export const MADE: MatKey[] = ["refMetal", "rareCmp", "parts", "electronics"];
 export const CAP: Record<string, number> = {
   "Cargo Bay": 1400,
   // The shop holds raw material AND everything it has made, so it needs room for
-  // both. At 900 it was full of its own parts and rejecting ore deliveries.
-  "Engineering": 1400,
+  // both. At 900 it was full of its own parts and rejecting ore deliveries — and
+  // once a crossing's worth of stock has to fit alongside incoming ore, 1400 was
+  // the same trap one size up.
+  "Engineering": 2400,
 };
 // A room has to be able to hold the buffer its own rule asks for, plus what it
 // is about to consume. 120 was below Life Support's own threshold.

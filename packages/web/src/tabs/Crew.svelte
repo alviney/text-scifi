@@ -7,8 +7,8 @@
    *  §5b: the board runs both ways, so requests from the crew live here too. */
   import type { State } from "../../../sim/src/types.ts";
   import type { Command } from "../../../sim/src/commands.ts";
-  import { BANKS, PER_BANK, COLD_GRACE_DAYS } from "../../../sim/src/colony.ts";
-  import { ROSTER, ageFactor, RETIRE_AGE, THAW_DAYS, type Role } from "../../../sim/src/crew.ts";
+  import { BANKS, PER_BANK, COLD_GRACE_DAYS, foodBalance } from "../../../sim/src/colony.ts";
+  import { ROSTER, ageFactor, RETIRE_AGE, THAW_MIN, THAW_MAX, type Role } from "../../../sim/src/crew.ts";
   import { assetName, hours, num, when } from "../lib/view.ts";
 
   let { ship, frac, send }: { ship: State; frac: number; send: (c: Command) => void } = $props();
@@ -26,6 +26,7 @@
   let handing: string | null = $state(null);
 
   const roleList = $derived([...new Set(ROSTER)] as Role[]);
+  const food = $derived(foodBalance(ship, ship.settings.botanistShare));
   const free = $derived(ship.crew.filter(p => !ship.board.some(t => t.assignee === p.id)));
   const label = (t: { kind: string; target: string; what?: string; to?: string }) =>
     t.kind === "service" ? `Service ${assetName(t.target)}`
@@ -91,7 +92,7 @@
       {:else}
         <button class="act" onclick={() => waking = true}>Wake somebody</button>
         <div class="sentence faint">
-          They spend {THAW_DAYS} days in the Medbay before they can work, and every
+          They spend {THAW_MIN}–{THAW_MAX} days in the Medbay before they can work, and every
           year awake is a year of their life.
         </div>
       {/if}
@@ -247,7 +248,30 @@
 
   {:else}
     <div class="pad">
-      <div class="label">Crew effort</div>
+      <!-- §6: the locker is finite and nothing is growing yet. Cutting rations
+           buys days and costs morale, which costs work rate, which costs you the
+           grow beds you were cutting rations to build. -->
+      <div class="label">Rations</div>
+      <div class="sentence">
+        {Math.round(ship.settings.rations * 100)}% —
+        {ship.colony.food.toFixed(0)} left in the locker.
+      </div>
+      <div class="rats">
+        {#each [[1,"Full"],[0.75,"Short"],[0.5,"Half"]] as [lvl, name]}
+          <button class="rat" aria-pressed={Math.abs(ship.settings.rations - (lvl as number)) < 0.01}
+                  onclick={() => send({ kind: "rations", level: lvl as number })}>{name}</button>
+        {/each}
+      </div>
+      <div class="sentence faint">
+        {#if food.daysLeft === Infinity}
+          The beds are keeping up. Nothing is being eaten into.
+        {:else}
+          {Math.round(food.daysLeft)} days of locker at this rate ·
+          {food.produced.toFixed(1)} grown against {food.eaten.toFixed(1)} eaten
+        {/if}
+      </div>
+
+      <div class="label" style="margin-top:16px">Crew effort</div>
       <div class="sentence">
         {Math.round(ship.settings.botanistShare * 100)}% goes to the grow beds, the rest to repairs and hauling.
       </div>
@@ -344,6 +368,10 @@
   .lnk:disabled { opacity: .4; text-decoration: none; }
   .hand { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
   .pick { border: 1px solid var(--accent); color: var(--accent); padding: 3px 8px; font-size: 11px; }
+
+  .rats { display: flex; gap: 6px; margin: 4px 0 8px; }
+  .rat { flex: 1; border: 1px solid var(--rule); color: var(--dim); padding: 6px; font-size: 11px; }
+  .rat[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 
   .pool { display: flex; gap: 10px; font-size: 11.5px; padding: 4px 0; border-bottom: 1px solid var(--rule); }
   .pool > :first-child { flex: 1; }

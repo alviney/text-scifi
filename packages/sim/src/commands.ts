@@ -5,10 +5,13 @@
  *  log reproduces any bug exactly (§2's determinism rule), and a second client
  *  only has to build these objects — it never reaches into the model. */
 import { newTask, type Rule } from "./rules.ts";
-import type { Settings, State } from "./types.ts";
+import { MAX_BEDS } from "./catalogue.ts";
+import type { Settings, State, Stores } from "./types.ts";
 import { emit } from "./signals.ts";
 import { SCAN_HOURS, worthScanning } from "./encounters.ts";
-import { makeDistinct, THAW_DAYS, type Person, type Role } from "./crew.ts";
+import { LEGS } from "./legs.ts";
+import { FIRST_CREW, seasonOver } from "./sim.ts";
+import { makeDistinct, THAW_MAX, type Person, type Role } from "./crew.ts";
 import type { Rng } from "./rng.ts";
 
 /** §3: "Freezing is cheap and instant — rotate crew freely, the cost gate is on
@@ -48,7 +51,18 @@ export type Command =
   | { kind: "assign"; task: string; person: string }
   | { kind: "unassign"; task: string }
   /** §6b: look harder at something ahead. One game-hour of the array's time. */
-  | { kind: "rescan"; enc: number };
+  | { kind: "rescan"; enc: number }
+  /** The three beats of a leg: prep -> season -> transit. */
+  /** End the season: everyone back under, and say who wakes at the next cluster. */
+  | { kind: "goDark"; next?: import("./crew.ts").Role[] }
+  /** §4: move material between rooms by hand. The manual half of the logistics
+   *  layer, and without it the material economy is unreachable — deliveries only
+   *  ever came from standing rules, which the player now starts without. */
+  | { kind: "haul"; from: string; to: string; what: string }
+  /** §6: a grow bed is built, not inherited. The first crew's real job. */
+  | { kind: "buildBed" }
+  /** How thin to spread the locker. Buys days, costs morale. */
+  | { kind: "rations"; level: number };
 
 export function apply(s: State, c: Command): State {
   switch (c.kind) {
@@ -128,7 +142,7 @@ export function apply(s: State, c: Command): State {
       s.colony.frozen--; s.colony.awake = s.crew.length;
       emit(s, "info", "Medbay", "CRW-WAKE",
            `${p.name} is out of cryo. ${p.role[0].toUpperCase() + p.role.slice(1)}, age ${
-             Math.floor(p.age)}. Fit for duty in ${THAW_DAYS} days.`);
+             Math.floor(p.age)}. Fit for duty within ${THAW_MAX} days.`);
       break;
     }
     case "assign": {
@@ -138,6 +152,48 @@ export function apply(s: State, c: Command): State {
       // One thing at a time (§3). Taking a new job drops the old one.
       for (const t of s.board) if (t.assignee === who.id) t.assignee = undefined;
       task.assignee = who.id; who.task = task.id;
+      break;
+    }
+    case "haul": {
+      if ((s.rooms[c.from]?.[c.what as keyof Stores] ?? 0) <= 0) break;
+      if (s.board.some(t => t.kind === "deliver" && t.to === c.to && t.what === c.what)) break;
+      s.board.push(newTask(s, { kind: "deliver", target: `${c.to}:${c.what}`,
+                                raised: s.day, priority: 4,
+                                from: c.from, to: c.to, what: c.what }));
+      break;
+    }
+    case "buildBed": {
+      const have = s.assets.filter(a => a.id.startsWith("bed")).length;
+      if (have >= MAX_BEDS) break;
+      if (s.board.some(t => t.kind === "buildBed")) break;
+      s.board.push(newTask(s, { kind: "buildBed", target: `bed${have + 1}`,
+                                raised: s.day, priority: 2 }));
+      break;
+    }
+    case "rations": {
+      s.settings.rations = Math.max(0.4, Math.min(1, c.level));
+      emit(s, "info", "Quarters", "RAT-SET",
+           `Rations set to ${Math.round(s.settings.rations * 100)}%.`);
+      break;
+    }
+    case "goDark": {
+      if (s.phase !== "season") break;
+      // The readiness gate is parked along with the Long-Dark automation model
+      // it was written for. For now the only condition is that the cluster is
+      // behind you and you have said who wakes up next.
+      if (!seasonOver(s)) {
+        emit(s, "warn", "Bridge", "SEA-HOLD", "There are still objects ahead of us.");
+        break;
+      }
+      // Everyone goes back under. Nobody keeps watch — there is nothing for
+      // them to do that the player could direct, and no automation to direct it.
+      for (const person of [...s.crew]) freeze(s, person);
+      s.nextCrew = c.next ?? [...FIRST_CREW];
+      s.phase = "transit"; s.phaseFrom = s.hour;
+      const next = LEGS[s.leg + 1];
+      emit(s, "info", "Voyage", "SEA-DARK",
+           next ? `Going dark. ${Math.round(next.year - s.day / 365)} years to ${next.name}.`
+                : `Going dark. ${Math.round(300 - s.day / 365)} years to target.`);
       break;
     }
     case "rescan": {

@@ -14,6 +14,9 @@
   import { classReading, confidence, estimate, estimateComposition,
            trueMass, worthScanning, SCAN_HOURS } from "../../../sim/src/encounters.ts";
   import { fuel, hours, num, power, MATERIAL } from "../lib/view.ts";
+  import { seasonOver } from "../../../sim/src/sim.ts";
+  import { LEGS } from "../../../sim/src/legs.ts";
+  import { ROSTER, type Role } from "../../../sim/src/crew.ts";
 
   let { ship, frac, progress, send }: {
     ship: State; frac: number; progress: () => number; send: (c: Command) => void } = $props();
@@ -21,6 +24,12 @@
   let sky: HTMLCanvasElement | undefined = $state();
   let bar: HTMLElement | undefined = $state();
   let picked: number | null = $state(null);
+  /** The hand-off: who comes round at the next cluster, chosen as you go under. */
+  let rostering = $state(false);
+  let next = $state<Role[]>(["engineer", "engineer", "botanist", "pilot"]);
+  const roles = [...new Set(ROSTER)] as Role[];
+  const over = $derived(seasonOver(ship) && ship.phase === "season");
+  const after = $derived(LEGS[ship.leg + 1]);
 
   const p = $derived(power(ship));
   const f = $derived(fuel(ship));
@@ -163,6 +172,54 @@
       </div>
     </div>
 
+    {#if ship.phase === "transit"}
+      <div class="pad dark">
+        <div class="label">The long dark</div>
+        <div class="big">{(after ? after.year - ship.day / 365 : 300 - ship.day / 365).toFixed(1)}
+          <span class="dim">years to go</span></div>
+        <div class="sentence dim">
+          Everyone is under. The reactor is throttled and the ship is cold.
+          Nothing is running, so nothing is wearing out.
+        </div>
+      </div>
+    {/if}
+
+    {#if over}
+      <!-- The cluster is behind you. The only thing left is to say who wakes up
+           at the next one — decades from now, with whatever you leave them. -->
+      <div class="pad handoff">
+        <div class="label">The season is over</div>
+        {#if rostering}
+          <div class="sentence dim">
+            Four berths. {after ? `${Math.round(after.year - ship.day / 365)} years to ${after.name}.`
+                                : "The last stretch to target."}
+          </div>
+          {#each next as _, i}
+            <div class="berth">
+              <span class="faint">{i + 1}</span>
+              {#each roles as r}
+                <button class="pick" aria-pressed={next[i] === r}
+                        disabled={ship.pool[r] <= 0}
+                        onclick={() => next[i] = r}>{r.slice(0, 3)}</button>
+              {/each}
+            </div>
+          {/each}
+          <div class="sentence faint">
+            {roles.map(r => `${ship.pool[r]} ${r}s`).join(" · ")} left in the bank
+          </div>
+          <button class="act" onclick={() => send({ kind: "goDark", next: [...next] })}>
+            Put everyone under
+          </button>
+        {:else}
+          <div class="sentence">
+            {num(ship.counters.encountersTaken)} objects worked.
+            Whatever is on the shelves now is what the next crew inherit.
+          </div>
+          <button class="act" onclick={() => rostering = true}>Choose the next crew</button>
+        {/if}
+      </div>
+    {/if}
+
     <div class="pad">
       <div class="label">Voyage</div>
       <div class="big">Year {num(Math.floor(yr))} <span class="dim">of 300</span></div>
@@ -234,6 +291,15 @@
           align-items: center; font-size: 11px; padding: 3px 0; }
   .comp .bar { height: 3px; }
   .comp .faint { text-align: right; }
+  .dark { background: color-mix(in srgb, var(--accent) 6%, transparent);
+          border-bottom: 1px solid var(--rule); }
+  .handoff { background: var(--panel); border-bottom: 1px solid var(--rule); }
+  .berth { display: flex; gap: 5px; align-items: center; margin-bottom: 5px; }
+  .berth .faint { width: 12px; }
+  .berth .pick { flex: 1; border: 1px solid var(--rule); color: var(--dim);
+                 padding: 5px 0; font-size: 10.5px; text-transform: uppercase; }
+  .berth .pick[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  .berth .pick:disabled { opacity: .3; }
   .scanning { margin-top: 16px; display: grid; gap: 5px; }
   .scanning .faint { font-size: 11px; }
   .act { display: block; width: 100%; border: 1px solid var(--accent); color: var(--accent);
