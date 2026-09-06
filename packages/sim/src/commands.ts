@@ -8,11 +8,12 @@ import { newTask, type Rule } from "./rules.ts";
 import { MAX_BEDS } from "./catalogue.ts";
 import type { Settings, State, Stores } from "./types.ts";
 import { emit } from "./signals.ts";
-import { SCAN_HOURS, worthScanning } from "./encounters.ts";
+import { SCAN_HOURS, worthScanning, sortiesFor, classReading, confidence,
+         dvCost, closestApproach } from "./encounters.ts";
 import { LEGS } from "./legs.ts";
 import { canWake, MED_ROOM, MEDS_PER_WAKE } from "./colony.ts";
 import { withdraw } from "./logistics.ts";
-import { FIRST_CREW, seasonOver } from "./sim.ts";
+import { FIRST_CREW, seasonOver, launchBlocked } from "./sim.ts";
 import { makeDistinct, THAW_MAX, type Person, type Role } from "./crew.ts";
 import type { Rng } from "./rng.ts";
 
@@ -54,6 +55,11 @@ export type Command =
   | { kind: "unassign"; task: string }
   /** §6b: look harder at something ahead. One game-hour of the array's time. */
   | { kind: "rescan"; enc: number }
+  /** §6b: SEND THE FLEET. The one command the season turns on — nothing is
+   *  harvested that the player did not send the drones to. */
+  | { kind: "launch"; enc: number }
+  /** Call them home early, keeping the water the rest of the wave would burn. */
+  | { kind: "recall" }
   /** The three beats of a leg: prep -> season -> transit. */
   /** End the season: everyone back under, and say who wakes at the next cluster. */
   | { kind: "goDark"; next?: import("./crew.ts").Role[] }
@@ -226,6 +232,33 @@ export function apply(s: State, c: Command): State {
       s.scans.push({ enc: c.enc, work: SCAN_HOURS, done: 0 });
       emit(s, "chatter", "Bridge", "NAV-SCAN", `Surveying the object ${
         Math.round(enc.year - s.day / 365)} years out.`);
+      break;
+    }
+    case "launch": {
+      const e = s.schedule.find(x => x.id === c.enc);
+      if (!e) break;
+      const why = launchBlocked(s, e);
+      if (why) { emit(s, "warn", "Drone Bay", "HRV-HOLD", why); break; }
+      // Re-sending the fleet to an object it is already working is a no-op
+      // rather than a second wave: the drones are there.
+      if (s.sortie?.enc === c.enc) break;
+      const dv = dvCost(e, s.day);
+      s.sortie = { enc: e.id, flown: e.flown, want: sortiesFor(s.drones),
+                   landed: 0, burned: 0, spilled: 0, lost: 0, from: s.day, dv };
+      const late = s.day > closestApproach(e);
+      emit(s, "info", "Drone Bay", "HRV-GO",
+           `Fleet away to the ${classReading(e, confidence(e, s.day / 365)).toLowerCase()} object. ` +
+           `${(sortiesFor(s.drones) - e.flown)} sorties at ${dv.toFixed(1)}x propellant` +
+           (dv > 1.6 ? late ? " — it is already running from us." : " — we are chasing it down."
+                     : "."));
+      break;
+    }
+    case "recall": {
+      const so = s.sortie;
+      if (!so) break;
+      s.sortie = null;
+      emit(s, "info", "Drone Bay", "HRV-BACK",
+           `Fleet recalled after ${so.flown} sorties. ${so.landed.toFixed(0)} units aboard.`);
       break;
     }
     case "unassign": {

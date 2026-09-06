@@ -2,6 +2,7 @@
  *  time. Starts leg 1 with a deliberately short tank and no hauling. */
 import { init, step, seasonOver } from "../sim/src/sim.ts";
 import { apply } from "../sim/src/commands.ts";
+import { autoLaunch } from "./pilot.ts";
 import { WATER_ROOM, waterDays } from "../sim/src/colony.ts";
 import { LEGS } from "../sim/src/legs.ts";
 
@@ -11,7 +12,12 @@ for (const tank of [1200, 600, 300, 120]) {
   s.rooms[WATER_ROOM].ice = tank;
   const start = s.day, marks: string[] = [];
   let seen = new Set<string>(), minAir = 100, dryFrom = 0;
+  let lastLaunchDay = -1;
   while (!s.dead && !(s.phase === "season" && seasonOver(s))) {
+    // The fleet does not fly itself any more. Send it, but do NOT haul: this
+    // probe measures a room running dry, and carrying water up from the bay
+    // would be measuring the fix rather than the failure.
+    if (s.day !== lastLaunchDay) { lastLaunchDay = s.day; autoLaunch(s); }
     const beds = s.assets.filter(a => a.id.startsWith("bed")).length;
     if (beds < 3 && !s.board.some(t => t.kind === "buildBed")
         && s.phase === "season" && s.crew.some(c => !c.asleep && s.day >= c.fitOn))

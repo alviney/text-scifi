@@ -2027,6 +2027,37 @@ So the window is a **decision with a shape**, not a binary in-range flag. Launch
 wastes propellant you need for later sorties; waiting for the optimum is efficient but
 worthless if your drones aren't built and fuelled when it arrives. Preparation is the skill.
 
+### Built: the fleet goes where it is sent
+
+The lifecycle above was, until now, a description of something the simulation did on the
+player's behalf. `step()` worked every object the ship passed, so DETECT → WINDOW → SORTIES
+happened whether anyone was watching or not, and the survey button bought a better estimate of
+something you were going to take anyway.
+
+Harvesting is a command now. `launch` sends the drones to one object; `recall` brings them
+home; a window that shuts on an object nobody sent them to is a rock the route does not offer
+twice, and the bulletin says so by name.
+
+**The window is 28 days before closest approach and 8 after**, and the asymmetry is the design:
+a drone can chase something down expensively, but nothing catches an object already receding
+at cruise velocity. The lead was 12 days in the first cut and that was wrong for a reason worth
+keeping — at 12 days against a season's ~18-day object spacing, only one object is ever in
+range, so "which rock" is not a choice at all. Measured: picking the biggest rock, the most
+metallic and the most icy produced byte-identical seasons. **The overlap is the decision.**
+
+**The cost curve above is charged per sortie, on the day it flies.** Sweeping the launch day
+finds a clean minimum at 33.9 water per thousand units landed five days out, against 47.3
+launching the moment the window opens and 43.9 launching two days late — and the volume runs
+the other way, because a longer window is more days for the crew to empty the bay. Water buys
+rocks later in the season; there is no season later than the fifth.
+
+**And the wave holds station on a full Cargo Bay** (§4's backpressure). Without that the fleet
+burned 818 water to land 2,193 units and spill 47,096 — a broken decision rather than a hard
+one. With it, how many rocks a season works is set by how fast the crew drain the bay: 1.2 of
+5 with nobody hauling, 4.3 of 5 with material going where it is used.
+
+Numbers, sweeps and what it cost the other probes: `packages/README.md`.
+
 ### Object classes
 
 | Class | Freq | Water ice | Volatiles | Silicates | Metal ore | **Rare elements** |

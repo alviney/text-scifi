@@ -190,6 +190,35 @@ export function shelf(s: State, room: string) {
               .map(([k, name]) => ({ key: k, name, qty: (st as Record<string, number>)[k] }));
 }
 
+/** §4: where each raw material is actually CONSUMED.
+ *
+ *  The haul control offers these and nothing else. A list of ten rooms is not a
+ *  decision, and nine of the ten have no use for a tonne of ore. Volatiles are
+ *  the only material with two real destinations, which is exactly the choice
+ *  §6b wanted them to be: fertiliser or medical stock, not both. */
+export const WANTED_IN: Record<string, string[]> = {
+  ore: ["Engineering"], sil: ["Engineering"], rare: ["Engineering"],
+  ice: ["Life Support"], vol: ["Hydroponics", "Medbay"],
+};
+
+/** What a room is holding that somewhere else has a use for, biggest first.
+ *  This is the Cargo Bay's whole problem in one function. */
+export function haulable(s: State, room: string) {
+  const st = s.rooms[room] as unknown as Record<string, number>;
+  if (!st) return [];
+  return Object.entries(WANTED_IN)
+    .filter(([k]) => st[k] > 20)
+    .map(([k, to]) => ({ key: k, name: MATERIAL[k], qty: st[k],
+                         to: to.filter(r => r !== room) }))
+    .filter(x => x.to.length)
+    .sort((a, b) => b.qty - a.qty);
+}
+
+/** Is a haul of this material to this room already on the board or moving? */
+export const hauling = (s: State, what: string, to: string) =>
+  s.board.some(t => t.kind === "deliver" && t.to === to && t.what === what)
+  || s.shipments.some(x => x.to === to && x.what === what);
+
 /** Consignments on their way, for the room that is waiting on them. */
 export const inbound = (s: State, room: string) => s.shipments.filter(x => x.to === room);
 export const outbound = (s: State, room: string) => s.shipments.filter(x => x.from === room);

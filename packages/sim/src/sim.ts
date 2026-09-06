@@ -1,15 +1,17 @@
 import { type Rng, rng, chance } from "./rng.ts";
-import type { Asset, Policy, Settings, State } from "./types.ts";
+import type { Asset, Encounter, Policy, Settings, State } from "./types.ts";
 import { DEFAULT_SETTINGS } from "./types.ts";
 import { buildAssets, assetName, newBed, BED_PARTS, MAX_BEDS,
          RARE_COST, PART_COST, ELEC_COST } from "./catalogue.ts";
-import { buildSchedule, harvest, classReading, confidence, trueMass,
-         SORTIES_PER_WINDOW, PROPELLANT_PER_SORTIE, PROPELLANT_RESERVE,
-         propellantFor } from "./encounters.ts";
+import { buildSchedule, classReading, confidence, trueMass, dvCost, inWindow,
+         sortieYield, sortiesFor, windowOpens, windowCloses, windowGone,
+         SORTIE_LOSS, SORTIES_PER_WINDOW, PROPELLANT_PER_SORTIE,
+         PROPELLANT_RESERVE, propellantFor, WINDOW_LEAD, WINDOW_TAIL,
+         CLASS_NAME } from "./encounters.ts";
 import { emptyStores, refine, makeParts, canMakeRod, makeRod, canMakeDrone, makeDrone,
          RARE_RESERVE, ELEC_TARGET } from "./economy.ts";
-import { CRANE_KW, HOLD, SHOP, capOf, daysOf, deposit, isBulk, land, loadOf, newRooms,
-         withdraw, type MatKey } from "./logistics.ts";
+import { CRANE_KW, HOLD, SHOP, capOf, daysOf, deposit, heldIn, isBulk, land, loadOf,
+         newRooms, withdraw, type MatKey } from "./logistics.ts";
 import { BASELINE_KW, bus, emptyRoomSaving, reactorOutput, rodsPerDay } from "./power.ts";
 import { type Task, inheritedRules, playerRules, evaluate, reportedCondition } from "./rules.ts";
 import { newColony, tickColony, crewLabour, STARTING_WATER, WATER_ROOM,
@@ -35,7 +37,7 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   const s: State = {
     day: 0, rngState: 0, assets: buildAssets(), rods: START_RODS, drones: START_DRONES,
     stores: emptyStores(), rooms: newRooms(), shipments: [],
-    schedule: buildSchedule(r), next: 0, scans: [], hour: 0,
+    schedule: buildSchedule(r), next: 0, sortie: null, scans: [], hour: 0,
     leg: 0, phase: "prep", phaseFrom: 0, nextCrew: [...FIRST_CREW],
     gauges: { parts: 100, rods: 100, rareCmp: 100, drones: 100 }, colony: newColony(),
     crew: [], requests: [], memorial: [], pool: { ...POOL }, nextCrewId: 0, nextTaskId: 0,
@@ -308,7 +310,10 @@ function openSeason(s: State): void {
 /** The cluster is behind you when the last object has passed. */
 export function seasonOver(s: State): boolean {
   const last = s.schedule.filter(e => e.leg === s.leg).at(-1);
-  return !!last && s.day / 365 > last.year;
+  // The season ends when the last WINDOW shuts, not when the ship passes
+  // closest approach: there are six more days of harvesting after that, and
+  // ending the season on the earlier date silently threw them away.
+  return !!last && windowGone(last, s.day) && !s.sortie;
 }
 
 function arrive(s: State): void {
@@ -388,6 +393,160 @@ function hourly(s: State): void {
          `Survey complete. ${classReading(enc, conf)}, ${
            Math.round(trueMass(enc) * (1 + enc.bias * (1 - conf) * 0.4))} units, ` +
          `${Math.round(conf * 100)}% confidence.`);
+  }
+}
+
+/** ─── §6b: the fleet ────────────────────────────────────────────────────────
+ *
+ *  Three small functions, and between them they are the season.
+ *
+ *  `openWindows` tells you a rock is reachable. `flyWave` flies the wave you
+ *  sent. `closeWindows` books what you took and what you let go past. The
+ *  player is the only thing that connects the first to the second. */
+
+/** What one sortie costs in water, right now, at this object. */
+export const sortieCost = (e: Encounter, day: number) =>
+  PROPELLANT_PER_SORTIE * dvCost(e, day);
+
+/** What a full wave would cost if it launched today and flew at today's rate.
+ *
+ *  An estimate, and deliberately the optimistic one: the Δv curve keeps falling
+ *  until closest approach, so a wave launched before the minimum costs LESS than
+ *  this. Quoting the pessimistic figure would have made waiting look worse than
+ *  launching, which is backwards. */
+export const waveCost = (s: State, e: Encounter) =>
+  sortieCost(e, s.day) * sortiesFor(s.drones);
+
+/** Why the fleet cannot go, in the words the player will see. Null means go. */
+export function launchBlocked(s: State, e: Encounter): string | null {
+  if (s.phase === "transit" || s.phase === "done") return "The ship is dark.";
+  if (s.sortie && s.sortie.enc !== e.id) return "The fleet is already out.";
+  if (e.flown >= sortiesFor(s.drones)) return "Picked clean.";
+  if (s.day < windowOpens(e)) return `Out of range for ${Math.ceil(windowOpens(e) - s.day)} days.`;
+  if (windowGone(e, s.day)) return "Gone. It is receding at cruise velocity.";
+  if (s.drones <= 0) return "No drones left.";
+  if (!hasAwake(s.crew, "pilot")) return "Nobody awake can fly them.";
+  if (reactorOf(s).faulted) return "The reactor is down.";
+  if (s.rooms[HOLD].ice < sortieCost(e, s.day))
+    return "Not enough water in the bay for a single sortie.";
+  return null;
+}
+
+/** A window opening is the ONLY prompt the player gets, and it is a warning
+ *  rather than a note on purpose: a season has five of these in it and each one
+ *  is a rock you will not be offered again. */
+function openWindows(s: State): void {
+  // The first day the AI is awake in this leg. An object whose window opened
+  // before the ship came online still has to be announced, or the season's
+  // first rock is one nobody was ever told about.
+  const online = Math.round(LEGS[s.leg].year * 365 - PREP_DAYS);
+  for (const e of s.schedule) {
+    if (e.leg !== s.leg) continue;
+    if (Math.max(Math.round(windowOpens(e)), online) !== s.day) continue;
+    const conf = confidence(e, s.day / 365);
+    emit(s, "warn", "Drone Bay", "HRV-OPEN",
+         `${classReading(e, conf)} in range. ${WINDOW_LEAD + WINDOW_TAIL} days to work it, ` +
+         `cheapest in ${WINDOW_LEAD}.`);
+  }
+}
+
+/** One day of the wave in flight.
+ *
+ *  Each drone makes one round trip a day, and pays for it before it goes. The
+ *  bill is water out of the Cargo Bay at today's point on the Δv curve — so a
+ *  wave that launched early is still paying for that decision on day three,
+ *  and one that launched at the minimum gets cheaper for a day and then dearer. */
+function flyWave(s: State, r: Rng): void {
+  const so = s.sortie;
+  if (!so) return;
+  const e = s.schedule.find(x => x.id === so.enc)!;
+
+  const stop = (why: string, level: "info" | "warn" = "info") => {
+    s.sortie = null;
+    emit(s, level, "Drone Bay", "HRV-HOME",
+         `Fleet home from the ${CLASS_NAME[e.cls]} object. ${so.flown} of ${so.want} sorties, ` +
+         `${so.landed.toFixed(0)} units aboard for ${so.burned.toFixed(0)} water. ${why}`);
+  };
+
+  if (windowGone(e, s.day)) return stop("The window shut.", "warn");
+  if (s.drones <= 0) return stop("The fleet is gone.", "warn");
+  if (!hasAwake(s.crew, "pilot")) return stop("Nobody awake can fly them.", "warn");
+  if (reactorOf(s).faulted) return stop("The reactor went down.", "warn");
+
+  const dv = dvCost(e, s.day);
+  const per = PROPELLANT_PER_SORTIE * dv;
+  const bay = s.rooms[HOLD], cap = capOf(HOLD);
+
+  for (let i = 0; i < s.drones && so.flown < so.want; i++) {
+    // §4 BACKPRESSURE, and the reason the haul is the season.
+    //
+    // A drone will not burn water to bring a load to a shelf with no room on
+    // it. Measured without this: the probe landed 2,193 units and spilled
+    // 47,096 — the fleet spent 818 water flying cargo into a bay that had been
+    // full since the third sortie. That is not a hard decision, it is a broken
+    // one. The wave now HOLDS STATION until somebody carries material out of
+    // the Cargo Bay, which makes the length of a wave a function of how fast
+    // the crew can empty the bay, not of how big the rock is.
+    const load = sortieYield(e).units;
+    if (capOf(HOLD) - heldIn(bay) < load * 0.25) {
+      if (!s.bayHeld) {
+        s.bayHeld = true;
+        emit(s, "warn", "Cargo Bay", "HRV-HOLD",
+             `Fleet holding station — the bay is full. ${
+               so.want - so.flown} sorties waiting on somebody to clear it.`);
+      }
+      return;
+    }
+    s.bayHeld = false;
+    if (bay.ice < per) {
+      emit(s, "warn", "Drone Bay", "PRP-SHORT",
+           `Only ${so.flown} of ${so.want} sorties flown — the bay is out of water.`);
+      return stop("Out of propellant.", "warn");
+    }
+    so.burned += withdraw(bay, "ice", per);
+    s.counters.propellant += per;
+    so.flown++; e.flown++;
+
+    const h = sortieYield(e);
+    // Value order, unchanged from the instantaneous version. The bay has a lid,
+    // so something gets left in space — the crew keep the rare earths and the
+    // ore before the water, and the fleet's own reserve goes ahead of both.
+    const fuelFirst = Math.min(Math.max(0, h.ice),
+                               Math.max(0, PROPELLANT_RESERVE - bay.ice));
+    for (const [k, v] of [["ice", fuelFirst], ["rare", h.rare], ["ore", h.ore],
+                          ["sil", h.sil], ["ice", Math.max(0, h.ice) - fuelFirst],
+                          ["vol", h.vol]] as [MatKey, number][]) {
+      const got = land(bay, k, v, cap);
+      s.counters.overflow += got.lost;
+      s.counters.declined += got.declined;
+      so.spilled += got.lost;
+      const kept = v - got.lost - got.declined;
+      so.landed += kept; e.landed += kept;
+    }
+    // §6b's risk column. A sortie flown off the minimum is a sortie flown hard.
+    if (chance(r, SORTIE_LOSS * dv)) {
+      s.drones--; so.lost++;
+      emit(s, "warn", "Drone Bay", "DRN-LOST", `Drone lost on sortie. Fleet at ${s.drones}.`);
+      if (s.drones <= 0) return stop("The fleet is gone.", "warn");
+    }
+  }
+
+  if (so.spilled > 1 && s.day % 3 === 0)
+    emit(s, "warn", "Cargo Bay", "BAY-FULL",
+         `Bay full. ${so.spilled.toFixed(0)} units of this haul left behind.`);
+  if (so.flown >= so.want) stop("Picked clean.");
+}
+
+/** Book the objects whose windows have shut. */
+function closeWindows(s: State): void {
+  while (s.next < s.schedule.length && windowCloses(s.schedule[s.next]) <= s.day) {
+    const e = s.schedule[s.next++];
+    if (e.flown > 0) { s.counters.encountersTaken++; continue; }
+    s.counters.encountersMissed++;
+    if (e.leg === s.leg)
+      emit(s, "warn", "Cargo Bay", "HRV-GONE",
+           `${classReading(e, confidence(e, s.day / 365))} object passed unworked. ` +
+           `The route does not offer it twice.`);
   }
 }
 
@@ -545,67 +704,18 @@ function daily(s: State): void {
   if (s.rods < yearsLeft * rodsPerDay(delivered, reactor.cond) * 365) s.counters.deficitDays++;
 
   // ---- encounters ----
-  const year = s.day / 365;
-  while (s.next < s.schedule.length && s.schedule[s.next].year <= year) {
-    const enc = s.schedule[s.next++];
-    // §3: "No pilots, no rare compounds, no ship." Drones do not fly themselves.
-    const bay0 = s.rooms[HOLD];
-    // §6b: the fleet flies on water, and the bill is paid before the wave
-    // launches. A dry bay does not cancel the encounter, it flies a smaller
-    // wave — so running short costs you part of a rock rather than all of it,
-    // and the loop that refills the tank is the same one that empties it.
-    const wanted = s.drones * SORTIES_PER_WINDOW;
-    const flown = Math.min(wanted, Math.floor(bay0.ice / PROPELLANT_PER_SORTIE));
-    if (s.drones > 0 && flown > 0 && !reactor.faulted && hasAwake(s.crew, "pilot")) {
-      const burned = withdraw(bay0, "ice", propellantFor(flown));
-      s.counters.propellant += burned;
-      const h = harvest(enc, s.drones, flown);
-      const bay = s.rooms[HOLD], cap = capOf(HOLD);
-      let spilled = 0, declined = 0, landed = 0;
-      // Value order, deliberately. The bay has a lid, so something gets left in
-      // space — and the crew keep the rare earths and the ore before the water.
-      // Depositing in an arbitrary order let ice fill the bay and leave the ore
-      // behind, which is a modelling artifact rather than a decision anyone made.
-      //
-      // The one thing that goes ahead of the ore is the fleet's own fuel. Water
-      // buys every future rock, so the crew top the propellant reserve up before
-      // they load anything they cannot come back for. Whatever water is left
-      // over queues behind the cargo, where it always was.
-      const fuelFirst = Math.min(Math.max(0, h.ice),
-                                 Math.max(0, PROPELLANT_RESERVE - bay.ice));
-      for (const [k, v] of [["ice", fuelFirst], ["rare", h.rare], ["ore", h.ore],
-                            ["sil", h.sil], ["ice", Math.max(0, h.ice) - fuelFirst],
-                            ["vol", h.vol]] as [MatKey, number][]) {
-        const got = land(bay, k, v, cap);
-        spilled += got.lost; declined += got.declined;
-        landed += v - got.lost - got.declined;
-      }
-      s.counters.overflow += spilled;
-      s.counters.declined += declined;
-      s.counters.encountersTaken++;
-      if (flown < wanted)
-        emit(s, "warn", "Drone Bay", "PRP-SHORT",
-             `Only ${flown} of ${wanted} sorties flown — not enough water for propellant.`);
-      emit(s, "info", "Cargo Bay", "HRV-OK",
-           `${enc.cls}-type worked. ${landed.toFixed(0)} units aboard, ${burned.toFixed(0)} spent as propellant.`);
-      // §4: an output buffer that is full stalls the thing feeding it. Here that
-      // is the whole encounter — material left in space because the bay is full.
-      if (spilled > 1)
-        emit(s, "warn", "Cargo Bay", "BAY-FULL",
-             `Bay full. ${spilled.toFixed(0)} units left behind.`);
-      if (chance(r, 0.06 * s.drones)) {
-        s.drones--;
-        emit(s, "warn", "Drone Bay", "DRN-LOST", `Drone lost on sortie. Fleet at ${s.drones}.`);
-      }
-    } else {
-      s.counters.encountersMissed++;
-      emit(s, "warn", "Cargo Bay", "HRV-MISS",
-           `${enc.cls}-type passed unworked — ${
-             s.drones <= 0 ? "no drones" :
-             !hasAwake(s.crew, "pilot") ? "nobody awake can fly them" :
-             flown <= 0 ? "no water in the bay for propellant" : "no power"}.`);
-    }
-  }
+  //
+  // NOTHING HERE HARVESTS BY ITSELF ANY MORE.
+  //
+  // This block used to work every object the ship passed, which meant the five
+  // rocks of a season were an income statement rather than five decisions — and
+  // the survey button bought a better estimate of something you were going to
+  // take anyway (packages/README, open thread 1). The fleet now goes where it is
+  // sent, one object at a time, and a window that shuts on an object nobody sent
+  // it to is a rock the route does not offer twice.
+  openWindows(s);
+  flyWave(s, r);
+  closeWindows(s);
 
   const frozenBefore = s.colony.frozen, awakeBefore = s.colony.awake;
   // §3: the people, before the aggregate. A ship with no botanist awake grows
@@ -636,7 +746,31 @@ function daily(s: State): void {
 
 export function run(seed: number, p: Policy, actII = 40): State {
   const s = init(seed, actII, p);
+  let lastDay = -1;
   while (!s.dead) {
+    // THE AUTOPILOT HAS TO SEND THE FLEET NOW.
+    //
+    // `step()` stopped harvesting by itself, so without this every automated
+    // run works zero objects — validate.ts went from 5 encounters to 0 the
+    // moment the mechanic landed. This is a CLIENT decision sitting in the
+    // simulation's own driver, for the same reason the calibration below is:
+    // run() is the balance harness's loop, not the game's. It takes anything in
+    // range the moment it appears, which is the crudest possible player and
+    // exactly right for a determinism and crash check. The probes that measure
+    // the DECISION live in packages/harness/pilot.ts.
+    if (s.day !== lastDay) {
+      lastDay = s.day;
+      if (!s.sortie) {
+        const e = s.schedule.find(x => x.leg === s.leg && inWindow(x, s.day)
+                                       && x.flown < sortiesFor(s.drones)
+                                       && !launchBlocked(s, x));
+        if (e) apply(s, { kind: "launch", enc: e.id });
+        // Nothing carries material out of the bay in an autopilot run either,
+        // so the wave would hold station on a full shelf for three hundred
+        // years. The rules the policy installs do the hauling; this only has to
+        // not deadlock when they cannot.
+      }
+    }
     // The autopilot's one standing habit the rule engine cannot express:
     // §5 gauges have no machine to be opened alongside, so calibration is a
     // deliberate act. A human client issues apply(s, {kind:"calibrate"}).

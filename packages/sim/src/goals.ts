@@ -57,7 +57,9 @@ const BEDS_WANTED = 3;
 
 export function goals(s: State): Goal[] {
   const beds = s.assets.filter(a => a.id.startsWith("bed") && !a.faulted).length;
-  const worked = s.schedule.filter(e => e.leg === s.leg && e.id < s.next).length;
+  // Worked means the fleet was SENT and brought something back, not that the
+  // ship happened to pass it. Four rocks you sailed past are not four rocks.
+  const worked = s.schedule.filter(e => e.leg === s.leg && e.flown > 0).length;
   const next = LEGS[s.leg + 1];
   const years = Math.max(1, next ? next.year - s.day / 365 : 300 - s.day / 365);
   const need = crossingNeeds(s, years);
@@ -99,7 +101,7 @@ export function goals(s: State): Goal[] {
     g("belt", "Work the belt", false, worked, OBJECTS_PER_LEG,
       `${worked} of ${OBJECTS_PER_LEG} objects`,
       "Mission Control",
-      "Every rock you pass is one the route does not offer twice."),
+      "Every rock you pass is one the route does not offer twice. Send the drones."),
 
     g("sound", "Hand over a sound ship", false, sound, crit.length,
       `${sound} of ${crit.length} critical systems above 55`,

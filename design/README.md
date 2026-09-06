@@ -206,6 +206,9 @@ reassembles as you go, so you can check it means what you meant before saving.
 | `role-years` | Working years left |
 | `M-type (est.)` | Probably metal |
 | Manufacturing / Task board | Workshop / Jobs |
+| `dvCost` multiplier | `×1.2` beside "cheapest in 6d" |
+| `sortie` / `window` | Fleet on station / In range · 9 days left |
+| `haul(from, to, what)` | `→ Engineering` on the material it moves |
 
 The one mark kept is the trailing `?` on a reading from a worn gauge — it is a symbol
 rather than jargon, and Stores explains it once in plain English.
@@ -216,6 +219,10 @@ Two conventions worth preserving:
   chromatic element. Colour never carries meaning alone — `●` `◐` `○` differ by glyph.
 - **Degraded readings are marked.** A trailing `?` on any value sourced from a
   worn sensor (§5), e.g. `Water 900?`. No explanation in the UI.
+- **The fix goes next to the problem.** When the drone wave holds station on a full Cargo
+  Bay, the notice saying so carries the haul chips that clear it. The player should not
+  have to learn which tab the answer lives on to act on a sentence the ship just told them.
+  The same chips exist on every room's shelf for when they go looking deliberately.
 
 ### Skins
 

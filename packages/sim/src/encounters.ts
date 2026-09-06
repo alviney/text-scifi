@@ -35,6 +35,7 @@ export function buildSchedule(r: Rng): Encounter[] {
         size: range(r, 0.45, 1.55),
         bias: range(r, -1, 1),
         scans: 0,
+        flown: 0, landed: 0,
       });
     }
   }
@@ -61,28 +62,70 @@ export const propellantFor = (sorties: number) => sorties * PROPELLANT_PER_SORTI
  *  you cargo, which it still does. It is not supposed to cost you the fleet. */
 export const PROPELLANT_RESERVE = propellantFor(3 * 24);
 
-/** Harvest one encounter. `sorties` defaults to a full wave, and is passed
- *  short when the bay could not fuel one.
+/** §6b's window, in days either side of closest approach.
  *
- *  Ice comes back GROSS. Propellant used to be netted off in here, which meant
- *  the largest single use of water in the game happened inside a return value
- *  and was never visible to anyone: the bay simply received less ice than the
- *  rock contained, with no transaction to see. It is now spent at the bay,
- *  before the wave launches, where it can be watched and can run out. */
-export function harvest(enc: Encounter, drones: number,
-                        sorties = drones * SORTIES_PER_WINDOW) {
-  const units = sorties * CAP_PER_SORTIE * enc.richness * enc.size;
-  const c = COMP[enc.cls];
-  return {
-    ice: units * c.ice,
-    vol: units * c.vol,
-    sil: units * c.sil,
-    ore: units * c.ore,
-    rare: units * c.rare,
-    sorties,
-  };
+ *  "Objects are detected 6-18 months ahead... the launch window is a cost curve,
+ *  not a gate." The lead is longer than the tail on purpose: a drone can chase
+ *  something down, expensively, but once the object is receding at cruise
+ *  velocity it is gone and no amount of propellant catches it.
+ *
+ *  THE OVERLAP IS THE DECISION, and the first cut of these numbers designed it
+ *  out. At a 12-day lead against a season's ~18-day object spacing only one
+ *  object is ever in range, so the fleet takes whatever is in front of it and
+ *  "which rock" is not a choice at all — measured, picking the biggest, the
+ *  most metallic and the most icy rock of the season produced byte-identical
+ *  seasons. A 28-day lead puts two and often three objects in range at once,
+ *  which is what forces you to leave one.
+ *
+ *  The tail stays short. Chasing something down is expensive; catching something
+ *  that is already receding at cruise velocity is impossible. */
+export const WINDOW_LEAD = 28;
+export const WINDOW_TAIL = 8;
+
+export const closestApproach = (e: Encounter) => e.year * 365;
+export const windowOpens = (e: Encounter) => closestApproach(e) - WINDOW_LEAD;
+export const windowCloses = (e: Encounter) => closestApproach(e) + WINDOW_TAIL;
+export const inWindow = (e: Encounter, day: number) =>
+  day >= windowOpens(e) && day <= windowCloses(e);
+export const windowGone = (e: Encounter, day: number) => day > windowCloses(e);
+
+/** §6b's cost curve, as a multiplier on a sortie's propellant.
+ *
+ *  | Early | High — the drone burns fuel chasing |
+ *  | At the minimum | Lowest |
+ *  | Late | Rises steeply |
+ *
+ *  This is the only reason the launch button is a decision rather than a
+ *  formality. Sending the fleet the hour a window opens costs about 2.4x what
+ *  sending it two days before closest approach costs, and the water it wastes
+ *  is water the NEXT object's wave does not have. Waiting is the skill; waiting
+ *  too long is how you lose the rock and a drone with it. */
+export function dvCost(e: Encounter, day: number): number {
+  const t = day - closestApproach(e);
+  if (t <= 0) return 1 + Math.pow(Math.min(1, -t / WINDOW_LEAD), 1.4) * 1.7;
+  return 1 + Math.pow(Math.min(1, t / WINDOW_TAIL), 2) * 3.2;
 }
 
+/** What one drone brings back from one round trip, by material.
+ *
+ *  Harvest used to be a single instantaneous call for the whole object, which
+ *  is what made the encounter something that HAPPENED TO the player rather than
+ *  something they did. A wave is now flown a day at a time, so the material
+ *  arrives while the season is still running and the crew can carry it out of
+ *  the bay as it lands. */
+export function sortieYield(e: Encounter) {
+  const units = CAP_PER_SORTIE * e.richness * e.size;
+  const c = COMP[e.cls];
+  return { ice: units * c.ice, vol: units * c.vol, sil: units * c.sil,
+           ore: units * c.ore, rare: units * c.rare, units };
+}
+
+/** How many round trips an object is worth before it is picked clean. */
+export const sortiesFor = (drones: number) => drones * SORTIES_PER_WINDOW;
+
+/** §6b's risk column. A sortie flown off the minimum is a sortie flown hard,
+ *  and hard sorties are the ones that do not come back. */
+export const SORTIE_LOSS = 0.010;
 
 /** What the object is actually worth, in units aboard, for a given fleet. */
 export const trueMass = (enc: Encounter, drones = 6) =>

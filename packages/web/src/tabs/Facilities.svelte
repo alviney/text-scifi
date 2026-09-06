@@ -11,7 +11,7 @@
   import type { Command } from "../../../sim/src/commands.ts";
   import { assetName, band, GLYPH, roomBand, roomLine, assetLine, stateWord,
            mark, num, shown, shownStock, shelf, inbound, logistics,
-           ROOMS, roomOf } from "../lib/view.ts";
+           haulable, hauling, ROOMS, roomOf } from "../lib/view.ts";
   import { MAXCOND_FLOOR } from "../../../sim/src/sim.ts";
   import Cutaway from "../lib/Cutaway.svelte";
   import { PART_COST, ELEC_COST, RARE_COST, MAX_BEDS, BED_PARTS,
@@ -126,6 +126,24 @@
         {/each}
       </div>
     {/if}
+    <!-- §4: NOTHING MOVES BETWEEN ROOMS UNLESS A CREW MEMBER CARRIES IT, and
+         until now there was no way to ask anyone to. The `haul` command has
+         existed since the logistics layer landed and only the balance harness
+         could reach it — which meant the Cargo Bay was a one-way shelf for
+         every player, and since the drone wave holds station on a full bay,
+         a season was one rock and no way to make it more. -->
+    {#each haulable(ship, room) as h (h.key)}
+      <div class="carry">
+        <span class="what">{num(h.qty)} {h.name.toLowerCase()}</span>
+        {#each h.to as dest}
+          {@const busy = hauling(ship, h.key, dest)}
+          <button class="chip" disabled={busy}
+                  onclick={() => send({ kind: "haul", from: room!, to: dest, what: h.key })}>
+            {busy ? `going to ${dest}` : `→ ${dest}`}
+          </button>
+        {/each}
+      </div>
+    {/each}
     {#each inbound(ship, room) as sh}
       <div class="moving">
         <span class="mv">▸</span>
@@ -222,6 +240,14 @@
   .act:disabled { border-color: var(--rule); color: var(--faint); cursor: default; }
   .more { color: var(--dim); font-size: 11px; margin-top: 12px; }
   .kv { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 4px 12px; margin-top: 8px; }
+  .carry { display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+           margin-top: 6px; font-size: 11px; }
+  .carry .what { color: var(--dim); margin-right: auto; }
+  .chip { font: inherit; font-size: 10px; letter-spacing: .04em; color: var(--accent);
+          background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+          padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+  .chip:disabled { color: var(--faint); border-color: var(--rule); cursor: default; }
+
   .moving { display: flex; gap: 8px; align-items: baseline; font-size: 11.5px;
             padding: 4px 0; border-bottom: 1px solid var(--rule); }
   .moving .faint { margin-left: auto; }

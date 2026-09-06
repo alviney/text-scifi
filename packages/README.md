@@ -704,12 +704,115 @@ bay-cap sweep concluded "the bay is not the bottleneck" — correct, but for a r
 stating properly: the shop can only refine what is in *Engineering*, so a bigger bay cannot
 help while nothing is carrying material there. The haul is the bottleneck, at every bay size.
 
+## The fleet goes where it is sent
+
+Open thread 1, taken. `step()` used to work every object the ship passed, so the five rocks
+of a season were an income statement rather than five decisions, and the rescan button bought
+a better estimate of something you were going to take anyway. Harvesting is now a command:
+`launch` sends the drones to one object, `recall` brings them home, and a window that shuts on
+an object nobody sent them to is a rock the route does not offer twice.
+
+Three things had to be true for that to be a decision rather than five extra taps.
+
+### 1. The window has to be wide enough that objects overlap
+
+The first cut set the window at 12 days before closest approach and 6 after, chosen so the
+fleet would rarely be double-booked. That is exactly backwards, and the measurement said so:
+picking the biggest rock of the season, the most metallic, and the most icy produced
+**byte-identical seasons**, because with 18-day windows against ~18-day object spacing only
+one object is ever in range and the fleet takes whatever is in front of it.
+
+At a 28-day lead two and often three objects are reachable at once, and the strategies part:
+
+```
+  strategy   worked   parts   electronics   rare cmp   water
+  big         4.0/5     240            64         74    1313
+  metal       4.1/5     252            76         78    1313
+  ice         4.3/5     235            65         67    1364
+```
+
+Modest, and the reason is worth stating: **the bay caps what a season can land, so the choice
+moves composition, not volume.** Chasing metal is +19% electronics and +16% rare compounds —
+and rare compounds are §7's choke point — against one fewer object worked and less water back.
+
+### 2. The Δv curve has to have a floor you can miss
+
+§6b's table ("early: high, at the minimum: lowest, late: rises steeply") is now a multiplier on
+each sortie's propellant, charged the day the sortie flies rather than on the day you launched:
+
+```
+   -28   -22   -16   -12    -8    -5    -3    -1     0    +2    +4    +6    +8
+  2.70  2.21  1.78  1.52  1.29  1.15  1.07  1.02  1.00  1.20  1.80  2.80  4.20
+                                                     ^ closest approach
+```
+
+Swept over 12 seeds, with the crew hauling:
+
+```
+  launch at   worked   landed   propellant   water/1k landed   spilled   drones
+       -28d    4.0/5     6154          291              47.3      6386    5.5/6
+       -16d    4.7/5     5678          227              39.9      5196    5.8/6
+        -5d    4.8/5     5790          196              33.9      4139    5.7/6
+        -3d    4.8/5     5641          192              34.1      3336    5.8/6
+         0d    4.3/5     4984          198              39.7      2108    5.4/6
+        +2d    3.0/5     3913          172              43.9      1358    5.4/6
+        +4d    1.7/5     2259           93              41.2       426    5.8/6
+```
+
+A clean U at **33.9 water per thousand units landed, five days out**, against 47.3 launching
+the moment the window opens and 43.9 launching two days late. But the volume column runs the
+other way — launching at the window's opening lands the *most* material, because a longer
+window is more days for the crew to drain the bay. So the two ends of the curve are a real
+trade rather than a right answer: water buys rocks later in the season, and there is no season
+later than the fifth.
+
+### 3. A drone will not fly cargo to a shelf with no room on it
+
+The first working version had no backpressure and the number was absurd: **2,193 units landed,
+47,096 spilled, 818 water burned.** The fleet had been flying into a full bay since the third
+sortie of the season. That is not a hard decision, it is a broken one.
+
+§4 already had the answer — an output buffer that is full stalls the thing feeding it — so the
+wave now **holds station** until somebody carries material out of the Cargo Bay. Which turns
+the sharpest previously-recorded finding into the mechanic itself:
+
+```
+  hauling                  objects worked   units landed
+  nobody moves anything            1.2/5           1390
+  ore to the shop                  1.7/5           2225
+  everything to where it is used   4.3/5           5002
+```
+
+**3.6x the material for keeping the bay clear** — the same multiple the old measurement found,
+reached by a different route. It is no longer a thing a diligent player does better; the length
+of a wave *is* how fast the bay drains.
+
+### The interface had no way to haul at all
+
+Found while wiring this up, and it had been true since the logistics layer landed: `haul` was
+reachable from the balance harness and from nothing else. Every player's Cargo Bay was a
+one-way shelf. That was survivable while harvesting was automatic and overflow was silent;
+with the wave holding on a full bay it made a season exactly one rock, always, with no way to
+make it more. There are now destination chips on every room's shelf, and the same chips inside
+the hold notice on the Voyage tab, one tap from the problem.
+
+### What it cost elsewhere
+
+`validate.ts` went from 5 encounters to 0 the moment the mechanic landed, because its autopilot
+never sent the fleet. Every probe is a client now and needs the two standing habits a human
+has, so they live in one place (`packages/harness/pilot.ts`) instead of being copied into each.
+`run()` in sim.ts carries the crudest version inline — take anything in range — next to the
+calibration hack that is there for the same reason. `water.ts` and `volatiles.ts` launch but
+deliberately do not haul: they measure a room running dry, and carrying water up from the bay
+would be measuring the fix rather than the failure. Their conclusions are unchanged — dry on
+day 75/40/18, `FRT-LOW` on d73/d29/d5, `MED-OUT` on d50/d30/d10, all identical to before.
+
 ## Open threads, for whoever picks this up next
 
-1. **Harvesting is automatic.** Five objects a season and refining capacity for roughly one
-   makes *which rock you work* the decision of the season — which is exactly what surveying
-   is for. `step()` still works every object it passes, so the choice does not exist and the
-   rescan button buys a better estimate of something you were going to take anyway.
+1. **Taken — the fleet goes where it is sent.** See above. What it left behind: the *spread*
+   between strategies is small because the bay caps the season, so the surveying payoff is a
+   composition choice rather than a volume one. If that should be sharper, the lever is the
+   bay, not the window.
 2. **The harness cannot go dark.** `run.ts`'s autopilot never ends a season, so it sits in
    `phase: "season"` for 300 years and every policy dies. It will keep producing misleading
    numbers against every resource added until it can issue `goDark`.
@@ -718,7 +821,12 @@ help while nothing is carrying material there. The haul is the bottleneck, at ev
    delete it.
 4. **Volatiles' third use is unmodelled.** plan.md's table says fuel, medical supplies and
    fertiliser; two of the three are in.
-5. **Not every note can be attributed.** The board names people for work-completion signals
+5. **The crane, not the crew, is now the season's clock.** A bulk haul is 200 units over four
+   days, and a leg-1 rock is 12,480. Four fifths of every object is still left in space —
+   6,386 units spilled on the most aggressive launch schedule measured. That is no longer a
+   modelling artifact, it is the shape of the opening, but nobody has decided whether it
+   should be.
+6. **Not every note can be attributed.** The board names people for work-completion signals
    only. A bay-full warning or a survey result is the ship talking, and inventing a
    signature for it was deliberately avoided.
 

@@ -10,9 +10,13 @@
    *  legible without reading a number. */
   import type { Encounter, State } from "../../../sim/src/types.ts";
   import type { Command } from "../../../sim/src/commands.ts";
-  import { classReading, confidence, estimate, estimateComposition,
-           trueMass, worthScanning, SCAN_HOURS } from "../../../sim/src/encounters.ts";
-  import { hours, num, MATERIAL, MATERIAL_COLOUR, units, ROOM_OF_FAC } from "../lib/view.ts";
+  import { classReading, confidence, estimate, estimateComposition, trueMass,
+           worthScanning, SCAN_HOURS, dvCost, inWindow, windowOpens, windowCloses,
+           windowGone, sortiesFor, WINDOW_LEAD } from "../../../sim/src/encounters.ts";
+  import { launchBlocked, sortieCost, waveCost } from "../../../sim/src/sim.ts";
+  import { hours, num, MATERIAL, MATERIAL_COLOUR, units, ROOM_OF_FAC,
+           haulable, hauling } from "../lib/view.ts";
+  import { HOLD } from "../../../sim/src/logistics.ts";
   import { seasonOver } from "../../../sim/src/sim.ts";
   import { LEGS, PREP_DAYS } from "../../../sim/src/legs.ts";
   import { shapeOf, drawRock } from "../lib/rock.ts";
@@ -68,12 +72,23 @@
   /** How far through the season the ship is. Negative during prep — the cluster
    *  has not started, so the marker waits at the line's start. */
   const seasonPc = $derived(Math.max(0, Math.min(100, (dayIn / legDays) * 100)));
-  const worked = (e: Encounter) => e.id < ship.next;
+  /** WORKED MEANS THE FLEET WENT THERE. It used to mean "the ship has passed
+   *  it", which was the same thing while step() harvested everything it met. */
+  const worked = (e: Encounter) => e.flown > 0;
+  const gone = (e: Encounter) => windowGone(e, ship.day);
+  const open = (e: Encounter) => inWindow(e, ship.day);
+  const onStation = (e: Encounter) => ship.sortie?.enc === e.id;
 
   /** The object the panel is about. Tapping picks one; otherwise it is simply
    *  the next one the ship will meet, because that is the one every decision on
    *  this screen is about. */
-  const upcoming = $derived(cluster.find(e => !worked(e)) ?? null);
+  /** The object every decision on this screen is about: whatever the fleet is
+   *  working, else the nearest one still in range, else the next to open. */
+  const upcoming = $derived(
+    cluster.find(e => onStation(e))
+    ?? cluster.filter(e => open(e)).sort((a, b) => a.year - b.year)[0]
+    ?? cluster.find(e => !gone(e))
+    ?? cluster.at(-1) ?? null);
   const sel = $derived(picked === null ? upcoming
                                        : ship.schedule.find(e => e.id === picked) ?? upcoming);
   const selConf = $derived(sel ? confidence(sel, yr) : 0);
@@ -84,6 +99,27 @@
   /** The composition stripe: shares only, no per-material numbers. At this scale
    *  every line would read 1 or 3, which carries less than the share does. */
   const selMix = $derived(sel ? estimateComposition(sel, selConf) : []);
+
+  /** §6b: everything about sending the drones somewhere. */
+  const wave = $derived(ship.sortie);
+  const waveEnc = $derived(wave ? ship.schedule.find(e => e.id === wave.enc) ?? null : null);
+  const selDv = $derived(sel ? dvCost(sel, ship.day) : 1);
+  const selCost = $derived(sel ? Math.round(waveCost(ship, sel)) : 0);
+  const selBlocked = $derived(sel ? launchBlocked(ship, sel) : "no object");
+  const selLeft = $derived(sel ? Math.ceil(windowCloses(sel) - ship.day) : 0);
+  const selOpensIn = $derived(sel ? Math.ceil(windowOpens(sel) - ship.day) : 0);
+  /** Days until this object is at its cheapest. Negative once it is past. */
+  const selCheapIn = $derived(sel ? Math.ceil(sel.year * 365 - ship.day) : 0);
+
+  /** The status line above the object's name. */
+  const selState = $derived.by(() => {
+    if (!sel) return "";
+    if (onStation(sel)) return `Fleet on station · ${selLeft}d of window left`;
+    if (gone(sel)) return worked(sel) ? `Worked · ${units(sel.landed)} units aboard`
+                                      : "Gone · never worked";
+    if (open(sel)) return `In range · ${selLeft} day${selLeft === 1 ? "" : "s"} left`;
+    return `Opens in ${selOpensIn} day${selOpensIn === 1 ? "" : "s"}`;
+  });
 
   const conf = (e: Encounter) => confidence(e, yr);
   const mass = (e: Encounter) => estimate(trueMass(e), e, conf(e));
@@ -194,6 +230,8 @@
       {#each cluster as e (e.id)}
         <button class="obj" style="left:{xpc(e)}%; --d:{px(e)}px"
                 class:known={conf(e) >= 0.8} class:worked={worked(e)}
+                class:gone={gone(e) && !worked(e)} class:range={open(e) && !onStation(e)}
+                class:station={onStation(e)}
                 class:on={sel?.id === e.id} class:scanning={scanning(e)}
                 onclick={() => picked = e.id}
                 title="{classReading(e, conf(e))} · day {Math.round(e.year * 365 - legStart)}">
@@ -214,10 +252,7 @@
   {#if sel}
     <div class="objd">
       <div class="info">
-        <div class="label">
-          {worked(sel) ? "Worked" : "Next object"} · day {selDay}{
-            worked(sel) ? "" : selAway > 0 ? ` · ${selAway} days` : " · now"}
-        </div>
+        <div class="label" class:live={open(sel) && !gone(sel)}>{selState}</div>
         <div class="name" class:unk={selConf < 0.45}>{classReading(sel, selConf)}</div>
         <div class="haul">
           <b>{units(selMass.lo)}–{units(selMass.hi)}</b><em>units</em>
@@ -238,6 +273,52 @@
                 (MATERIAL[row.what] ?? row.what).replace(/^(Metal |Water |Rare )/, "").toLowerCase()
               }</span>
             {/each}
+          </div>
+        {/if}
+        <!-- §6b: THE DECISION. Everything above this is what the ship can tell
+             you about the rock; this is what it costs to go and get it. -->
+        {#if !gone(sel)}
+          <div class="fleet" class:out={onStation(sel)}>
+            {#if onStation(sel) && wave}
+              <div class="wrow">
+                <span class="bar"><i style="width:{(wave.flown / wave.want) * 100}%"></i></span>
+                <span class="pc">{wave.flown}/{wave.want} sorties</span>
+              </div>
+              <div class="wrow small">
+                <span>{(wave.landed / 1000).toFixed(1)} of {units(selMass.mid)} units ·
+                      {wave.burned.toFixed(0)} water</span>
+                <button class="recall" onclick={() => send({ kind: "recall" })}>Recall</button>
+              </div>
+              {#if ship.bayHeld}
+                <div class="hold">Holding station — the Cargo Bay is full.</div>
+                <!-- The fix, one tap from the problem. A drone will not burn
+                     water to bring a load to a shelf with no room on it, so
+                     the length of a wave is set by how fast the bay drains. -->
+                {#each haulable(ship, HOLD).slice(0, 2) as h (h.key)}
+                  <div class="carry">
+                    <span class="what">{num(h.qty)} {(MATERIAL[h.key] ?? h.key).toLowerCase()}</span>
+                    {#each h.to as dest}
+                      {@const busy = hauling(ship, h.key, dest)}
+                      <button class="chip" disabled={busy}
+                              onclick={() => send({ kind: "haul", from: HOLD, to: dest, what: h.key })}>
+                        {busy ? `going to ${dest}` : `→ ${dest}`}
+                      </button>
+                    {/each}
+                  </div>
+                {/each}
+              {/if}
+            {:else}
+              <div class="wrow">
+                <span class="dv" class:cheap={selDv < 1.25} class:dear={selDv > 1.8}
+                      >×{selDv.toFixed(1)}</span>
+                <span class="small">{selCheapIn > 0 ? `cheapest in ${selCheapIn}d`
+                                                    : "past its cheapest — it is receding"}</span>
+              </div>
+              <button class="launch" disabled={!!selBlocked}
+                      onclick={() => send({ kind: "launch", enc: sel!.id })}>
+                {selBlocked ?? `Send the fleet · ${selCost} water`}
+              </button>
+            {/if}
           </div>
         {/if}
         <div class="foot">
@@ -365,6 +446,33 @@
 </div>
 
 <style>
+  /* §6b — the launch control. The one button that decides a season. */
+  .fleet { margin-top: 7px; display: grid; gap: 5px; }
+  .wrow { display: flex; align-items: center; gap: 7px; }
+  .wrow .small, .fleet .small { font-size: 10px; color: var(--faint); }
+  .dv { font-size: 11px; font-weight: 600; color: var(--dim);
+        border: 1px solid var(--rule); padding: 1px 5px; }
+  .dv.cheap { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
+  .dv.dear { color: var(--warn, #E8A33D);
+             border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+  .launch { width: 100%; padding: 7px; font: inherit; font-size: 11px; letter-spacing: .06em;
+            text-transform: uppercase; color: var(--bg); background: var(--accent);
+            border: 0; cursor: pointer; }
+  .launch:disabled { background: transparent; color: var(--faint);
+                     border: 1px solid var(--rule); cursor: default;
+                     text-transform: none; letter-spacing: 0; }
+  .recall { font: inherit; font-size: 10px; color: var(--dim); background: transparent;
+            border: 1px solid var(--rule); padding: 2px 7px; cursor: pointer;
+            margin-left: auto; }
+  .hold { font-size: 10px; color: var(--accent); }
+  .carry { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 10.5px; }
+  .carry .what { color: var(--dim); margin-right: auto; }
+  .chip { font: inherit; font-size: 10px; letter-spacing: .04em; color: var(--accent);
+          background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+          padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+  .chip:disabled { color: var(--faint); border-color: var(--rule); cursor: default; }
+  .label.live { color: var(--accent); }
+
   /* BAND 1 — the season rail through the drift. */
   .hero { height: 150px; border-bottom: 1px solid var(--rule);
           background: var(--panel); position: relative; overflow: hidden; }
@@ -393,7 +501,12 @@
          border: 1.5px solid var(--accent); transform: rotate(45deg); }
   .obj.known .dot { background: var(--accent); }
   /* An object the ship has already passed is history: no colour, no pull. */
-  .obj.worked .dot { border-color: var(--faint); background: var(--faint); }
+  .obj.worked .dot { border-color: var(--ok); background: var(--ok); }
+  /* One that went past unworked is the thing this screen exists to prevent. */
+  .obj.gone .dot { border-color: var(--faint); background: transparent; opacity: .45; }
+  /* In range: reachable RIGHT NOW, which is the only state you can act on. */
+  .obj.range .dot { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); }
+  .obj.station .dot { animation: ping .9s ease-in-out infinite; }
   .obj.on .dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
   .obj.scanning .dot { animation: ping 1.1s ease-in-out infinite; }
   @keyframes ping { 0%,100% { opacity: .35 } 50% { opacity: 1 } }

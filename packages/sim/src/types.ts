@@ -33,6 +33,32 @@ export type Encounter = {
   bias: number;
   /** how many times the player has paid to look harder */
   scans: number;
+  /** §6b: round trips actually flown at it, and the units they brought home.
+   *  Zero on an object nobody sent the fleet to — which is now most of them,
+   *  and is the whole point. `step()` used to work every object it passed. */
+  flown: number;
+  landed: number;
+};
+
+/** Where the fleet is, and what it has cost so far.
+ *
+ *  The drones are in ONE place at a time and only because somebody sent them.
+ *  This is the object that turns "which rock do you work" from a thing the
+ *  simulation decided into a thing the player decides — see §6b and
+ *  packages/README's open thread 1. */
+export type Sortie = {
+  enc: number;
+  /** round trips flown, out of `want` before the object is picked clean */
+  flown: number;
+  want: number;
+  /** running totals, for the report when the fleet comes home */
+  landed: number;
+  burned: number;
+  spilled: number;
+  lost: number;
+  /** day the wave launched, and the Δv multiplier it launched at */
+  from: number;
+  dv: number;
 };
 
 export type Counters = {
@@ -65,7 +91,12 @@ export type State = {
   rooms: Record<string, Stores>;
   shipments: import("./logistics.ts").Shipment[];
   schedule: Encounter[];
-  next: number;          // index into schedule
+  /** index of the earliest object whose window has NOT yet shut. Bookkeeping
+   *  only — it no longer means "the next one the ship will harvest", because
+   *  harvesting is not automatic any more. */
+  next: number;
+  /** §6b: the wave in flight, or nothing. One at a time. */
+  sortie: Sortie | null;
   /** §5: gauges on the stores. They wear, and a worn one reads high. */
   gauges: Record<string, number>;
   colony: import("./colony.ts").Colony;
@@ -108,6 +139,9 @@ export type State = {
   waterLow?: boolean;
   /** §6b: were the beds short of fertiliser yesterday? Same edge trick. */
   lean?: boolean;
+  /** §4: is the wave holding station on a full Cargo Bay? Edge detection, so
+   *  the feed says it once rather than every day the crew fail to clear it. */
+  bayHeld?: boolean;
   /** Standing orders the player sets. Part of the state because they are part
    *  of the save, and because a second client must not have to be taught them. */
   settings: Settings;
