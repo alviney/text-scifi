@@ -162,6 +162,19 @@ export const MATERIAL: Record<string, string> = {
   sil: "Silicates", ice: "Water ice", vol: "Volatiles",
 };
 
+/** The signal facility codes, read backwards.
+ *
+ *  emit() stores the three-letter code and throws the room name away, which is
+ *  right for the ticker — `[··][LSP][H2O-LOW]` is the house style and the codes
+ *  are part of it. It is wrong for the noticeboard, where design/README's
+ *  vocabulary rule applies: a note is filed by a PLACE, and nothing in the game
+ *  says "QTR". */
+export const ROOM_OF_FAC: Record<string, string> = {
+  BRG: "Bridge", ENG: "Engineering", RCT: "Reactor", LSP: "Life Support",
+  HYD: "Hydroponics", MED: "Medbay", QTR: "Quarters", CRG: "Cargo Bay",
+  DRN: "Drone Bay", MNT: "Maintenance", NAV: "Voyage", STO: "Stores", CRY: "Colony",
+};
+
 /** §4: the materials worth showing on a shelf, in the order a person reads them. */
 export const SHELF: [string, string][] = [
   ["parts", "Metal parts"], ["electronics", "Electronics"], ["rareCmp", "Rare compounds"],

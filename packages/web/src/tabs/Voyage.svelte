@@ -13,10 +13,12 @@
   import { DAYS, START_RODS } from "../../../sim/src/sim.ts";
   import { classReading, confidence, estimate, estimateComposition,
            trueMass, worthScanning, SCAN_HOURS } from "../../../sim/src/encounters.ts";
-  import { fuel, hours, num, power, MATERIAL, MATERIAL_COLOUR, units } from "../lib/view.ts";
+  import { fuel, hours, num, power, MATERIAL, MATERIAL_COLOUR, units,
+           ROOM_OF_FAC } from "../lib/view.ts";
   import { seasonOver } from "../../../sim/src/sim.ts";
   import { LEGS, PREP_DAYS } from "../../../sim/src/legs.ts";
   import { shapeOf, drawRock } from "../lib/rock.ts";
+  import { goals } from "../../../sim/src/goals.ts";
   import { ROSTER, type Role } from "../../../sim/src/crew.ts";
 
   let { ship, frac, progress, send }: {
@@ -26,12 +28,22 @@
   let art: HTMLCanvasElement | undefined = $state();
   let bar: HTMLElement | undefined = $state();
   let picked: number | null = $state(null);
+  /** The goals collapse to one line so the object gets the room. Opening them
+   *  is the only place on this screen with space for a voice. */
+  let openGoals = $state(false);
   /** The hand-off: who comes round at the next cluster, chosen as you go under. */
   let rostering = $state(false);
   let next = $state<Role[]>(["engineer", "engineer", "botanist", "pilot"]);
   const roles = [...new Set(ROSTER)] as Role[];
   const over = $derived(seasonOver(ship) && ship.phase === "season");
   const after = $derived(LEGS[ship.leg + 1]);
+
+  const stage = $derived(goals(ship));
+  const stageMet = $derived(stage.filter(g => g.met).length);
+  /** The board, newest first. The ticker rotates and forgets; this keeps things
+   *  up, with the room that filed them and the day it happened. Chatter is the
+   *  ship talking to itself and does not belong on a noticeboard. */
+  const board = $derived([...ship.signals].filter(g => g.level !== "chatter").reverse().slice(0, 12));
 
   const p = $derived(power(ship));
   const f = $derived(fuel(ship));
@@ -242,6 +254,57 @@
     </div>
   {/if}
 
+  <!-- BAND 3 · the season's brief, collapsed to a line. Tapping opens it,
+       because a goal is the one thing on this screen with room for a voice. -->
+  <button class="goals1" onclick={() => openGoals = !openGoals}
+          aria-expanded={openGoals}>
+    <span class="g" class:ok={stageMet === stage.length}>{stageMet === stage.length ? "●" : "○"}</span>
+    <span>Stage goals</span>
+    <span class="n" class:ok={stageMet === stage.length}>{stageMet}/{stage.length}</span>
+    <span class="chev">{openGoals ? "⌄" : "›"}</span>
+  </button>
+
+  {#if openGoals}
+    <div class="goals">
+      {#each stage as g (g.id)}
+        <div class="goal" class:met={g.met} class:key={g.critical}>
+          <div class="top">
+            <span class="gl">{g.met ? "●" : g.critical ? "○" : "◐"}</span>
+            <span class="t">{g.name}</span>
+            <span class="v">{g.detail}</span>
+          </div>
+          <!-- §5c: somebody decided this before you existed, and wrote down why.
+               It is the only part of this screen that could not be generated
+               from the numbers. -->
+          <blockquote class="why">{g.because}<cite>— {g.by}, at departure</cite></blockquote>
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- BAND 4 · the bulletin. Not the ticker: that rotates and forgets, this
+       keeps things up with the room that filed them and the day it happened. -->
+  <div class="board">
+    <div class="label">Bulletin</div>
+    {#if board.length === 0}
+      <div class="sentence faint">Nothing posted yet.</div>
+    {:else}
+      {#each board as n, i (n.day + n.code + i)}
+        <div class="note {n.level}">
+          <!-- The day is the SEASON's, not the voyage's. "d710" is true and
+               useless; "d13" is the day the crew would say. -->
+          <div class="nh">
+            <span class="src">{ROOM_OF_FAC[n.fac] ?? n.fac}</span>
+            <!-- A note filed before the cluster arrives has no season day to
+                 give. "d-20" is arithmetic; "prep" is where you were. -->
+            <span>{n.day - legStart >= 0 ? `d${n.day - legStart}` : "prep"}</span>
+          </div>
+          <div class="nb">{n.text}</div>
+        </div>
+      {/each}
+    {/if}
+  </div>
+
     {#if ship.phase === "transit"}
       <div class="pad dark">
         <div class="label">The long dark</div>
@@ -393,6 +456,43 @@
   .objd .pc { font-size: 10px; color: var(--faint); white-space: nowrap; }
   .scan { flex: none; white-space: nowrap; font-size: 10.5px; padding: 4px 9px;
           border: 1px solid var(--accent); color: var(--accent); }
+
+  /* BAND 3 — the brief, one line until you want it. */
+  .goals1 { display: grid; grid-template-columns: auto minmax(0,1fr) auto auto;
+            gap: 9px; align-items: baseline; width: 100%; text-align: left;
+            padding: 11px 12px; border-bottom: 1px solid var(--rule); font-size: 12px; }
+  .goals1 .g, .goals1 .n { color: var(--crit); }
+  .goals1 .g.ok, .goals1 .n.ok { color: var(--ok); }
+  .goals1 .n { font-variant-numeric: tabular-nums; }
+  .goals1 .chev { color: var(--faint); }
+  .goals1:hover { background: var(--panel); }
+  .goals { border-bottom: 1px solid var(--rule); background: var(--panel); padding: 4px 12px 10px; }
+  .goal { padding: 9px 0; border-top: 1px solid var(--rule); }
+  .goal:first-child { border-top: 0; }
+  .goal .top { display: grid; grid-template-columns: 14px minmax(0,1fr); gap: 8px;
+               align-items: baseline; }
+  .goal .gl { color: var(--dim); font-size: 11px; }
+  .goal.met .gl { color: var(--ok); }
+  .goal.key:not(.met) .gl { color: var(--crit); }
+  .goal .t { font-size: 12.5px; }
+  .goal .v { grid-column: 2; font-size: 10.5px; color: var(--faint);
+             font-variant-numeric: tabular-nums; margin-top: 1px; }
+  .why { margin: 6px 0 0; grid-column: 2; padding-left: 22px; font-size: 11.5px;
+         line-height: 1.55; color: var(--dim); }
+  .why cite { display: block; margin-top: 5px; font-style: normal; font-size: 10px;
+              color: var(--faint); }
+
+  /* BAND 4 — the noticeboard. */
+  .board { padding: 11px 12px 6px; border-bottom: 1px solid var(--rule); }
+  .note { border-left: 2px solid var(--rule); padding-left: 10px; margin-bottom: 11px; }
+  .note.warn { border-left-color: var(--warn); }
+  .note.critical { border-left-color: var(--crit); }
+  .note.info { border-left-color: var(--ok); }
+  .note .nh { display: flex; gap: 8px; align-items: baseline; font-size: 9.5px;
+              letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+  .note .nh .src { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+                   white-space: nowrap; }
+  .note .nb { font-size: 11.5px; color: var(--dim); line-height: 1.5; margin-top: 3px; }
   .track { height: 3px; background: var(--panel2); margin: 8px 0; overflow: hidden; }
   .track > i { display: block; height: 100%; background: var(--accent);
                transform-origin: left; transform: scaleX(0); }
