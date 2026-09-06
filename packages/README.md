@@ -703,3 +703,21 @@ twenty-six small ones spread it thin enough to look like ordinary overflow. And 
 bay-cap sweep concluded "the bay is not the bottleneck" — correct, but for a reason worth
 stating properly: the shop can only refine what is in *Engineering*, so a bigger bay cannot
 help while nothing is carrying material there. The haul is the bottleneck, at every bay size.
+
+## Open threads, for whoever picks this up next
+
+1. **Harvesting is automatic.** Five objects a season and refining capacity for roughly one
+   makes *which rock you work* the decision of the season — which is exactly what surveying
+   is for. `step()` still works every object it passes, so the choice does not exist and the
+   rescan button buys a better estimate of something you were going to take anyway.
+2. **The harness cannot go dark.** `run.ts`'s autopilot never ends a season, so it sits in
+   `phase: "season"` for 300 years and every policy dies. It will keep producing misleading
+   numbers against every resource added until it can issue `goDark`.
+3. **`readiness()` in legs.ts is dead code** — nine live checks written for the parked
+   watch-and-automate model, surfaced by nothing. Either wire it to the go-dark gate or
+   delete it.
+4. **Volatiles' third use is unmodelled.** plan.md's table says fuel, medical supplies and
+   fertiliser; two of the three are in.
+5. **Not every note can be attributed.** The board names people for work-completion signals
+   only. A bay-full warning or a survey result is the ship talking, and inventing a
+   signature for it was deliberately avoided.
