@@ -63,6 +63,56 @@ export const START_BAY_WATER = 600;
 /** Days of tank left before the ship says something. */
 export const WATER_LOW_DAYS = 25;
 
+/** §6b: volatiles, the other material with nothing to spend it on.
+ *
+ *  Water was 26% of every haul and did nothing; volatiles are 19% and were in the
+ *  same position, sitting at a 250-unit keep-cap because there was no reason to
+ *  carry more. plan.md's table has always had them cracked into chemical
+ *  compounds for "fuel, medical supplies, fertiliser".
+ *
+ *  They are consumed raw here. The cracking step in §6's recipe table would add a
+ *  tenth material to a game that is trying to lose some, and nothing downstream
+ *  would be able to tell the difference — so the yields are folded into the rates
+ *  below rather than modelled as a stage.
+ *
+ *  Two sinks, and deliberately not the same shape as water's:
+ *
+ *    FERTILISER  Continuous, small, and a YIELD LEVER rather than a gate. Water
+ *                is the hard stop on a grow bed — no water, no crop. Volatiles
+ *                only decide how good the crop is, so running out costs you
+ *                harvest rather than killing the rack.
+ *    MEDICAL     Lumpy, and a HARD GATE on the one decision §3 says the whole
+ *                game turns on. Waking somebody has always cost colonist-years
+ *                and days in the Medbay; it has never cost material, so there
+ *                was no reason to harvest for the crew rather than the machines.
+ *                An empty Medbay means nobody else comes up.
+ *
+ *  The rostered crew who come round at the start of a leg are FREE. They were
+ *  prepped before the ship went dark, which is fiction the go-dark decision
+ *  already implies — and it is what stops an empty Medbay from being a hard lock
+ *  with no crew, no wakes and no way back. Improvising a wake mid-season is what
+ *  draws on the stores, which is exactly the difference the planning loop wants. */
+export const FARM_ROOM = "Hydroponics";
+export const MED_ROOM = "Medbay";
+export const VOL_PER_BED_PER_DAY = 0.6;
+/** What a bed yields with no fertiliser at all. Less, not nothing. */
+export const UNFED_BED_YIELD = 0.55;
+export const MEDS_PER_WAKE = 25;
+// 200 ended leg 1 with fifteen units left, which is the same coin toss the water
+// tank was rejected for. 240 lands it at about a quarter full, matching the tank,
+// so the first season teaches the readout rather than the shortage — and leg 2
+// still cannot be started without hauling volatiles up.
+export const STARTING_FERTILISER = 240;
+export const STARTING_MEDS = 250;
+
+/** Can the Medbay bring somebody round? §3's gate, now with a material in it. */
+export function canWake(s: State): boolean {
+  return (s.rooms[MED_ROOM]?.vol ?? 0) >= MEDS_PER_WAKE;
+}
+/** How many more people the Medbay could bring round on what it holds. */
+export const wakesLeft = (s: State) =>
+  Math.floor((s.rooms[MED_ROOM]?.vol ?? 0) / MEDS_PER_WAKE);
+
 /** What Life Support will draw today, at the current crew and beds. */
 export function waterDraw(s: State): number {
   const beds = s.assets.filter(a => a.id.startsWith("bed") && !a.faulted).length;
@@ -123,10 +173,15 @@ export function foodBalance(s: State, botanistShare: number, dimmed = false) {
   const ration = s.settings.rations;
   const beds = s.assets.filter(a => a.id.startsWith("bed") && !a.faulted).length;
   const jobs = crewLabour(s.crew, s.colony) * botanistShare / 0.6;
-  // A dry bed grows nothing, so the projection has to know about the tank.
+  // A dry bed grows nothing and an unfertilised one grows badly, so the
+  // projection has to know about both shelves.
   const wet = Math.min(1, (s.rooms[WATER_ROOM]?.ice ?? 0) / Math.max(1e-9, waterDraw(s)));
+  const fed_ = beds > 0
+    ? UNFED_BED_YIELD + (1 - UNFED_BED_YIELD)
+      * Math.min(1, (s.rooms[FARM_ROOM]?.vol ?? 0) / (beds * VOL_PER_BED_PER_DAY))
+    : 1;
   const produced = beds * (BED_YIELD / BED_CYCLE_DAYS) * Math.min(1, jobs)
-                 * (dimmed ? 0.6 : 1) * wet;
+                 * (dimmed ? 0.6 : 1) * wet * fed_;
   const eaten = s.crew.filter(c => !c.asleep).length * FOOD_PER_CREW_PER_DAY * ration;
   return { produced, eaten, beds, margin: eaten > 0 ? produced / eaten : Infinity,
            /** days of locker left at the current burn, ignoring what grows */
@@ -172,12 +227,29 @@ export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
   }
   s.dry = isDry;
 
+  // ---- fertiliser: how good the crop is, not whether there is one ----
+  const wantVol = beds.length * VOL_PER_BED_PER_DAY;
+  const gotVol = withdraw(s.rooms[FARM_ROOM], "vol", wantVol);
+  s.counters.volUsed += gotVol;
+  const fedBeds = wantVol > 0
+    ? UNFED_BED_YIELD + (1 - UNFED_BED_YIELD) * (gotVol / wantVol)
+    : 1;
+  const wasLean = s.lean ?? false;
+  const isLean = wantVol > 0 && gotVol < wantVol - 1e-9;
+  if (isLean && !wasLean)
+    emit(s, "warn", FARM_ROOM, "FRT-LOW",
+         `No fertiliser in ${FARM_ROOM}. The beds keep going at ${
+           (fedBeds * 100).toFixed(0)}% until volatiles are carried up.`);
+  else if (!isLean && wasLean)
+    emit(s, "info", FARM_ROOM, "FRT-OK", "Fertiliser restored. The beds are back to full yield.");
+  s.lean = isLean;
+
   // ---- food: beds crop on a cycle, and only if someone plants and picks them ----
   // §6: grow beds are `dimmable`, so a ship short of power grows less food
   // rather than none. Dimming is paid for here, one meal at a time. A bed with
   // no water does not grow slowly, it grows nothing.
   const perDay = beds.length * (BED_YIELD / BED_CYCLE_DAYS) * Math.min(1, botanistJobs)
-               * (b.dimmed ? 0.6 : 1) * wet;
+               * (b.dimmed ? 0.6 : 1) * wet * fedBeds;
   c.food += perDay;
   const ration = s.settings.rations;
   c.food -= c.awake * FOOD_PER_CREW_PER_DAY * ration;
@@ -246,10 +318,12 @@ export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
   // and gets the old behaviour.
   const medbay0 = s.assets.find(a => a.id === "medstation")!;
   if (s.settings.autoWake && c.awake < CREW_TARGET && c.frozen > 0
-      && !medbay0.faulted && c.fed > 40 && c.air > 40 && chance(r, 0.02)) {
+      && !medbay0.faulted && canWake(s) && c.fed > 40 && c.air > 40 && chance(r, 0.02)) {
     const want = nextRole(s.crew, s.pool);
     if (want) {
       s.pool[want]--;
+      withdraw(s.rooms[MED_ROOM], "vol", MEDS_PER_WAKE);
+      s.counters.volUsed += MEDS_PER_WAKE;
       const p = makeDistinct(r, want, s.day, s.nextCrewId++, s.crew);
       s.crew.push(p); c.awake++; c.frozen--;
       emit(s, "info", "Medbay", "CRW-WAKE",

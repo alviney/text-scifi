@@ -10,6 +10,8 @@ import type { Settings, State, Stores } from "./types.ts";
 import { emit } from "./signals.ts";
 import { SCAN_HOURS, worthScanning } from "./encounters.ts";
 import { LEGS } from "./legs.ts";
+import { canWake, MED_ROOM, MEDS_PER_WAKE } from "./colony.ts";
+import { withdraw } from "./logistics.ts";
 import { FIRST_CREW, seasonOver } from "./sim.ts";
 import { makeDistinct, THAW_MAX, type Person, type Role } from "./crew.ts";
 import type { Rng } from "./rng.ts";
@@ -131,6 +133,17 @@ export function apply(s: State, c: Command): State {
       // the Medbay brings them round.
       const medbay = s.assets.find(a => a.id === "medstation")!;
       if (medbay.faulted || s.pool[c.role] <= 0 || s.colony.frozen <= 0) break;
+      // §6b: and it now costs medical supplies, which is the first reason the
+      // game has ever given to harvest for the crew rather than the machines.
+      // An empty Medbay is a hard no — the rostered crew who come round at the
+      // start of a leg are free, so this can never lock the ship out entirely.
+      if (!canWake(s)) {
+        emit(s, "warn", MED_ROOM, "MED-OUT",
+             `No medical supplies in ${MED_ROOM}. Nobody can be brought round until volatiles are carried up.`);
+        break;
+      }
+      withdraw(s.rooms[MED_ROOM], "vol", MEDS_PER_WAKE);
+      s.counters.volUsed += MEDS_PER_WAKE;
       s.pool[c.role]--;
       // Thread the state's own RNG rather than reaching for a fresh one:
       // ARCHITECTURE §2's non-negotiable is that a save plus a command log

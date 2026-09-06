@@ -13,7 +13,8 @@ import { CRANE_KW, HOLD, SHOP, capOf, daysOf, deposit, isBulk, land, loadOf, new
 import { BASELINE_KW, bus, emptyRoomSaving, reactorOutput, rodsPerDay } from "./power.ts";
 import { type Task, inheritedRules, playerRules, evaluate, reportedCondition } from "./rules.ts";
 import { newColony, tickColony, crewLabour, STARTING_WATER, WATER_ROOM,
-         START_BAY_WATER } from "./colony.ts";
+         START_BAY_WATER, FARM_ROOM, MED_ROOM,
+         STARTING_FERTILISER, STARTING_MEDS } from "./colony.ts";
 import { newCrew, tickCrew, hasAwake, effort, onDuty, makeDistinct, POOL,
          type Person, type Role } from "./crew.ts";
 
@@ -43,7 +44,7 @@ export function init(seed: number, actII = 40, p?: Policy): State {
                 faults: 0, encountersTaken: 0, encountersMissed: 0, rodsMade: 0,
                 deficitDays: 0, brownoutDays: 0,
                 deliveries: 0, overflow: 0, starvedDays: 0, craneBlockedDays: 0,
-                waterUsed: 0, propellant: 0, declined: 0 },
+                waterUsed: 0, propellant: 0, declined: 0, volUsed: 0 },
     dead: null,
   };
   s.rngState = r.s;
@@ -63,6 +64,11 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   // Life Support's is the tank the crew and the beds draw on.
   s.rooms[HOLD].ice = START_BAY_WATER;
   s.rooms[WATER_ROOM].ice = STARTING_WATER;
+  // Volatiles, likewise: fertiliser for the racks that do not exist yet, and
+  // enough medical stock for ten wakes. Both are one season's worth — the point
+  // is that leg 2 cannot be started on what the ship left Earth with.
+  s.rooms[FARM_ROOM].vol = STARTING_FERTILISER;
+  s.rooms[MED_ROOM].vol = STARTING_MEDS;
   // §5c argues the ship should launch with standing rules as a curriculum. The
   // game now starts with NONE: the opening phase is meant to be hands-on —
   // wake someone, learn what the ship does, hand out every job — and automation

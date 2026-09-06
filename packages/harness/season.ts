@@ -13,6 +13,7 @@ import { apply } from "../sim/src/commands.ts";
 import { seasonOver } from "../sim/src/sim.ts";
 import { LEGS } from "../sim/src/legs.ts";
 import { HOLD } from "../sim/src/logistics.ts";
+import { FARM_ROOM, MED_ROOM, wakesLeft } from "../sim/src/colony.ts";
 import type { State } from "../sim/src/types.ts";
 
 const SEEDS = Number(process.env.SEEDS ?? 12);
@@ -24,6 +25,7 @@ export type Row = {
   taken: number; missed: number;
   ice: number; iceDeclined: number; water: number;
   beds: number; awake: number;
+  fert: number; wakes: number; vol: number;
 };
 
 function playSeason(seed: number): Row {
@@ -55,6 +57,8 @@ function playSeason(seed: number): Row {
     water: (s.counters as any).waterUsed ?? 0,
     beds: s.assets.filter(a => a.id.startsWith("bed") && !a.faulted).length,
     awake: s.crew.filter(c => !c.asleep).length,
+    fert: s.rooms[FARM_ROOM].vol, wakes: wakesLeft(s),
+    vol: (s.counters as any).volUsed ?? 0,
   };
 }
 
@@ -74,6 +78,8 @@ const cols: [string, (r: Row) => string][] = [
   ["taken", r => `${r.taken}/${r.taken + r.missed}`],
   ["bay ice", r => r.ice.toFixed(0)],
   ["water used", r => r.water.toFixed(0)],
+  ["fert left", r => r.fert.toFixed(0)],
+  ["wakes left", r => String(r.wakes)],
   ["ended", r => r.dead ?? "-"],
 ];
 console.log(cols.map(([h]) => h.padStart(11)).join(""));
@@ -85,6 +91,7 @@ console.log(["mean", avg(r => r.days).toFixed(0), avg(r => r.awake).toFixed(1),
              avg(r => r.fed).toFixed(0), avg(r => r.air).toFixed(0),
              `${avg(r => r.taken).toFixed(1)}/${avg(r => r.taken + r.missed).toFixed(1)}`,
              avg(r => r.ice).toFixed(0), avg(r => r.water).toFixed(0),
+             avg(r => r.fert).toFixed(0), avg(r => r.wakes).toFixed(1),
              `${rows.filter(r => r.dead).length} dead`]
             .map(c => c.padStart(11)).join(""));
 console.log();

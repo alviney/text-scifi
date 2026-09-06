@@ -107,6 +107,12 @@ export function inheritedRules(assets: Asset[]): Rule[] {
     // The threshold is a fortnight of a full watch and three beds, which is
     // enough lead time for someone to walk the ice up from the Cargo Bay.
     mk("LS-01", "room:Life Support:ice", "roomstock", 120, "deliver"),
+    // §6b's other two: fertiliser for the racks and medical stock for the
+    // Medbay. The Medbay's threshold is two wakes — low enough that the rule is
+    // not constantly hauling, high enough that running it to zero takes
+    // inattention rather than bad luck.
+    mk("HY-01", "room:Hydroponics:vol",  "roomstock",  60, "deliver"),
+    mk("MD-01", "room:Medbay:vol",       "roomstock",  50, "deliver"),
     mk("LG-01", "room:Engineering:ore",  "roomstock", 300, "deliver"),
     mk("LG-02", "room:Engineering:sil",  "roomstock", 150, "deliver"),
     mk("LG-03", "room:Engineering:rare", "roomstock",  80, "deliver"),

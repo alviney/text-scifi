@@ -46,6 +46,8 @@ export type Counters = {
   /** §6b water: what Life Support drew, what the fleet burned as propellant,
    *  and what the crew left in space because the bay would not take it. */
   waterUsed: number; propellant: number; declined: number;
+  /** volatiles drawn as fertiliser and as medical supplies */
+  volUsed: number;
 };
 
 export type State = {
@@ -104,6 +106,8 @@ export type State = {
    *  warned about? Edge detection, so the feed says it once rather than daily. */
   dry?: boolean;
   waterLow?: boolean;
+  /** §6b: were the beds short of fertiliser yesterday? Same edge trick. */
+  lean?: boolean;
   /** Standing orders the player sets. Part of the state because they are part
    *  of the save, and because a second client must not have to be taught them. */
   settings: Settings;

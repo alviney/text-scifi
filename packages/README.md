@@ -594,3 +594,39 @@ against a route that never advances. Every policy dies "crew lost".
 **The real signal is `harness/season.ts`**, which drives `init(seed)` with no policy — the
 opening the game actually has. Four crew, no rules, three beds queued by hand: 24.2/26
 encounters, 165 meals left, air 100, nobody dead, across 12 seeds.
+
+## Volatiles, the same hole one row down
+
+19% of every haul, a 250-unit keep-cap, and plan.md promising *fuel, medical supplies,
+fertiliser* that the simulation never delivered. Fixed the same way, with two sinks chosen to
+be **different in character from water's**, because a second resource that behaves like the
+first one teaches nothing:
+
+- **Fertiliser** (Hydroponics, 0.6/bed/day) is a *lever*. Water is the gate on a grow bed —
+  no water, no crop. Volatiles only decide how good the crop is: at zero the beds keep going
+  at 55%. Across the whole sweep, from full stock to none, **nobody dies**; it costs harvest.
+- **Medical supplies** (Medbay, 25/wake) is an *absolute gate* on the one decision §3 says the
+  game turns on. Waking has always cost colonist-years and Medbay days but never material, so
+  there was no reason to harvest for the crew rather than the machines. At zero stock, six
+  wake attempts were refused, the crew stayed at four, and nothing else broke.
+
+The rostered crew at the start of a leg are free — prepped before the ship went dark — which
+is what stops an empty Medbay being a hard lock with no crew and no way back.
+
+Volatiles are consumed raw. §6's cracking recipe (10 volatiles → 7 chemical compounds) would
+add a tenth material to a game trying to lose some, and nothing downstream could tell the
+difference, so the yield is folded into the rates.
+
+### A probe bug worth recording, because it will happen again
+
+The first volatiles run reported `MED-OUT` on day 10 for *every* stock level, including one
+with four wakes in hand. The simulation was right; the probe was stepping **game-hours** and
+gating its wake attempts on `s.day % 10`, so all six attempts fired within one day. `step()`
+is one hour — anything in a harness that means "once a day" has to latch on the day changing.
+
+### Second-order effect on the broken harness
+
+`run.ts` got worse again (underfed: 57 → 22 died awake, 142 → 178 died cold). Same cause as
+before, not a new one: the autopilot never goes dark, so after leg 1 there are no encounters,
+volatiles run out, `autoWake` hits the medical gate and the ship depopulates faster. The
+player path (`season.ts`) is unchanged at 24.2/26 encounters, 165 meals, nobody dead.

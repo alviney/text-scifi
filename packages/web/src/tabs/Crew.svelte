@@ -8,7 +8,9 @@
   import type { State } from "../../../sim/src/types.ts";
   import type { Command } from "../../../sim/src/commands.ts";
   import { BANKS, PER_BANK, COLD_GRACE_DAYS, foodBalance,
-           WATER_ROOM, WATER_LOW_DAYS, waterDays, waterDraw } from "../../../sim/src/colony.ts";
+           WATER_ROOM, WATER_LOW_DAYS, waterDays, waterDraw,
+           FARM_ROOM, MED_ROOM, MEDS_PER_WAKE, VOL_PER_BED_PER_DAY,
+           UNFED_BED_YIELD, wakesLeft } from "../../../sim/src/colony.ts";
   import { ROSTER, ageFactor, RETIRE_AGE, THAW_MIN, THAW_MAX, type Role } from "../../../sim/src/crew.ts";
   import { assetName, hours, num, when } from "../lib/view.ts";
 
@@ -34,6 +36,13 @@
   const tank = $derived(ship.rooms[WATER_ROOM]?.ice ?? 0);
   const wdays = $derived(waterDays(ship));
   const draw = $derived(waterDraw(ship));
+  // §6b: volatiles. Two readouts because they are two different decisions —
+  // how many more people the Medbay can bring round, and how well the racks
+  // are being fed.
+  const wakes = $derived(wakesLeft(ship));
+  const fert = $derived(ship.rooms[FARM_ROOM]?.vol ?? 0);
+  const fertDraw = $derived(food.beds * VOL_PER_BED_PER_DAY);
+  const fertDays = $derived(fertDraw > 0 ? fert / fertDraw : Infinity);
   const free = $derived(ship.crew.filter(p => !ship.board.some(t => t.assignee === p.id)));
   const label = (t: { kind: string; target: string; what?: string; to?: string }) =>
     t.kind === "service" ? `Service ${assetName(t.target)}`
@@ -97,10 +106,18 @@
         {/each}
         <button class="cancel" onclick={() => waking = false}>Not now</button>
       {:else}
-        <button class="act" onclick={() => waking = true}>Wake somebody</button>
+        <button class="act" onclick={() => waking = true} disabled={wakes < 1}>Wake somebody</button>
         <div class="sentence faint">
           They spend {THAW_MIN}–{THAW_MAX} days in the Medbay before they can work, and every
           year awake is a year of their life.
+        </div>
+        <div class="sentence" class:crit={wakes < 1} class:warn={wakes < 3}>
+          {#if wakes < 1}
+            The Medbay is out of supplies. Nobody else comes round until volatiles
+            are carried up from the Cargo Bay.
+          {:else}
+            Medical stock for <b>{wakes}</b> more — {MEDS_PER_WAKE} volatiles each.
+          {/if}
         </div>
       {/if}
     </div>
@@ -279,6 +296,19 @@
                   onclick={() => send({ kind: "rations", level: lvl as number })}>{name}</button>
         {/each}
       </div>
+      <div class="label" style="margin-top:16px">Fertiliser</div>
+      <div class="sentence" class:warn={fertDays < 20}>
+        {#if food.beds === 0}
+          {num(fert)} in {FARM_ROOM}, waiting for a rack to put it on.
+        {:else if fert <= 0}
+          None left. The beds are running at {Math.round(UNFED_BED_YIELD * 100)}% —
+          they keep going, they just grow badly.
+        {:else}
+          {num(fert)} in {FARM_ROOM}, {Math.round(fertDays)} days for {food.beds}
+          bed{food.beds === 1 ? "" : "s"}.
+        {/if}
+      </div>
+
       <div class="sentence faint">
         {#if food.daysLeft === Infinity}
           The beds are keeping up. Nothing is being eaten into.

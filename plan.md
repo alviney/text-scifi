@@ -1506,6 +1506,59 @@ top a three-wave propellant reserve *before* they load cargo — a full bay cost
 as it always did, but it never costs you the fleet. Encounters went back to 24.2/26,
 exactly the figure before water existed.
 
+### Built: volatiles, the other material with nothing to spend it on
+
+Same hole, one row down. Volatiles are **19% of every haul** and sat at a 250-unit
+keep-cap for the same reason water did — the table above says *fuel, medical supplies,
+fertiliser* and none of it was modelled.
+
+They are consumed **raw**. The cracking step in §6's recipe table (10 volatiles → 7
+chemical compounds) would add a tenth material to a game that is trying to lose some,
+and nothing downstream could tell the difference, so the yield is folded into the rates
+rather than modelled as a stage.
+
+Two sinks, and deliberately not the same shape as water's:
+
+| Sink | Room | Rate | What running out costs |
+|---|---|---|---|
+| **Fertiliser** | Hydroponics | 0.6 / bed / day | Yield. Beds drop to 55% and keep going. |
+| **Medical supplies** | Medbay | 25 per wake | Everything, and only this. Nobody else comes round. |
+
+That difference is the point. Water is a **gate** on a grow bed — no water, no crop.
+Volatiles are a **lever** — no fertiliser, a bad crop. And the medical sink is the
+opposite again: an absolute stop on the one decision §3 says the whole game turns on.
+Waking somebody has always cost colonist-years and days in the Medbay, but it has never
+cost *material*, so there was no reason to harvest for the crew rather than for the
+machines. Now there is.
+
+**The rostered crew who come round at the start of a leg are free.** They were prepped
+before the ship went dark, which the go-dark decision already implies — and it is what
+stops an empty Medbay being a hard lock with no crew, no wakes and no way back.
+Improvising a wake mid-season is what draws on the stores, which is exactly the
+difference the planning loop wants to charge for.
+
+**Measured, leg 1.** Both stocks are one season's worth, so the first leg teaches the
+readouts and leg 2 cannot be started on what the ship left Earth with:
+
+| Fertiliser at start | Warns | Food left | Fed | Beds | Died |
+|---|---|---|---|---|---|
+| 240 | — | 158 | 100% | 3 | 0 |
+| 120 | d73 | 35 | 100% | 3 | 0 |
+| 40 | d29 | 0 | 82% | 3 | 0 |
+| 0 | d5 | 0 | 71% | 3 | 0 |
+
+| Medical at start | Wakes taken | Refused | Crew | Warns |
+|---|---|---|---|---|
+| 250 (10 wakes) | 6 | 0 | 10 | — |
+| 100 (4 wakes) | 4 | 2 | 8 | d50 |
+| 50 (2 wakes) | 2 | 4 | 6 | d30 |
+| 0 | 0 | 6 | 4 | d10 |
+
+Note what does **not** happen in either table: nobody dies. Losing fertiliser costs
+harvest at every level including zero; losing medical stock stops the roster growing and
+breaks nothing else. 200 fertiliser was tried first and ended leg 1 with fifteen units,
+the same coin toss the 900-unit water tank was rejected for.
+
 ### Production Chains (3-4 steps deep)
 
 ```

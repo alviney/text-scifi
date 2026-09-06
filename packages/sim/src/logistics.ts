@@ -43,6 +43,11 @@ export const CAP_DEFAULT = 260;
 // Life Support holds the ship's water tank as well as its shelf of parts, so it
 // is the one room whose cap is set by a store rather than by its assets.
 CAP["Life Support"] = 1400;
+// Hydroponics keeps a season of fertiliser beside its parts, and the Medbay a
+// season of medical stock. Both would have overflowed CAP_DEFAULT the first
+// time anyone hauled to them.
+CAP["Hydroponics"] = 600;
+CAP["Medbay"] = 600;
 export const capOf = (room: string) => CAP[room] ?? CAP_DEFAULT;
 
 /** How much of the low-value stuff the crew will actually take aboard.
@@ -56,11 +61,12 @@ export const capOf = (room: string) => CAP[room] ?? CAP_DEFAULT;
  *
  *  Leaving the surplus in space is a decision, not a loss, so it is not counted
  *  as overflow. */
-// Water is no longer surplus: the crew drink it, the beds transpire it and the
-// drones burn it. What is left is the ceiling on how much the BAY will carry,
-// which is a shelf-space decision rather than a statement that water is
-// worthless. Volatiles still have no sink and keep the old cap.
-export const KEEP: Partial<Record<MatKey, number>> = { ice: 1100, vol: 250 };
+// Neither of these is surplus any more: the crew drink the water, the beds
+// transpire it and the drones burn it; the beds are fertilised with volatiles
+// and the Medbay brings people round on them. What is left is a ceiling on how
+// much the BAY will carry — a shelf-space decision, not a statement that the
+// material is worthless, which is what these numbers used to mean.
+export const KEEP: Partial<Record<MatKey, number>> = { ice: 1100, vol: 600 };
 
 export const heldIn = (st: Stores) =>
   RAW.reduce((n, k) => n + st[k], 0) + MADE.reduce((n, k) => n + st[k], 0);
