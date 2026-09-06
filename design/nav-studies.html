@@ -27,24 +27,26 @@
 html{max-width:100%;overflow-x:hidden}
 body{margin:0;overflow-x:hidden;background:var(--pg-bg);color:var(--pg-text);
   font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1240px;margin:0 auto;padding:40px 20px 80px}
+.wrap{max-width:940px;margin:0 auto;padding:40px 20px 80px}
 @media (max-width:520px){.wrap{padding:24px 12px 56px}}
 .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--pg-accent);font-weight:600}
 h1{font-family:var(--d-font);font-size:clamp(26px,4vw,38px);font-weight:700;margin:8px 0 12px;
   letter-spacing:-.02em;text-wrap:balance}
-.standfirst{max-width:64ch;color:var(--pg-dim);font-size:15.5px;margin:0 0 6px}
+.standfirst{max-width:64ch;color:var(--pg-dim);font-size:15.5px;margin:0 0 8px}
 .standfirst b{color:var(--pg-text);font-weight:600}
 .rule{height:1px;background:var(--pg-rule);margin:26px 0}
 
-.studies{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:start}
-@media (max-width:1040px){.studies{grid-template-columns:minmax(0,1fr);max-width:min(420px,100%)}}
-.study{min-width:0;display:flex;flex-direction:column;gap:12px}
-.study h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:uppercase;
-  font-weight:700;margin:0;color:var(--pg-accent)}
-.study .lede{font-size:13.5px;color:var(--pg-dim);margin:0;max-width:42ch}
-.notes{font-size:12.5px;color:var(--pg-dim);margin:0;padding-left:16px}
-.notes li{margin-bottom:4px}
+.split{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:34px;align-items:start}
+@media (max-width:820px){.split{grid-template-columns:minmax(0,1fr);max-width:min(420px,100%)}}
+h2{font-family:var(--d-font);font-size:12px;letter-spacing:.11em;text-transform:uppercase;
+  font-weight:700;margin:0 0 10px;color:var(--pg-accent)}
+.notes{font-size:13.5px;color:var(--pg-dim);margin:0 0 22px;padding-left:17px}
+.notes li{margin-bottom:7px}
 .notes b{color:var(--pg-text);font-weight:600}
+.gone{border-left:2px solid var(--pg-rule);padding-left:14px;margin-top:6px}
+.gone .t{font-family:var(--d-font);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--pg-dim);margin-bottom:6px}
+.gone p{margin:0 0 6px;font-size:13px;color:var(--pg-dim)}
 
 /* ---- the device ---------------------------------------------------------- */
 .dev{max-width:100%;background:var(--d-bg);border:1px solid var(--d-rule);
@@ -58,45 +60,43 @@ h1{font-family:var(--d-font);font-size:clamp(26px,4vw,38px);font-weight:700;marg
   border-bottom:1px solid var(--d-rule);font-size:10.5px}
 .phz .tag{color:var(--d-faint);letter-spacing:.08em;text-transform:uppercase;flex:none}
 .phz .nm{color:var(--d-accent);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.phz .st{color:var(--d-dim);flex:none}
-.clk{padding:5px 12px;border-bottom:1px solid var(--d-rule);font-size:10.5px;color:var(--d-dim)}
-.clk b{color:var(--d-accent);font-weight:400}
-.clk i{color:var(--d-text);font-style:normal}
+.phz .st{color:var(--d-dim);flex:none;font-variant-numeric:tabular-nums}
 .body{padding:12px}
 .lab{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--d-faint);margin-bottom:3px}
-.big{font-size:19px;letter-spacing:-.01em}
-.big span{color:var(--d-dim)}
-.say{color:var(--d-dim);font-size:11.5px;margin:6px 0 0}
+.say{color:var(--d-dim);font-size:11.5px;margin:0}
 .say .a{color:var(--d-text)}
 .nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--d-rule);
   background:var(--d-panel);margin-top:auto}
 .nav span{padding:12px 2px;text-align:center;font-size:10.5px;color:var(--d-dim)}
 .nav span.on{color:var(--d-accent);box-shadow:inset 0 2px 0 var(--d-accent)}
 
-/* ---- the voyage strip: five legs, one lit -------------------------------- */
-.voy{display:flex;gap:3px;margin-bottom:14px}
-.voy i{flex:1;height:3px;background:var(--d-rule);font-style:normal;position:relative}
-.voy i.done{background:var(--d-faint)}
-.voy i.now{background:var(--d-accent)}
-.voy-cap{display:flex;justify-content:space-between;font-size:9px;color:var(--d-faint);
-  letter-spacing:.08em;text-transform:uppercase;margin:-9px 0 14px}
-
-/* ---- A: the season rail -------------------------------------------------- */
-.rail{position:relative;height:96px;margin:16px 0 2px}
-.rail .line{position:absolute;left:0;right:0;top:56px;height:2px;background:var(--d-rule)}
-.rail .fill{position:absolute;left:0;top:56px;height:2px;background:var(--d-accent);width:38%}
-.rail .ship{position:absolute;top:49px;left:38%;transform:translateX(-50%);color:var(--d-accent);
-  font-size:13px;line-height:1}
-.rock{position:absolute;top:56px;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:3px}
-.rock .d{border:1.5px solid var(--d-accent);transform:rotate(45deg)}
+/* ---- the hero: the season rail, drifting through stars ------------------- */
+.hero{position:relative;height:150px;border-bottom:1px solid var(--d-rule);
+  background:var(--d-panel);overflow:hidden}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.rail{position:absolute;inset:0}
+.rail .line{position:absolute;left:0;right:0;top:74px;height:1px;
+  background:var(--d-rule)}
+.rail .fill{position:absolute;left:0;top:74px;height:1px;background:var(--d-accent);width:38%}
+.rail .ship{position:absolute;top:67px;left:38%;transform:translateX(-50%);color:var(--d-accent);
+  font-size:13px;line-height:1;text-shadow:0 0 8px rgba(245,197,24,.55)}
+.rock{position:absolute;top:74px;transform:translate(-50%,-50%)}
+.rock .d{display:block;border:1.5px solid var(--d-accent);transform:rotate(45deg)}
 .rock.taken .d{border-color:var(--d-faint);background:var(--d-faint)}
 .rock.known .d{background:var(--d-accent)}
-.rock .t{position:absolute;top:calc(50% + 16px);font-size:8.5px;color:var(--d-faint);white-space:nowrap}
-.rock.taken .t{color:var(--d-faint)}
-.ends{display:flex;justify-content:space-between;font-size:9px;color:var(--d-faint);
-  letter-spacing:.08em;text-transform:uppercase}
-.pct{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px}
-.pct .n{font-size:22px;color:var(--d-accent)}
+.rock .t{position:absolute;left:50%;transform:translateX(-50%);top:calc(50% + 15px);
+  font-size:8.5px;color:var(--d-faint);white-space:nowrap}
+.ends{position:absolute;left:12px;right:12px;bottom:8px;display:flex;justify-content:space-between;
+  font-size:9px;color:var(--d-faint);letter-spacing:.08em;text-transform:uppercase}
+
+.pct{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.pct .n{font-size:24px;color:var(--d-accent);line-height:1}
+
+.voy{display:flex;gap:3px}
+.voy i{flex:1;height:3px;background:var(--d-rule);font-style:normal}
+.voy i.now{background:var(--d-accent)}
+.voy-cap{display:flex;justify-content:space-between;font-size:9px;color:var(--d-faint);
+  letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
 
 .rows{margin-top:14px;border-top:1px solid var(--d-rule)}
 .row{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:9px;align-items:baseline;
@@ -106,35 +106,6 @@ h1{font-family:var(--d-font);font-size:clamp(26px,4vw,38px);font-weight:700;marg
 .row .sub{grid-column:2/-1;font-size:10px;color:var(--d-dim);margin-top:-2px}
 .row.past .sub{color:var(--d-faint)}
 .row .amt{font-variant-numeric:tabular-nums;color:var(--d-dim);font-size:11px}
-
-/* ---- B: the approach ----------------------------------------------------- */
-.appr{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;margin-top:14px}
-.spine{position:relative;background:var(--d-rule);width:2px;justify-self:center;border-radius:1px}
-.spine .prog{position:absolute;left:0;right:0;top:0;height:38%;background:var(--d-accent)}
-.spine .you{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);
-  width:9px;height:9px;background:var(--d-accent);border-radius:50%}
-.stops{display:flex;flex-direction:column;gap:0}
-.stop{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:9px;align-items:baseline;
-  padding:9px 0;border-bottom:1px solid var(--d-rule)}
-.stop:first-child{padding-top:0}
-.stop .d{color:var(--d-accent);font-size:12px;line-height:1}
-.stop.past{color:var(--d-faint)} .stop.past .d{color:var(--d-faint)}
-.stop .when{font-variant-numeric:tabular-nums;color:var(--d-dim);font-size:11px;white-space:nowrap}
-.stop .sub{grid-column:2/-1;font-size:10px;color:var(--d-dim);margin-top:1px}
-.stop.next{background:color-mix(in srgb,var(--d-accent) 9%,transparent);
-  margin:0 -12px;padding-left:12px;padding-right:12px}
-
-/* ---- C: the dial --------------------------------------------------------- */
-.dial{display:grid;place-items:center;margin:6px 0 2px}
-.dial svg{width:100%;max-width:230px;height:auto;display:block}
-.pips{display:flex;gap:4px;justify-content:center;margin-top:4px}
-.pips i{width:16px;height:3px;background:var(--d-rule);font-style:normal}
-.pips i.done{background:var(--d-faint)} .pips i.now{background:var(--d-accent)}
-
-.foot{margin-top:34px;font-size:13px;color:var(--pg-dim);max-width:64ch}
-.foot b{color:var(--pg-text);font-weight:600}
-.foot code{font-family:var(--d-font);font-size:12px;background:var(--pg-panel);
-  border:1px solid var(--pg-rule);padding:1px 5px}
 @media (prefers-reduced-motion:no-preference){
   .rock.next .d{animation:pulse 2.6s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
@@ -144,33 +115,24 @@ h1{font-family:var(--d-font);font-size:clamp(26px,4vw,38px);font-weight:700;marg
 <div class="wrap">
   <div class="eyebrow">Seedship · interface study</div>
   <h1>Where am I in this leg?</h1>
-  <p class="standfirst">The voyage is five harvest seasons. The nav panel's whole job is to answer
-  one question at a glance — <b>how far through the current cluster am I, and what is still
-  ahead of me</b> — with the three hundred years kept firmly in the background where it belongs.</p>
-  <p class="standfirst">Three treatments of the same moment: <b>Leg 1, The Departure Belt. Day 34
-  of 90. Five objects, unevenly spaced — two behind, three ahead.</b> Same data, same palette,
-  same device width.</p>
+  <p class="standfirst">One bar is the season. The ship travels it, the objects sit where they
+  fall, and the stars drift past behind — <b>drifting background means time passing</b>, which is
+  the one thing this screen is for.</p>
+  <p class="standfirst">Showing <b>Leg 1, The Departure Belt. Day 34 of 90. Five objects, two
+  behind and three ahead.</b></p>
 
   <div class="rule"></div>
 
-  <div class="studies">
-
-    <!-- ============================ A ============================ -->
-    <div class="study">
-      <h2>A · The season rail</h2>
-      <p class="lede">Literally the brief: one bar is the season, the ship travels it, the rocks
-      sit where they fall.</p>
+  <div class="split">
+    <div>
       <div class="dev">
         <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
           <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
         <div class="phz"><span class="tag">Leg 1 of 5</span><span class="nm">The Departure Belt</span>
-          <span class="st">day 34 · 3 ahead</span></div>
-        <div class="clk">Y2 <b>day 34</b> <i>09:00</i></div>
-        <div class="body">
-          <div class="voy"><i class="now"></i><i></i><i></i><i></i><i></i></div>
-          <div class="voy-cap"><span>y2 belt</span><span>y283 debris</span></div>
+          <span class="st">day 34</span></div>
 
-          <div class="lab">This season</div>
+        <div class="hero">
+          <canvas id="sky"></canvas>
           <div class="rail">
             <div class="line"></div><div class="fill"></div>
             <div class="ship">➤</div>
@@ -181,9 +143,14 @@ h1{font-family:var(--d-font);font-size:clamp(26px,4vw,38px);font-weight:700;marg
             <div class="rock" style="left:87%"><span class="d" style="width:16px;height:16px"></span><span class="t">d78</span></div>
           </div>
           <div class="ends"><span>day 0</span><span>day 90</span></div>
+        </div>
 
+        <div class="body">
           <div class="pct"><span class="n">38%</span>
             <span class="say">56 days of cluster left</span></div>
+
+          <div class="voy"><i class="now"></i><i></i><i></i><i></i><i></i></div>
+          <div class="voy-cap"><span>y2 belt</span><span>y283 debris</span></div>
 
           <div class="rows">
             <div class="row past"><span class="g">◆</span><span>Metal, 2,600</span><span class="amt">d12</span>
@@ -200,120 +167,83 @@ h1{font-family:var(--d-font);font-size:clamp(26px,4vw,38px);font-weight:700;marg
         </div>
         <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
       </div>
-      <ul class="notes">
-        <li><b>The bar is the season</b>, so 38% means something concrete: 56 days left, three rocks.</li>
-        <li>Marker size is the estimated haul — the big one at d41 reads before any number does.</li>
-        <li>Worked rocks stay on the rail behind you, filled and grey. The season accumulates.</li>
-        <li>Costs: at 26 objects (what the sim actually generates today) the rail crowds badly.
-        This wants <b>5–8 per leg</b>, which is a real balance decision, not a display one.</li>
-      </ul>
     </div>
 
-    <!-- ============================ B ============================ -->
-    <div class="study">
-      <h2>B · The approach</h2>
-      <p class="lede">The season runs down the screen. The bar and the list are the same object,
-      so there is nothing to read twice.</p>
-      <div class="dev">
-        <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
-          <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
-        <div class="phz"><span class="tag">Leg 1 of 5</span><span class="nm">The Departure Belt</span>
-          <span class="st">day 34 · 3 ahead</span></div>
-        <div class="clk">Y2 <b>day 34</b> <i>09:00</i></div>
-        <div class="body">
-          <div class="voy"><i class="now"></i><i></i><i></i><i></i><i></i></div>
-          <div class="voy-cap"><span>y2 belt</span><span>y283 debris</span></div>
-
-          <div class="lab">The Departure Belt · day 34 of 90</div>
-          <div class="appr">
-            <div class="spine"><div class="prog"></div><div class="you"></div></div>
-            <div class="stops">
-              <div class="stop past"><span class="d">◆</span><span>Metal, 2,600</span>
-                <span class="when">d12</span><span class="sub">worked · 2,610 aboard</span></div>
-              <div class="stop past"><span class="d">◆</span><span>Ice, 900</span>
-                <span class="when">d28</span><span class="sub">worked · 880 aboard</span></div>
-              <div class="stop next"><span class="d">◆</span><span>Rare earths, 3,900–4,300</span>
-                <span class="when">7d</span><span class="sub">surveyed twice · 86% confidence · biggest of the season</span></div>
-              <div class="stop"><span class="d">◇</span><span>Unknown, 700–2,100</span>
-                <span class="when">29d</span><span class="sub">never surveyed</span></div>
-              <div class="stop"><span class="d">◇</span><span>Probably stone, 2,400–4,200</span>
-                <span class="when">44d</span><span class="sub">surveyed once · 61% confidence</span></div>
-            </div>
-          </div>
-          <p class="say" style="margin-top:14px"><span class="a">56 days</span> of cluster left,
-          then sixty years of dark.</p>
-        </div>
-        <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
-      </div>
+    <div>
+      <h2>What's on it</h2>
       <ul class="notes">
-        <li><b>Scales to any object count</b> — 26 rocks is a scroll, not a collision.</li>
-        <li>The next one is highlighted in place, so "what do I survey now" answers itself.</li>
-        <li>Costs: size has to be a number rather than a shape, so <b>"a big one is coming"
-        stops being pre-attentive</b> — which was the point of putting rocks on screen at all.</li>
+        <li><b>The bar is the season.</b> 38% is not a mood, it is 56 days and three rocks.</li>
+        <li><b>Marker size is the estimated haul.</b> The big one at d41 reads before any number
+        does — that is the whole reason objects are on screen rather than only in the list.</li>
+        <li><b>Hollow means never surveyed.</b> Unknown rather than merely uncertain, which is
+        the distinction the survey mechanic turns on.</li>
+        <li><b>Worked rocks stay on the rail behind you</b>, filled and grey. The season visibly
+        accumulates rather than resetting.</li>
+        <li><b>Three parallax layers</b> at different speeds and brightnesses. Distant stars
+        barely move; the near ones cross in seconds. The ship holds station in the middle of the
+        strip and the season moves past it, so the drift reads as the leg passing rather than as
+        the ship flying.</li>
       </ul>
-    </div>
 
-    <!-- ============================ C ============================ -->
-    <div class="study">
-      <h2>C · The dial</h2>
-      <p class="lede">The season as one arc. Compact enough to leave the rest of the screen for
-      fuel, power and the ship.</p>
-      <div class="dev">
-        <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
-          <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
-        <div class="phz"><span class="tag">Leg 1 of 5</span><span class="nm">The Departure Belt</span>
-          <span class="st">day 34 · 3 ahead</span></div>
-        <div class="clk">Y2 <b>day 34</b> <i>09:00</i></div>
-        <div class="body">
-          <div class="dial">
-            <svg viewBox="0 0 240 158" role="img"
-                 aria-label="Season dial: day 34 of 90, 38 percent, three objects ahead">
-              <path d="M30 132 A90 90 0 0 1 210 132" fill="none" stroke="#2B3841"
-                    stroke-width="7" stroke-linecap="round"/>
-              <path d="M30 132 A90 90 0 0 1 86.3 48.6" fill="none" stroke="#F5C518"
-                    stroke-width="7" stroke-linecap="round"/>
-              <circle cx="37.8" cy="95.4" r="5.5" fill="#4F6070"/>
-              <circle cx="69.7" cy="57.4" r="4.0" fill="#4F6070"/>
-              <circle cx="107.5" cy="42.9" r="8.0" fill="#F5C518"/>
-              <circle cx="172.9" cy="59.2" r="4.6" fill="none" stroke="#F5C518" stroke-width="1.6"/>
-              <circle cx="202.2" cy="95.4" r="6.6" fill="none" stroke="#F5C518" stroke-width="1.6"/>
-              <circle cx="86.3" cy="48.6" r="6.5" fill="#0F1418" stroke="#F5C518" stroke-width="2.5"/>
-              <text x="120" y="106" fill="#F5C518" text-anchor="middle"
-                    font-family="JetBrains Mono, monospace" font-size="30" font-weight="700">38%</text>
-              <text x="120" y="122" fill="#4F6070" text-anchor="middle"
-                    font-family="JetBrains Mono, monospace" font-size="9"
-                    letter-spacing="1.4">DAY 34 OF 90</text>
-              <text x="26" y="150" fill="#4F6070" font-family="JetBrains Mono, monospace" font-size="9">d0</text>
-              <text x="196" y="150" fill="#4F6070" font-family="JetBrains Mono, monospace" font-size="9">d90</text>
-            </svg>
-          </div>
-          <div class="pips"><i class="now"></i><i></i><i></i><i></i><i></i></div>
-          <p class="say" style="text-align:center;margin-top:8px">Leg 1 of 5 · The Departure Belt</p>
-
-          <div class="rows" style="margin-top:16px">
-            <div class="row"><span class="g">◆</span><span>Rare earths, 3,900–4,300</span><span class="amt">7d</span>
-              <span class="sub">next · surveyed twice · 86%</span></div>
-            <div class="row"><span class="g">◇</span><span>Unknown, 700–2,100</span><span class="amt">29d</span>
-              <span class="sub">never surveyed</span></div>
-            <div class="row"><span class="g">◇</span><span>Probably stone, 2,400–4,200</span><span class="amt">44d</span>
-              <span class="sub">surveyed once · 61%</span></div>
-          </div>
-          <p class="say">Two behind you · 3,490 units aboard</p>
-        </div>
-        <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
+      <h2>Dropped, and easy to put back</h2>
+      <div class="gone">
+        <div class="t">Three ahead</div>
+        <p>The phase strip said <em>day 34 · 3 ahead</em>. The rail already shows three hollow
+        diamonds to the right of the ship, so the count was the picture written out in words.</p>
+        <div class="t" style="margin-top:14px">The clock row</div>
+        <p><em>Y2 day 34 09:00</em> is gone entirely. The day is in the phase strip and the hour
+        is not a decision — it earns its place on a screen with a running job on it, not here.</p>
+        <div class="t" style="margin-top:14px">Studies B and C</div>
+        <p>The vertical approach and the arc dial are retired. Both are in git if the object
+        count per leg turns out to be too high for a rail.</p>
       </div>
-      <ul class="notes">
-        <li>Reads as an <b>instrument</b> rather than a chart — closest to the CLI aesthetic.</li>
-        <li>Buys the most vertical room back for everything else the tab has to carry.</li>
-        <li>Costs: an arc is <b>worse than a line at "how much is left"</b>, and the five legs
-        shrink to pips, which is the one thing this screen was asked to make loud.</li>
-      </ul>
     </div>
   </div>
-
-  <p class="foot"><b>The recommendation is A.</b> It is the only one where the leg is the picture
-  rather than a caption, and marker size does the work a number can't. The thing it exposes is
-  worth knowing either way: the rail only reads at <b>5–8 objects per leg</b>, and
-  <code>LEGS[0]</code> currently generates 26. Either the clusters get smaller or the rail needs
-  to summarise, and that is a decision about the harvest, not about the panel.</p>
 </div>
+
+<script>
+(function(){
+  var cv = document.getElementById("sky");
+  if (!cv) return;
+  var ctx = cv.getContext("2d");
+  var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  // Three depth layers. Speed and brightness both fall off with distance, which
+  // is what makes it read as depth rather than as noise moving at one rate.
+  var LAYERS = [
+    { n: 34, speed: 0.030, size: 1.0, alpha: 0.30 },
+    { n: 22, speed: 0.075, size: 1.4, alpha: 0.55 },
+    { n: 12, speed: 0.150, size: 2.0, alpha: 0.85 }
+  ];
+  var stars = [];
+  function size(){
+    cv.width = cv.clientWidth * dpr;
+    cv.height = cv.clientHeight * dpr;
+    stars = [];
+    LAYERS.forEach(function(L){
+      for (var i = 0; i < L.n; i++)
+        stars.push({ x: Math.random() * cv.width, y: Math.random() * cv.height, L: L });
+    });
+  }
+  size();
+  if (window.ResizeObserver) new ResizeObserver(size).observe(cv);
+  var colour = getComputedStyle(document.documentElement)
+                 .getPropertyValue("--d-faint").trim() || "#4F6070";
+  function draw(){
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    for (var i = 0; i < stars.length; i++){
+      var s = stars[i];
+      if (!reduced){
+        s.x -= s.L.speed * dpr * 2.2;
+        if (s.x < -2){ s.x = cv.width + 2; s.y = Math.random() * cv.height; }
+      }
+      ctx.globalAlpha = s.L.alpha;
+      ctx.fillStyle = colour;
+      ctx.fillRect(s.x, s.y, s.L.size * dpr, s.L.size * dpr);
+    }
+    ctx.globalAlpha = 1;
+    if (!reduced) requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
