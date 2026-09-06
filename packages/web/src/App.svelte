@@ -66,13 +66,6 @@
 
   <Phase {ship} />
 
-  <div class="bar2">
-    <span class="yr">Y{num(year(ship.day))}</span>
-    <!-- The hour ticks once a real second, so it is the part of the clock that
-         shows the ship is running. -->
-    <span class="clock">day {num(ship.day % 365 + 1)} <b>{clock(ship.hour)}</b></span>
-  </div>
-
   {#if ship.dead}
     <div class="end scroll">
       <div class="pad">

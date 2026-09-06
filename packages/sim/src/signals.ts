@@ -14,6 +14,14 @@ export type Signal = {
   text: string;
   /** asset id, so tapping a feed line can drill straight in */
   target?: string;
+  /** §3: who did it, when a person did.
+   *
+   *  "Okonkwo took the hull repair" is a story; "the hull repair completed" is a
+   *  log line — the crew module opens on exactly that claim, and the feed had
+   *  been emitting the log line. Most signals have no author (a reactor sagging
+   *  is nobody's doing) and leave this unset; the ones that came out of somebody
+   *  finishing a job now carry their name. */
+  by?: string;
 };
 
 /** Room -> the three-letter code the feed prints. design/README: the marker is
@@ -35,8 +43,9 @@ export const LEVEL_MARK: Record<Level, string> = {
 export const FEED_CAP = 240;
 
 export function emit(s: { day: number; signals: Signal[] }, level: Level,
-                     fac: string, code: string, text: string, target?: string) {
-  s.signals.push({ day: s.day, level, fac: FAC[fac] ?? fac, code, text, target });
+                     fac: string, code: string, text: string, target?: string,
+                     by?: string) {
+  s.signals.push({ day: s.day, level, fac: FAC[fac] ?? fac, code, text, target, by });
   if (s.signals.length > FEED_CAP) s.signals.splice(0, s.signals.length - FEED_CAP);
 }
 

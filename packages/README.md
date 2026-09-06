@@ -668,3 +668,38 @@ This is a mechanic waiting to be picked up rather than a number to tune. Five ro
 capacity for one makes *which rock you work* the decision of the season — which is exactly
 what surveying is for, and right now the rescan button buys a better estimate of something
 you were going to take anyway, because the sim works every object it passes automatically.
+
+## The bay is a one-shot container until somebody hauls
+
+Found while verifying the nav port, and it is the sharpest number in the project so far.
+Working the five objects of leg 1 with nobody moving material:
+
+```
+  units landed per object, in the order worked
+  seed 1:   1519   120    96    96    72
+  seed 2:   1519   144   120   120   120
+  seed 3:   1519   120   120   120   120
+```
+
+**The first rock lands 1,519 units. Every rock after it lands about a hundred.** The Cargo
+Bay fills on object one and never drains, because deliveries only ever come from standing
+rules and a player game starts with none. Four fifths of a season goes past the window.
+
+It is not a wall, it is a lesson. Standing one haul job from the Cargo Bay to Engineering:
+
+```
+  no hauling       landed 1,963   parts in the shop  70
+  hauling by hand  landed 7,055   parts in the shop 289
+```
+
+**3.6x the material and 4x the parts, for keeping the ore moving.** That is the opening phase
+doing exactly what it was designed to do — the manual day-to-day is not busywork, it is most
+of your season — and it is the clearest argument yet for what the first automation should be.
+The ship already tells you: `BAY-FULL` fires with the tonnage left behind, and it now lands
+on the noticeboard as well as the ticker.
+
+Two things this sharpened rather than broke. Five big objects made the effect visible where
+twenty-six small ones spread it thin enough to look like ordinary overflow. And the earlier
+bay-cap sweep concluded "the bay is not the bottleneck" — correct, but for a reason worth
+stating properly: the shop can only refine what is in *Engineering*, so a bigger bay cannot
+help while nothing is carrying material there. The haul is the bottleneck, at every bay size.

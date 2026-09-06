@@ -153,7 +153,7 @@ export const REFURB_OVERHEAD = 0.05;
 export const REFURB_RATE = 0.022;
 export const FAULT_REBUILD_PENALTY = 2.0;
 
-function service(s: State, a: Asset) {
+function service(s: State, a: Asset, by?: string) {
   const recovered = a.maxCond - a.cond;
   const loss = REFURB_OVERHEAD + REFURB_RATE * recovered + (a.faulted ? FAULT_REBUILD_PENALTY : 0);
   const wasFaulted = a.faulted;
@@ -163,12 +163,12 @@ function service(s: State, a: Asset) {
   a.repairs++;
   s.counters.services++;
   if (wasFaulted)
-    emit(s, "info", a.room, "EQ-REBUILT", `${assetName(a.id)} rebuilt and back on line.`, a.id);
+    emit(s, "info", a.room, "EQ-REBUILT", `${assetName(a.id)} rebuilt and back on line.`, a.id, by);
   else
-    emit(s, "chatter", a.room, "EQ-SVC", `${assetName(a.id)} serviced.`, a.id);
+    emit(s, "chatter", a.room, "EQ-SVC", `${assetName(a.id)} serviced.`, a.id, by);
 }
 
-function replace(s: State, a: Asset): boolean {
+function replace(s: State, a: Asset, by?: string): boolean {
   // §4 splits this across two rooms, and the split is the point.
   //
   // The precision half — electronics and rare compounds — is assembled at the
@@ -189,7 +189,7 @@ function replace(s: State, a: Asset): boolean {
   here.parts -= PART_COST[a.cls];
   a.cond = 100; a.maxCond = 100; a.faulted = false; a.repairs = 0;
   s.counters.replacements++;
-  emit(s, "info", a.room, "EQ-NEW", `${assetName(a.id)} replaced. Ceiling back to 100.`, a.id);
+  emit(s, "info", a.room, "EQ-NEW", `${assetName(a.id)} replaced. Ceiling back to 100.`, a.id, by);
   return true;
 }
 
@@ -212,7 +212,7 @@ function canStart(s: State, task: Task, craneUp: boolean): boolean {
 
 /** The work is done — now do the thing. Returns false if it cannot be completed
  *  for want of materials, in which case the job waits, finished but unfulfilled. */
-function finish(s: State, task: Task, p: Settings): boolean {
+function finish(s: State, task: Task, p: Settings, by?: string): boolean {
   if (task.kind === "buildBed") {
     const shop = s.rooms[SHOP], hyd = s.rooms["Hydroponics"];
     const from = hyd.parts >= BED_PARTS ? hyd : shop;
@@ -222,20 +222,20 @@ function finish(s: State, task: Task, p: Settings): boolean {
     if (n > MAX_BEDS) return true;
     s.assets.push(newBed(n));
     emit(s, "info", "Hydroponics", "HYD-BED",
-         `Grow bed ${n} planted. ${n} of ${MAX_BEDS} racks running.`);
+         `Grow bed ${n} planted. ${n} of ${MAX_BEDS} racks running.`, undefined, by);
     return true;
   }
   if (task.kind === "makeRod") {
     if (!canMakeRod(s.stores)) return false;
     makeRod(s.stores); s.rods++; s.counters.rodsMade++;
-    emit(s, "chatter", "Engineering", "FAB-ROD", "Fuel rod fabricated.");
+    emit(s, "chatter", "Engineering", "FAB-ROD", "Fuel rod fabricated.", undefined, by);
     return true;
   }
   if (task.kind === "makeDrone") {
     if (s.drones >= p.droneTarget) return true;
     if (!canMakeDrone(s.stores)) return false;
     makeDrone(s.stores); s.drones++;
-    emit(s, "chatter", "Drone Bay", "FAB-DRN", `Drone built. Fleet at ${s.drones}.`);
+    emit(s, "chatter", "Drone Bay", "FAB-DRN", `Drone built. Fleet at ${s.drones}.`, undefined, by);
     return true;
   }
   if (task.kind === "deliver") {
@@ -249,12 +249,12 @@ function finish(s: State, task: Task, p: Settings): boolean {
   const a = s.assets.find(x => x.id === task.target);
   if (!a) return true;
   if (!a.faulted && a.cond >= a.maxCond - 3) return true;
-  if (a.maxCond < p.replaceAt && replace(s, a)) return true;
+  if (a.maxCond < p.replaceAt && replace(s, a, by)) return true;
   // No parts yet. Keep patching it anyway: the ceiling is already written off,
   // so there is nothing left to protect, and a high-wear asset in free-fall
   // reaches zero long before the replacement arrives. Abandoning the reactor for
   // one year at ageFactor 1.9 cost 182 colonists.
-  service(s, a);
+  service(s, a, by);
   // A sensor bolted to a machine gets checked while the machine is open, so
   // routine repairs DO mitigate condition drift — for free, without the player
   // ever deciding to. A gauge on a store has no such visit: nothing routine
@@ -368,7 +368,7 @@ function hourly(s: State): void {
     // ageing or injured person moves the bar more slowly, by name.
     task.done += effort(person) * (1 - p.botanistShare);
     if (task.done < task.work) continue;
-    if (finish(s, task, p)) { done.push(task); person.task = undefined; }
+    if (finish(s, task, p, person.name)) { done.push(task); person.task = undefined; }
     else { task.done = task.work; }             // held, waiting on materials
   }
   for (const t2 of done) s.board.splice(s.board.indexOf(t2), 1);

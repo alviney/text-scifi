@@ -1555,6 +1555,37 @@ estimate of something you were going to take anyway. The simulation still works
 every object it passes, automatically, so the choice does not exist yet. Building
 it is the obvious next move and is deliberately not made here.
 
+### Built: the noticeboard, and why hauling is the whole opening
+
+§8's feed is a ticker: it rotates and forgets. The nav panel now carries a
+**bulletin** underneath it — the same signals, kept up, filed by the place they came
+from and the day inside the season. `emit()` gained an optional author, so the ones
+that came out of somebody finishing a job carry their name: §3 opens on the claim
+that *"Okonkwo took the hull repair" is a story and "crew member 4 took the hull
+repair" is a log line*, and the feed had been emitting the log line.
+
+Building it turned up the sharpest number in the project. Working leg 1's five
+objects with nobody moving material:
+
+| | obj 1 | obj 2 | obj 3 | obj 4 | obj 5 |
+|---|---|---|---|---|---|
+| units landed | **1,519** | 120 | 96 | 96 | 72 |
+
+The bay fills on the first rock and never drains, because deliveries only come from
+standing rules and the player starts with none. Four fifths of a season goes past the
+window. Standing one haul job from the Cargo Bay to Engineering:
+
+| | Landed | Parts in the shop |
+|---|---|---|
+| No hauling | 1,963 | 70 |
+| Hauling by hand | **7,055** | **289** |
+
+**3.6× the material and 4× the parts for keeping the ore moving.** That is §1b's
+manual day-to-day earning its place — it is not busywork around the real game, it *is*
+most of your season — and it is the clearest case yet for what the first automation the
+player writes should be. The ship already says so: `BAY-FULL` fires with the tonnage
+left behind.
+
 ### Built: volatiles, the other material with nothing to spend it on
 
 Same hole, one row down. Volatiles are **19% of every haul** and sat at a 250-unit

@@ -103,9 +103,9 @@
    *  identical diamonds, which is the one thing this map exists not to be. With
    *  five objects there is about eighty pixels of rail each, so a 20-unit rock
    *  can afford to look like a 20-unit rock. An object already worked shrinks to
-   *  a tick: the weight belongs on what is still ahead of you. */
-  const px = (e: Encounter) =>
-    worked(e) ? 5 : Math.max(8, Math.min(26, 7 + units(mass(e).mid) * 0.95));
+   *  A worked object keeps its size and goes solid: it is history, not absent,
+   *  and shrinking it to a tick lost the shape of the season behind you. */
+  const px = (e: Encounter) => Math.max(8, Math.min(26, 7 + units(mass(e).mid) * 0.95));
 
   $effect(() => {
     if (!sky) return;
@@ -140,13 +140,22 @@
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   });
 
-  /** The object's own portrait. Separate effect from the starfield because it
-   *  redraws on a different thing: the starfield is time passing, this is which
-   *  rock you are looking at. */
+  /** The object's own portrait.
+   *
+   *  THE EFFECT MUST DEPEND ON THE CANVAS AND NOTHING ELSE. It used to read
+   *  `selRock` and `selConf` in its body, and `selConf` is confidence, which is
+   *  a function of how far away the object is — so it changed on every game
+   *  hour. Every tick tore the effect down and rebuilt it, and rebuilding calls
+   *  size(), which sets cv.width and blanks the canvas. That is the flicker: the
+   *  rock was being wiped and redrawn from scratch once a second.
+   *
+   *  Reading them inside frame() instead is safe because frame() runs from
+   *  requestAnimationFrame, outside the effect's synchronous tracking window, so
+   *  it sees the current values without subscribing to them. The first call has
+   *  to be scheduled rather than made directly for the same reason. */
   $effect(() => {
-    const cv = art, rock = selRock;
-    if (!cv || !rock) return;
-    const lit = selConf >= 0.8;
+    const cv = art;
+    if (!cv) return;
     const dpr = Math.min(2, devicePixelRatio || 1);
     const css = getComputedStyle(document.documentElement);
     const colours = {
@@ -155,16 +164,23 @@
       fill: css.getPropertyValue("--rule") || "#2B3841",
     };
     let raf = 0;
-    const size = () => { cv.width = cv.clientWidth * dpr; cv.height = cv.clientHeight * dpr; };
-    size();
+    const size = () => {
+      const w = cv.clientWidth * dpr, h = cv.clientHeight * dpr;
+      // Only touch the backing store when it actually changed: assigning to
+      // cv.width clears the canvas even when the value is identical.
+      if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    };
     const ro = new ResizeObserver(size); ro.observe(cv);
     const slow = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const frame = () => {
       raf = requestAnimationFrame(frame);
+      const rock = selRock;
+      if (!rock) return;
+      size();
       if (!slow) rock.rot += 0.0016;
-      drawRock(cv, rock, lit, colours);
+      drawRock(cv, rock, selConf >= 0.8, colours);
     };
-    frame();
+    raf = requestAnimationFrame(frame);
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
   });
 </script>
@@ -187,9 +203,7 @@
                 onclick={() => picked = e.id}
                 title="{classReading(e, conf(e))} · day {Math.round(e.year * 365 - legStart)}">
           <span class="dot"></span>
-          {#if sel?.id === e.id}
-            <span class="yr">d{Math.round(e.year * 365 - legStart)}</span>
-          {/if}
+          <span class="yr">d{Math.round(e.year * 365 - legStart)}</span>
         </button>
       {/each}
     </div>
@@ -259,7 +273,7 @@
   <button class="goals1" onclick={() => openGoals = !openGoals}
           aria-expanded={openGoals}>
     <span class="g" class:ok={stageMet === stage.length}>{stageMet === stage.length ? "●" : "○"}</span>
-    <span>Stage goals</span>
+    <span>Critical tasks</span>
     <span class="n" class:ok={stageMet === stage.length}>{stageMet}/{stage.length}</span>
     <span class="chev">{openGoals ? "⌄" : "›"}</span>
   </button>
@@ -294,7 +308,7 @@
           <!-- The day is the SEASON's, not the voyage's. "d710" is true and
                useless; "d13" is the day the crew would say. -->
           <div class="nh">
-            <span class="src">{ROOM_OF_FAC[n.fac] ?? n.fac}</span>
+            <span class="src">{ROOM_OF_FAC[n.fac] ?? n.fac}{n.by ? ` · ${n.by}` : ""}</span>
             <!-- A note filed before the cluster arrives has no season day to
                  give. "d-20" is arithmetic; "prep" is where you were. -->
             <span>{n.day - legStart >= 0 ? `d${n.day - legStart}` : "prep"}</span>
@@ -411,10 +425,13 @@
 
   .obj { position: absolute; top: 74px; transform: translate(-50%, -50%);
          display: grid; gap: 3px; justify-items: center; padding: 8px 1px; }
-  /* The label only ever belongs to the selected object — twenty-six of them
-     under a 430px rail is not a readout, it is a texture. */
-  .obj .yr { position: absolute; top: calc(50% + 12px); left: 50%;
+  /* Every object carries its day. This was cut back to the selected one only
+     while a leg had twenty-six of them and the labels ran together; with five
+     there is room, and the day an object arrives is half of what the map is
+     for. */
+  .obj .yr { position: absolute; top: calc(50% + 13px); left: 50%;
              transform: translateX(-50%); white-space: nowrap; }
+  .obj.on .yr { color: var(--dim); }
   .dot { display: block; width: var(--d); height: var(--d);
          border: 1.5px solid var(--accent); transform: rotate(45deg); }
   .obj.known .dot { background: var(--accent); }
