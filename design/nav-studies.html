@@ -94,6 +94,40 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
 .obj-d h4.unk{color:var(--d-dim)}
 .obj-d .haul{font-size:12.5px;color:var(--d-text);font-variant-numeric:tabular-nums}
 .obj-d .haul span{color:var(--d-dim)}
+/* the haul, at the new scale: one number you can hold in your head */
+.obj-d .big{display:flex;align-items:baseline;gap:6px;margin-top:1px}
+.obj-d .big b{font-weight:500;font-size:23px;line-height:1.1;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--d-text)}
+.obj-d .big em{font-style:normal;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--d-faint)}
+.obj-d .big.unk b{color:var(--d-dim)}
+.comp{margin-top:5px;font-size:10.5px;color:var(--d-dim);font-variant-numeric:tabular-nums;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.comp b{color:var(--d-text);font-weight:400}
+.comp .sep{color:var(--d-faint)}
+/* per-material rows, the literal "20% water (11)" form */
+.rows{margin-top:5px;display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:1px 8px;
+  font-size:11px;font-variant-numeric:tabular-nums;align-content:start}
+.rows .m{color:var(--d-dim)}
+.rows .pc{color:var(--d-faint);text-align:right}
+.rows .u{color:var(--d-text)}
+/* composition as a bar, no per-material numbers */
+.cbar{margin-top:7px;display:flex;height:5px;overflow:hidden;background:var(--d-panel2)}
+.cbar i{display:block;height:100%}
+.cbar .k1{background:var(--d-accent)} .cbar .k2{background:var(--d-ok)}
+.cbar .k3{background:var(--d-dim)}    .cbar .k4{background:var(--d-faint)}
+.ckey{margin-top:4px;font-size:9.5px;color:var(--d-faint);letter-spacing:.05em}
+.ckey i{display:inline-block;width:6px;height:6px;margin-right:3px}
+
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}
+@media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr);max-width:min(420px,100%)}}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 0;max-width:560px}
+.tbl th,.tbl td{text-align:left;padding:6px 12px 6px 0;border-bottom:1px solid var(--pg-rule);
+  vertical-align:top}
+.tbl th{font-family:var(--d-font);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--pg-dim);font-weight:700}
+.tbl td.n{font-family:var(--d-font);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl td b{font-weight:600}
 .conf{display:flex;align-items:center;gap:7px;margin-top:7px}
 .conf .bar{flex:1;height:3px;background:var(--d-panel2);overflow:hidden}
 .conf .bar i{display:block;height:100%;background:var(--d-accent)}
@@ -155,7 +189,7 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
       <p class="capsub">The next object is seven days out and has been surveyed twice.</p>
       <div class="dev">
         <div class="tick"><span class="mk">[··][NAV][SUR-OK]</span>
-          <span class="msg">Survey complete. Metal, 4,100 units, 86%.</span></div>
+          <span class="msg">Survey complete. Metal, 18 units, 86%.</span></div>
         <div class="phz"><span class="nm">The Departure Belt</span><span class="st">day 34</span>
           <span class="voy"><i class="now"></i><i></i><i></i><i></i><i></i></span></div>
 
@@ -177,7 +211,9 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
           <div class="info">
             <div class="lab">Next object · 7 days</div>
             <h4>Metal</h4>
-            <div class="haul">3,900–4,300 <span>units</span></div>
+            <div class="big"><b>16–20</b><em>units</em></div>
+            <div class="comp">ore <b>60%</b> <span class="sep">·</span> rare <b>18%</b>
+              <span class="sep">·</span> silicon <b>15%</b></div>
             <div class="conf"><span class="bar"><i style="width:86%"></i></span>
               <span class="pc">86% · 2 scans</span></div>
             <div class="foot">
@@ -211,7 +247,7 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
           <div class="note">
             <div class="nh"><span class="src">Cargo Bay · Vasquez</span><span>d28</span></div>
             <div class="nb">Second object worked and the crane is back in its cradle.
-              <b>880 units aboard</b>, mostly ice. Smaller than the array read it.</div>
+              <b>4 units aboard</b>, mostly ice. Smaller than the array read it.</div>
           </div>
         </div>
         <div class="nav"><span class="on">Voyage</span><span>Facilities</span><span>Crew</span><span>Rules</span></div>
@@ -247,7 +283,8 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
           <div class="info">
             <div class="lab">Next object · 12 days</div>
             <h4 class="unk">Unsurveyed</h4>
-            <div class="haul">600–4,400 <span>units</span></div>
+            <div class="big unk"><b>4–20</b><em>units</em></div>
+            <div class="comp">composition unknown</div>
             <div class="conf"><span class="bar"><i style="width:15%"></i></span>
               <span class="pc">15% · no scans</span></div>
             <div class="foot">
@@ -314,6 +351,109 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
     matters. It is the only long-form text in the game and the only note the crew did not
     write.</li>
   </ul>
+
+  <div class="rule"></div>
+
+  <h3 class="sect">How big is a rock?</h3>
+  <p class="sectlede">Today a unit is an abstract mass unit and a haul is <b>1,080–3,720</b> of
+  them in the Departure Belt, falling to <b>346–1,190</b> by Final Approach. Nobody can hold
+  that. Dividing by 200 puts every rock in the voyage between <b>2 and 19</b>, and the leg you
+  are in still reads off the size — a fat belt rock is 18, a Deep Field rock is 5.</p>
+
+  <div class="trio">
+    <div>
+      <p class="cap">A · One number, shares</p>
+      <p class="capsub">The haul is the headline; composition is percentages, because that is
+      what a class actually is.</p>
+      <div class="dev">
+        <div class="obj-d">
+          <div class="info">
+            <div class="lab">Next object · 7 days</div>
+            <h4>Metal</h4>
+            <div class="big"><b>16–20</b><em>units</em></div>
+            <div class="comp">ore <b>60%</b> <span class="sep">·</span> rare <b>18%</b>
+              <span class="sep">·</span> silicon <b>15%</b></div>
+            <div class="conf"><span class="bar"><i style="width:86%"></i></span>
+              <span class="pc">86% · 2 scans</span></div>
+            <div class="foot"><span class="why">Biggest of the season</span>
+              <button class="scan">Rescan 1h</button></div>
+          </div>
+          <div class="art"><canvas class="rock3d" data-seed="7" data-lit="1"></canvas>
+            <div class="tagd">d41</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <p class="cap">B · A number per material</p>
+      <p class="capsub">Your form exactly — the share and the units it comes to. Four small
+      numbers instead of one.</p>
+      <div class="dev">
+        <div class="obj-d">
+          <div class="info">
+            <div class="lab">Next object · 7 days</div>
+            <h4>Metal · 16–20 units</h4>
+            <div class="rows">
+              <span class="m">ore</span><span class="pc">60%</span><span class="u">11</span>
+              <span class="m">rare earths</span><span class="pc">18%</span><span class="u">3</span>
+              <span class="m">silicon</span><span class="pc">15%</span><span class="u">3</span>
+              <span class="m">volatiles</span><span class="pc">5%</span><span class="u">1</span>
+            </div>
+            <div class="foot"><span class="why">86% · 2 scans</span>
+              <button class="scan">Rescan 1h</button></div>
+          </div>
+          <div class="art"><canvas class="rock3d" data-seed="7" data-lit="1"></canvas>
+            <div class="tagd">d41</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <p class="cap">C · One number, a bar</p>
+      <p class="capsub">Composition as a stripe. You see the mix at a glance and never read a
+      second number.</p>
+      <div class="dev">
+        <div class="obj-d">
+          <div class="info">
+            <div class="lab">Next object · 7 days</div>
+            <h4>Metal</h4>
+            <div class="big"><b>16–20</b><em>units</em></div>
+            <div class="cbar"><i class="k1" style="width:60%"></i><i class="k2" style="width:18%"></i><i class="k3" style="width:15%"></i><i class="k4" style="width:7%"></i></div>
+            <div class="ckey"><i class="k1" style="background:var(--d-accent)"></i>ore
+              <i class="k2" style="background:var(--d-ok)"></i>rare
+              <i class="k3" style="background:var(--d-dim)"></i>silicon</div>
+            <div class="foot"><span class="why">86% · 2 scans</span>
+              <button class="scan">Rescan 1h</button></div>
+          </div>
+          <div class="art"><canvas class="rock3d" data-seed="7" data-lit="1"></canvas>
+            <div class="tagd">d41</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="sectlede" style="margin-top:22px"><b>What the new unit is worth.</b> Same economy,
+  same constants, only the display divided by 200 — so these are conversions, not proposals.</p>
+
+  <table class="tbl">
+    <tr><th>Thing</th><th>Reads</th><th>Was</th></tr>
+    <tr><td>A typical Departure Belt rock</td><td class="n"><b>12</b> units</td><td class="n">2,400</td></tr>
+    <tr><td>The biggest of that season</td><td class="n"><b>19</b> units</td><td class="n">3,720</td></tr>
+    <tr><td>A Deep Field rock, mid-voyage</td><td class="n"><b>5</b> units</td><td class="n">960</td></tr>
+    <tr><td>The leanest thing on the route</td><td class="n"><b>2</b> units</td><td class="n">346</td></tr>
+    <tr><td>One unit of ore, refined and fabricated</td><td class="n"><b>30</b> parts</td><td class="n">—</td></tr>
+    <tr><td>Replacing a high-complexity component</td><td class="n"><b>16</b> parts</td><td class="n">16</td></tr>
+    <tr><td>Building a drone</td><td class="n"><b>10</b> parts + 6 electronics</td><td class="n">same</td></tr>
+  </table>
+
+  <p class="sectlede" style="margin-top:20px"><b>The one thing this does not fix.</b> A part
+  costs 6.67 ore, so the refining chain is a divide-by-thirty: whatever scale the haul reads at,
+  parts are thirty times more numerous. Rescaling moves the big number from the rock to the
+  workshop rather than removing it. The real simplification is to <b>collapse the chain</b> —
+  drop refined metal as a separate store and let ore make parts directly at, say, two parts per
+  unit — which puts hauls at 2–19, parts at 4–40, and takes a material type out of the game. That
+  is a change to the simulation, so it is a decision rather than a mock-up, and I have not made
+  it.</p>
 </div>
 
 <script>
