@@ -3,14 +3,17 @@ import type { Asset, Policy, Settings, State } from "./types.ts";
 import { DEFAULT_SETTINGS } from "./types.ts";
 import { buildAssets, assetName, newBed, BED_PARTS, MAX_BEDS,
          RARE_COST, PART_COST, ELEC_COST } from "./catalogue.ts";
-import { buildSchedule, harvest, classReading, confidence, trueMass } from "./encounters.ts";
+import { buildSchedule, harvest, classReading, confidence, trueMass,
+         SORTIES_PER_WINDOW, PROPELLANT_PER_SORTIE, PROPELLANT_RESERVE,
+         propellantFor } from "./encounters.ts";
 import { emptyStores, refine, makeParts, canMakeRod, makeRod, canMakeDrone, makeDrone,
          RARE_RESERVE, ELEC_TARGET } from "./economy.ts";
 import { CRANE_KW, HOLD, SHOP, capOf, daysOf, deposit, isBulk, land, loadOf, newRooms,
          withdraw, type MatKey } from "./logistics.ts";
 import { BASELINE_KW, bus, emptyRoomSaving, reactorOutput, rodsPerDay } from "./power.ts";
 import { type Task, inheritedRules, playerRules, evaluate, reportedCondition } from "./rules.ts";
-import { newColony, tickColony, crewLabour } from "./colony.ts";
+import { newColony, tickColony, crewLabour, STARTING_WATER, WATER_ROOM,
+         START_BAY_WATER } from "./colony.ts";
 import { newCrew, tickCrew, hasAwake, effort, onDuty, makeDistinct, POOL,
          type Person, type Role } from "./crew.ts";
 
@@ -39,7 +42,8 @@ export function init(seed: number, actII = 40, p?: Policy): State {
     counters: { ruleFires: 0, staleTasks: 0, blindDays: 0, services: 0, replacements: 0,
                 faults: 0, encountersTaken: 0, encountersMissed: 0, rodsMade: 0,
                 deficitDays: 0, brownoutDays: 0,
-                deliveries: 0, overflow: 0, starvedDays: 0, craneBlockedDays: 0 },
+                deliveries: 0, overflow: 0, starvedDays: 0, craneBlockedDays: 0,
+                waterUsed: 0, propellant: 0, declined: 0 },
     dead: null,
   };
   s.rngState = r.s;
@@ -53,6 +57,12 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   s.stores = s.rooms[SHOP];
   s.stores.parts = 60; s.stores.electronics = 40; s.stores.rareCmp = 60; s.stores.refMetal = 200;
   for (const room of Object.keys(s.rooms)) if (room !== SHOP) s.rooms[room].parts = 25;
+  // §6b: water is a working stock like any other, and the ship cannot start
+  // without it — an empty bay cannot fuel the first wave, and an empty tank
+  // starts the air falling on day one. The Cargo Bay's share is propellant;
+  // Life Support's is the tank the crew and the beds draw on.
+  s.rooms[HOLD].ice = START_BAY_WATER;
+  s.rooms[WATER_ROOM].ice = STARTING_WATER;
   // §5c argues the ship should launch with standing rules as a curriculum. The
   // game now starts with NONE: the opening phase is meant to be hands-on —
   // wake someone, learn what the ship does, hand out every job — and automation
@@ -63,7 +73,13 @@ export function init(seed: number, actII = 40, p?: Policy): State {
   // A human client does the same through apply(), one command at a time.
   if (p) {
     // A Policy means the balance harness: a fully-staffed, self-running ship.
-    s.settings = { replaceAt: p.replaceAt, droneTarget: p.droneTarget,
+    // Spread over DEFAULT_SETTINGS rather than built from scratch: this object
+    // was written by hand and silently lost `rations` when the ration lever was
+    // added, so every automated run multiplied the day's meals by undefined and
+    // carried food = NaN from the first day to the last. The harness has been
+    // reporting a food model that was not running.
+    s.settings = { ...DEFAULT_SETTINGS,
+                   replaceAt: p.replaceAt, droneTarget: p.droneTarget,
                    botanistShare: p.botanistShare, prioritise: p.prioritise,
                    shedEmptyRooms: true, autoRetire: true,
                    crewSelfAssign: true, autoWake: true };
@@ -527,21 +543,45 @@ function daily(s: State): void {
   while (s.next < s.schedule.length && s.schedule[s.next].year <= year) {
     const enc = s.schedule[s.next++];
     // §3: "No pilots, no rare compounds, no ship." Drones do not fly themselves.
-    if (s.drones > 0 && !reactor.faulted && hasAwake(s.crew, "pilot")) {
-      const h = harvest(enc, s.drones);
+    const bay0 = s.rooms[HOLD];
+    // §6b: the fleet flies on water, and the bill is paid before the wave
+    // launches. A dry bay does not cancel the encounter, it flies a smaller
+    // wave — so running short costs you part of a rock rather than all of it,
+    // and the loop that refills the tank is the same one that empties it.
+    const wanted = s.drones * SORTIES_PER_WINDOW;
+    const flown = Math.min(wanted, Math.floor(bay0.ice / PROPELLANT_PER_SORTIE));
+    if (s.drones > 0 && flown > 0 && !reactor.faulted && hasAwake(s.crew, "pilot")) {
+      const burned = withdraw(bay0, "ice", propellantFor(flown));
+      s.counters.propellant += burned;
+      const h = harvest(enc, s.drones, flown);
       const bay = s.rooms[HOLD], cap = capOf(HOLD);
-      let spilled = 0;
+      let spilled = 0, declined = 0, landed = 0;
       // Value order, deliberately. The bay has a lid, so something gets left in
       // space — and the crew keep the rare earths and the ore before the water.
       // Depositing in an arbitrary order let ice fill the bay and leave the ore
       // behind, which is a modelling artifact rather than a decision anyone made.
-      for (const [k, v] of [["rare", h.rare], ["ore", h.ore], ["sil", h.sil],
-                            ["ice", Math.max(0, h.ice)], ["vol", h.vol]] as [MatKey, number][])
-        spilled += land(bay, k, v, cap).lost;
+      //
+      // The one thing that goes ahead of the ore is the fleet's own fuel. Water
+      // buys every future rock, so the crew top the propellant reserve up before
+      // they load anything they cannot come back for. Whatever water is left
+      // over queues behind the cargo, where it always was.
+      const fuelFirst = Math.min(Math.max(0, h.ice),
+                                 Math.max(0, PROPELLANT_RESERVE - bay.ice));
+      for (const [k, v] of [["ice", fuelFirst], ["rare", h.rare], ["ore", h.ore],
+                            ["sil", h.sil], ["ice", Math.max(0, h.ice) - fuelFirst],
+                            ["vol", h.vol]] as [MatKey, number][]) {
+        const got = land(bay, k, v, cap);
+        spilled += got.lost; declined += got.declined;
+        landed += v - got.lost - got.declined;
+      }
       s.counters.overflow += spilled;
+      s.counters.declined += declined;
       s.counters.encountersTaken++;
+      if (flown < wanted)
+        emit(s, "warn", "Drone Bay", "PRP-SHORT",
+             `Only ${flown} of ${wanted} sorties flown — not enough water for propellant.`);
       emit(s, "info", "Cargo Bay", "HRV-OK",
-           `${enc.cls}-type worked. ${(h.ore + h.rare + h.sil).toFixed(0)} units aboard.`);
+           `${enc.cls}-type worked. ${landed.toFixed(0)} units aboard, ${burned.toFixed(0)} spent as propellant.`);
       // §4: an output buffer that is full stalls the thing feeding it. Here that
       // is the whole encounter — material left in space because the bay is full.
       if (spilled > 1)
@@ -556,7 +596,8 @@ function daily(s: State): void {
       emit(s, "warn", "Cargo Bay", "HRV-MISS",
            `${enc.cls}-type passed unworked — ${
              s.drones <= 0 ? "no drones" :
-             !hasAwake(s.crew, "pilot") ? "nobody awake can fly them" : "no power"}.`);
+             !hasAwake(s.crew, "pilot") ? "nobody awake can fly them" :
+             flown <= 0 ? "no water in the bay for propellant" : "no power"}.`);
     }
   }
 

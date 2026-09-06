@@ -99,6 +99,14 @@ export function inheritedRules(assets: Asset[]): Rule[] {
     // §4: the ship does not launch with an empty logistics layer either. These
     // are the two hauls that keep the shop fed and the rooms stocked, and they
     // are the ones the player will watch jam when the reactor sags.
+    // §6b: the water rule. plan.md's own worked example of a sensor lying was
+    // "the water-restock rule that had not fired in 47 years", written when
+    // water did nothing — now that Life Support actually draws on the tank, a
+    // gauge reading high here is a slow suffocation rather than a curiosity.
+    //
+    // The threshold is a fortnight of a full watch and three beds, which is
+    // enough lead time for someone to walk the ice up from the Cargo Bay.
+    mk("LS-01", "room:Life Support:ice", "roomstock", 120, "deliver"),
     mk("LG-01", "room:Engineering:ore",  "roomstock", 300, "deliver"),
     mk("LG-02", "room:Engineering:sil",  "roomstock", 150, "deliver"),
     mk("LG-03", "room:Engineering:rare", "roomstock",  80, "deliver"),

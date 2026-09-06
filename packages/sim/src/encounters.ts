@@ -47,13 +47,34 @@ export const CAP_PER_SORTIE = 40;
 export const SORTIES_PER_WINDOW = 4;
 export const PROPELLANT_PER_SORTIE = 6;   // water, thrown away (§6b)
 
-/** Harvest one encounter with the fleet available. Returns what came aboard. */
-export function harvest(enc: Encounter, drones: number) {
-  const sorties = drones * SORTIES_PER_WINDOW;
+/** The water a full wave costs. Drones fly on the same stuff the crew drink,
+ *  which is what makes a comet worth taking rather than worth skipping. */
+export const propellantFor = (sorties: number) => sorties * PROPELLANT_PER_SORTIE;
+
+/** Water the bay holds back for the fleet before it loads anything else.
+ *
+ *  Three waves. Without this the two ends of §4 collide: the bay fills with ore
+ *  nobody has hauled to the shop yet, ice cannot land because there is no shelf
+ *  left, and the fleet stops flying — measured, a full bay cost 15 of 26
+ *  encounters in the first season and left the crew watching rocks go past with
+ *  a hold full of material they could not move. A full bay is supposed to cost
+ *  you cargo, which it still does. It is not supposed to cost you the fleet. */
+export const PROPELLANT_RESERVE = propellantFor(3 * 24);
+
+/** Harvest one encounter. `sorties` defaults to a full wave, and is passed
+ *  short when the bay could not fuel one.
+ *
+ *  Ice comes back GROSS. Propellant used to be netted off in here, which meant
+ *  the largest single use of water in the game happened inside a return value
+ *  and was never visible to anyone: the bay simply received less ice than the
+ *  rock contained, with no transaction to see. It is now spent at the bay,
+ *  before the wave launches, where it can be watched and can run out. */
+export function harvest(enc: Encounter, drones: number,
+                        sorties = drones * SORTIES_PER_WINDOW) {
   const units = sorties * CAP_PER_SORTIE * enc.richness * enc.size;
   const c = COMP[enc.cls];
   return {
-    ice: units * c.ice - sorties * PROPELLANT_PER_SORTIE,  // propellant is spent, not banked
+    ice: units * c.ice,
     vol: units * c.vol,
     sil: units * c.sil,
     ore: units * c.ore,

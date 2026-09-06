@@ -1438,6 +1438,74 @@ are core gameplay.
 | Volatiles        | Chemical compounds     | Fuel, medical supplies, fertiliser|
 | Rare elements    | Rare compounds         | Advanced electronics, medical     |
 
+### Built: water had none of those sinks, for a long time
+
+That first row — *drinking, hydroponics, O₂, drone propellant* — was written at the
+start and was not true of the simulation until now. Water arrived, sat in the Cargo
+Bay against a 400-unit cap, and did nothing. Air was a pure function of the oxygen
+generator and the power bus. Grow beds drew nothing. Food was rations and crops. The
+only consumer was drone propellant, and that was **netted off inside `harvest()`**
+before anything reached the bay — so the largest single use of water in the game
+happened inside a return value, with no transaction to see and nothing that could
+run out.
+
+The scale of the hole, measured across a full voyage at a full fleet:
+
+| | units |
+|---|---|
+| Total mass harvested | 135,744 |
+| Of which water (26% — C-types are 45% ice, comets 65%) | 34,818 |
+| Spent as propellant, invisibly | 14,400 |
+| **With no sink at all** | **20,418** |
+| What the bay would actually hold | 400 |
+
+So the most abundant material on the route was the one thing the ship did not need.
+A quarter of every haul was scenery, and a comet — one object in ten — was the worst
+thing you could be offered. `logistics.ts` capped ice at 400 not because water is
+worthless but because, being worthless, it filled the bay and starved the fabricator:
+1,295 units of ice once blocked electronics for 4,745 days.
+
+**What water does now.** Three sinks, deliberately different in character:
+
+| Sink | Rate | Character |
+|---|---|---|
+| Crew | 0.9 / person / day | Small, unavoidable. Make-up water the scrubbers cannot reclaim — nobody is modelled drinking. |
+| Grow beds | 1.6 / bed / day | Large, optional, and yours to choose. A dry bed grows **nothing**, not less. |
+| The fleet | 6 / sortie, 144 / wave | Spent up front, from the Cargo Bay, before the wave launches. |
+
+The tank lives in **Life Support**, so it obeys §4 like every other material: it is one
+room's shelf, and it only refills because somebody carried ice up from the bay. There
+is an inherited rule (`LS-01`, threshold 120 — about a fortnight) but the player starts
+with no rules at all, so leg 1 is hauled by hand or not at all.
+
+A dry loop is a *slower* death than a broken one. The scrubbers limp on what they can
+reclaim, so air falls at half the rate of a failed generator, and being half-supplied
+costs half as much again — the tank running low is felt before it runs out.
+
+**Measured, leg 1, four crew and three beds, no rules written:** 886 units drawn against
+a 1,200 tank, ending about a quarter full with the low-water warning inside the last
+fortnight. Short the tank deliberately and the failure is graded rather than sudden:
+
+| Tank | Warns | Dry | Lowest air | Dead |
+|---|---|---|---|---|
+| 1,200 | — | — | 100% | 0 |
+| 600 | d50 | d75 | 32% | 0 |
+| 300 | d15 | d40 | 0% | 1 |
+| 120 | d5 | d18 | 0% | 3 |
+
+The warning always arrives with time to act on it. 900 was tried first and rejected:
+it ended the season with **fourteen units** in the tank, which is not a lesson, it is a
+coin toss — waking a fifth person killed a player who had done everything the departure
+board asked.
+
+**The one thing that had to go ahead of the ore.** Making the fleet burn water from the
+bay coupled two ends of §4 that had never touched: the bay fills with ore nobody has
+hauled to the shop, ice cannot land because there is no shelf left, and the fleet stops
+flying. Measured, that cost **15 of 26 encounters** in the first season. So the crew now
+top a three-wave propellant reserve *before* they load cargo — a full bay costs you cargo,
+as it always did, but it never costs you the fleet. Encounters went back to 24.2/26,
+exactly the figure before water existed.
+
 ### Production Chains (3-4 steps deep)
 
 ```

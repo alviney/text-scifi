@@ -43,6 +43,9 @@ export type Counters = {
   /** §4 logistics: hauls run, material lost to a full bay, days the shop sat
    *  idle with raw material aboard but in the wrong room. */
   deliveries: number; overflow: number; starvedDays: number; craneBlockedDays: number;
+  /** §6b water: what Life Support drew, what the fleet burned as propellant,
+   *  and what the crew left in space because the bay would not take it. */
+  waterUsed: number; propellant: number; declined: number;
 };
 
 export type State = {
@@ -97,6 +100,10 @@ export type State = {
   acked: number;
   /** was the ship short of power yesterday? edge detection for the feed */
   brownout?: boolean;
+  /** §6b: was Life Support short of water yesterday, and had it already been
+   *  warned about? Edge detection, so the feed says it once rather than daily. */
+  dry?: boolean;
+  waterLow?: boolean;
   /** Standing orders the player sets. Part of the state because they are part
    *  of the save, and because a second client must not have to be taught them. */
   settings: Settings;

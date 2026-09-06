@@ -26,7 +26,11 @@ export const MADE: MatKey[] = ["refMetal", "rareCmp", "parts", "electronics"];
  *  full fleet brings back ~2,400 units, so the bay overflows unless the shop is
  *  keeping up. §4 wants that to be a genuine Act I bottleneck. */
 export const CAP: Record<string, number> = {
-  "Cargo Bay": 1400,
+  // §6b gave water three real sinks, and the fleet's share of it is spent from
+  // here. At 1400 the bay could hold four waves of propellant only by giving up
+  // the ore it exists to carry, so the encounter that refilled it was the same
+  // one that starved the shop.
+  "Cargo Bay": 2000,
   // The shop holds raw material AND everything it has made, so it needs room for
   // both. At 900 it was full of its own parts and rejecting ore deliveries — and
   // once a crossing's worth of stock has to fit alongside incoming ore, 1400 was
@@ -36,6 +40,9 @@ export const CAP: Record<string, number> = {
 // A room has to be able to hold the buffer its own rule asks for, plus what it
 // is about to consume. 120 was below Life Support's own threshold.
 export const CAP_DEFAULT = 260;
+// Life Support holds the ship's water tank as well as its shelf of parts, so it
+// is the one room whose cap is set by a store rather than by its assets.
+CAP["Life Support"] = 1400;
 export const capOf = (room: string) => CAP[room] ?? CAP_DEFAULT;
 
 /** How much of the low-value stuff the crew will actually take aboard.
@@ -49,7 +56,11 @@ export const capOf = (room: string) => CAP[room] ?? CAP_DEFAULT;
  *
  *  Leaving the surplus in space is a decision, not a loss, so it is not counted
  *  as overflow. */
-export const KEEP: Partial<Record<MatKey, number>> = { ice: 400, vol: 250 };
+// Water is no longer surplus: the crew drink it, the beds transpire it and the
+// drones burn it. What is left is the ceiling on how much the BAY will carry,
+// which is a shelf-space decision rather than a statement that water is
+// worthless. Volatiles still have no sink and keep the old cap.
+export const KEEP: Partial<Record<MatKey, number>> = { ice: 1100, vol: 250 };
 
 export const heldIn = (st: Stores) =>
   RAW.reduce((n, k) => n + st[k], 0) + MADE.reduce((n, k) => n + st[k], 0);

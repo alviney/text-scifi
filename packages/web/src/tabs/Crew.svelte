@@ -7,7 +7,8 @@
    *  §5b: the board runs both ways, so requests from the crew live here too. */
   import type { State } from "../../../sim/src/types.ts";
   import type { Command } from "../../../sim/src/commands.ts";
-  import { BANKS, PER_BANK, COLD_GRACE_DAYS, foodBalance } from "../../../sim/src/colony.ts";
+  import { BANKS, PER_BANK, COLD_GRACE_DAYS, foodBalance,
+           WATER_ROOM, WATER_LOW_DAYS, waterDays, waterDraw } from "../../../sim/src/colony.ts";
   import { ROSTER, ageFactor, RETIRE_AGE, THAW_MIN, THAW_MAX, type Role } from "../../../sim/src/crew.ts";
   import { assetName, hours, num, when } from "../lib/view.ts";
 
@@ -27,6 +28,12 @@
 
   const roleList = $derived([...new Set(ROSTER)] as Role[]);
   const food = $derived(foodBalance(ship, ship.settings.botanistShare));
+  // §6b: water is a survival resource now, so it gets a readout beside the two
+  // it sits between. Days, not units — a tank reading 340 means nothing without
+  // the draw, and the draw changes every time a bed goes in or someone wakes.
+  const tank = $derived(ship.rooms[WATER_ROOM]?.ice ?? 0);
+  const wdays = $derived(waterDays(ship));
+  const draw = $derived(waterDraw(ship));
   const free = $derived(ship.crew.filter(p => !ship.board.some(t => t.assignee === p.id)));
   const label = (t: { kind: string; target: string; what?: string; to?: string }) =>
     t.kind === "service" ? `Service ${assetName(t.target)}`
@@ -244,6 +251,16 @@
         </div>
       </div>
       <div class="sentence dim" style="margin-top:10px">{num(c.food)} meals in the galley</div>
+      <div class="label" style="margin-top:14px">Water</div>
+      <div class:crit={wdays < 8} class:warn={wdays < WATER_LOW_DAYS}>
+        {wdays === Infinity ? "—" : `${Math.round(wdays)} days`}
+      </div>
+      <div class="bar"><i style="width:{Math.min(100, wdays / 60 * 100)}%"></i></div>
+      <div class="sentence faint">
+        {num(tank)} in the tank, {draw.toFixed(1)} drawn a day by
+        {c.awake} awake and {food.beds} bed{food.beds === 1 ? "" : "s"}.
+        {#if wdays < WATER_LOW_DAYS}Carry ice up from the Cargo Bay.{/if}
+      </div>
     </div>
 
   {:else}

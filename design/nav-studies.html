@@ -114,10 +114,18 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
 /* composition as a bar, no per-material numbers */
 .cbar{margin-top:7px;display:flex;height:5px;overflow:hidden;background:var(--d-panel2)}
 .cbar i{display:block;height:100%}
-.cbar .k1{background:var(--d-accent)} .cbar .k2{background:var(--d-ok)}
-.cbar .k3{background:var(--d-dim)}    .cbar .k4{background:var(--d-faint)}
-.ckey{margin-top:4px;font-size:9.5px;color:var(--d-faint);letter-spacing:.05em}
-.ckey i{display:inline-block;width:6px;height:6px;margin-right:3px}
+/* One colour per material, used identically wherever a stripe appears. Water
+   takes the brightest band on purpose: it is the only one of the five that
+   every other activity on the ship is downstream of. */
+.k-ore{background:var(--d-accent)}  .k-rare{background:var(--d-ok)}
+.k-sil{background:var(--d-dim)}     .k-wat{background:var(--d-text)}
+.k-vol{background:var(--d-faint)}
+.cbar i{min-width:2px}
+.ckey{margin-top:5px;display:flex;flex-wrap:wrap;gap:2px 10px;font-size:9.5px;
+  color:var(--d-faint);letter-spacing:.04em}
+.ckey span{display:flex;align-items:center;gap:4px;white-space:nowrap}
+.ckey i{display:inline-block;width:6px;height:6px;flex:none}
+.cbar.unk{background:repeating-linear-gradient(90deg,var(--d-panel2) 0 4px,transparent 4px 8px)}
 
 .trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}
 @media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr);max-width:min(420px,100%)}}
@@ -212,8 +220,8 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
             <div class="lab">Next object · 7 days</div>
             <h4>Metal</h4>
             <div class="big"><b>16–20</b><em>units</em></div>
-            <div class="comp">ore <b>60%</b> <span class="sep">·</span> rare <b>18%</b>
-              <span class="sep">·</span> silicon <b>15%</b></div>
+            <div class="cbar"><i class="k-ore" style="width:60%"></i><i class="k-rare" style="width:18%"></i><i class="k-sil" style="width:15%"></i><i class="k-vol" style="width:5%"></i><i class="k-wat" style="width:2%"></i></div>
+            <div class="ckey"><span><i class="k-ore"></i>ore</span><span><i class="k-rare"></i>rare</span><span><i class="k-sil"></i>silicon</span><span><i class="k-wat"></i>water</span></div>
             <div class="conf"><span class="bar"><i style="width:86%"></i></span>
               <span class="pc">86% · 2 scans</span></div>
             <div class="foot">
@@ -284,7 +292,8 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
             <div class="lab">Next object · 12 days</div>
             <h4 class="unk">Unsurveyed</h4>
             <div class="big unk"><b>4–20</b><em>units</em></div>
-            <div class="comp">composition unknown</div>
+            <div class="cbar unk"></div>
+            <div class="ckey"><span>composition unknown</span></div>
             <div class="conf"><span class="bar"><i style="width:15%"></i></span>
               <span class="pc">15% · no scans</span></div>
             <div class="foot">
@@ -372,8 +381,8 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
             <div class="lab">Next object · 7 days</div>
             <h4>Metal</h4>
             <div class="big"><b>16–20</b><em>units</em></div>
-            <div class="comp">ore <b>60%</b> <span class="sep">·</span> rare <b>18%</b>
-              <span class="sep">·</span> silicon <b>15%</b></div>
+            <div class="cbar"><i class="k-ore" style="width:60%"></i><i class="k-rare" style="width:18%"></i><i class="k-sil" style="width:15%"></i><i class="k-vol" style="width:5%"></i><i class="k-wat" style="width:2%"></i></div>
+            <div class="ckey"><span><i class="k-ore"></i>ore</span><span><i class="k-rare"></i>rare</span><span><i class="k-sil"></i>silicon</span><span><i class="k-wat"></i>water</span></div>
             <div class="conf"><span class="bar"><i style="width:86%"></i></span>
               <span class="pc">86% · 2 scans</span></div>
             <div class="foot"><span class="why">Biggest of the season</span>
@@ -410,19 +419,17 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
     </div>
 
     <div>
-      <p class="cap">C · One number, a bar</p>
+      <p class="cap">C · One number, a bar  ·  adopted</p>
       <p class="capsub">Composition as a stripe. You see the mix at a glance and never read a
-      second number.</p>
+      second number. This is what the panels above now use.</p>
       <div class="dev">
         <div class="obj-d">
           <div class="info">
             <div class="lab">Next object · 7 days</div>
             <h4>Metal</h4>
             <div class="big"><b>16–20</b><em>units</em></div>
-            <div class="cbar"><i class="k1" style="width:60%"></i><i class="k2" style="width:18%"></i><i class="k3" style="width:15%"></i><i class="k4" style="width:7%"></i></div>
-            <div class="ckey"><i class="k1" style="background:var(--d-accent)"></i>ore
-              <i class="k2" style="background:var(--d-ok)"></i>rare
-              <i class="k3" style="background:var(--d-dim)"></i>silicon</div>
+            <div class="cbar"><i class="k-ore" style="width:60%"></i><i class="k-rare" style="width:18%"></i><i class="k-sil" style="width:15%"></i><i class="k-vol" style="width:5%"></i><i class="k-wat" style="width:2%"></i></div>
+            <div class="ckey"><span><i class="k-ore"></i>ore</span><span><i class="k-rare"></i>rare</span><span><i class="k-sil"></i>silicon</span><span><i class="k-wat"></i>water</span></div>
             <div class="foot"><span class="why">86% · 2 scans</span>
               <button class="scan">Rescan 1h</button></div>
           </div>
@@ -509,12 +516,21 @@ h3.sect{font-family:var(--d-font);font-size:13px;letter-spacing:.1em;text-transf
   which is a deliberate rule in <span style="font-family:var(--d-font)">logistics.ts</span> —
   without it, ice fills the bay and starves the fabricator.</p>
 
-  <p class="sectlede"><b>That is the actual finding.</b> The most abundant thing in the belt is
-  the one thing the ship does not need, so a quarter of every haul is scenery and the comets —
-  ten objects across the voyage — are rocks you would rather skip. Giving water real sinks
-  (life support drawing it, beds consuming it per crop, propellant as a visible line rather than
-  a hidden deduction) would make a comet a good day and put a second clock next to the ration
-  counter. It is a simulation change, so it is written down here rather than made.</p>
+  <p class="sectlede"><b>Built.</b> Water now has three sinks, deliberately different in
+  character. The crew's draw is small and unavoidable (0.9 a day each, make-up water the
+  scrubbers cannot reclaim). The beds' is large and optional (1.6 a day each — a bed with no
+  water grows nothing, not less). The fleet's is spent up front: propellant comes off the Cargo
+  Bay <em>before</em> the wave launches rather than being netted out of the harvest afterwards,
+  so the biggest single use of water in the game is now a transaction you can watch instead of a
+  number that quietly never arrived.</p>
+
+  <p class="sectlede">The tank lives in Life Support, so it obeys §4 like everything else: it is
+  one room's shelf, and it only refills because somebody carried ice up from the bay. Measured
+  over the first season — four crew, three beds, no rules written — the draw is 886 units against
+  a 1,200 tank, so leg 1 ends around a quarter full with the low-water warning firing inside the
+  last fortnight. Short the tank deliberately and the failure is graded rather than sudden: at
+  600 the ship warns on day 50, runs dry on day 75, drops to 32% air and everybody lives; at 300
+  one person dies; at 120, three. The warning always arrives with time to act on it.</p>
 
   <p class="sectlede" style="margin-top:20px"><b>The one thing this does not fix.</b> A part
   costs 6.67 ore, so the refining chain is a divide-by-thirty: whatever scale the haul reads at,

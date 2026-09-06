@@ -3,6 +3,7 @@
  *  report that a neglected ship arrives safely. */
 import type { Asset, State } from "./types.ts";
 import { chance, type Rng } from "./rng.ts";
+import { withdraw } from "./logistics.ts";
 import { emit } from "./signals.ts";
 import type { Bus } from "./power.ts";
 import { effort, makeDistinct, mourn, nextRole, type Person } from "./crew.ts";
@@ -21,6 +22,57 @@ export const STARTING_RATIONS = 700;
  *  morale, which costs work rate, which costs you the beds you were trying to
  *  build — the pressure is meant to compound rather than simply pinch. */
 export const RATION_LEVELS = [1, 0.75, 0.5] as const;
+
+/** §6b: water, which the ship had no use for until now.
+ *
+ *  A quarter of everything the fleet lands is ice — C-types are 45% water and
+ *  comets 65%, and those two classes are 45% of the route. Every drop of it used
+ *  to arrive, sit in the Cargo Bay against a 400-unit cap, and do nothing: air
+ *  was a function of the oxygen generator and the power bus, grow beds drew
+ *  nothing, and food was rations and crops. The most abundant thing on the
+ *  route was the one thing the ship did not need, which made a comet the worst
+ *  object you could be offered.
+ *
+ *  So water now has three sinks, and they are deliberately different in
+ *  character: the crew's draw is small and unavoidable, the beds' is large and
+ *  optional, and the fleet's is spent up front before a single unit comes back.
+ *
+ *  The loop is closed but not perfect — this is make-up water for what the
+ *  scrubbers cannot recover, not what anybody drinks. A grow bed does not close
+ *  at all: what it transpires leaves with the crop. */
+export const WATER_ROOM = "Life Support";
+export const WATER_PER_CREW_PER_DAY = 0.9;
+export const WATER_PER_BED_PER_DAY = 1.6;
+/** The tank Life Support launches with. Sized to carry the first season on its
+ *  own — §5c's rule that an inherited default may be suboptimal but must not be
+ *  fatal applies to the stores as much as to the rules, and the player starts
+ *  with no rules at all.
+ *
+ *  Four crew and three beds draw 8.4 a day, so a season costs about 920. At 900
+ *  the first leg ended with fourteen units in the tank, which is not a lesson,
+ *  it is a coin toss: waking a fifth person or planting a fourth bed killed a
+ *  player who had done everything the departure board asked. 1200 lands the
+ *  season at about a quarter full, with the low-water warning firing inside the
+ *  last fortnight — late enough to be a fright, early enough to act on, and
+ *  short enough that leg 2 cannot be started without hauling ice up. */
+export const STARTING_WATER = 1200;
+/** Propellant aboard at departure. A full wave costs 144, so this is four
+ *  encounters' worth: enough that the first icy rock is a top-up rather than a
+ *  rescue, and not enough to work a whole season without one. */
+export const START_BAY_WATER = 600;
+/** Days of tank left before the ship says something. */
+export const WATER_LOW_DAYS = 25;
+
+/** What Life Support will draw today, at the current crew and beds. */
+export function waterDraw(s: State): number {
+  const beds = s.assets.filter(a => a.id.startsWith("bed") && !a.faulted).length;
+  return s.colony.awake * WATER_PER_CREW_PER_DAY + beds * WATER_PER_BED_PER_DAY;
+}
+/** Days of water left in the tank at today's draw. */
+export function waterDays(s: State): number {
+  const d = waterDraw(s);
+  return d > 0 ? (s.rooms[WATER_ROOM]?.ice ?? 0) / d : Infinity;
+}
 export const BED_CYCLE_DAYS = 36;
 export const BED_YIELD = 155;
 export const COLONISTS = 200;
@@ -71,7 +123,10 @@ export function foodBalance(s: State, botanistShare: number, dimmed = false) {
   const ration = s.settings.rations;
   const beds = s.assets.filter(a => a.id.startsWith("bed") && !a.faulted).length;
   const jobs = crewLabour(s.crew, s.colony) * botanistShare / 0.6;
-  const produced = beds * (BED_YIELD / BED_CYCLE_DAYS) * Math.min(1, jobs) * (dimmed ? 0.6 : 1);
+  // A dry bed grows nothing, so the projection has to know about the tank.
+  const wet = Math.min(1, (s.rooms[WATER_ROOM]?.ice ?? 0) / Math.max(1e-9, waterDraw(s)));
+  const produced = beds * (BED_YIELD / BED_CYCLE_DAYS) * Math.min(1, jobs)
+                 * (dimmed ? 0.6 : 1) * wet;
   const eaten = s.crew.filter(c => !c.asleep).length * FOOD_PER_CREW_PER_DAY * ration;
   return { produced, eaten, beds, margin: eaten > 0 ? produced / eaten : Infinity,
            /** days of locker left at the current burn, ignoring what grows */
@@ -86,12 +141,43 @@ export function crewLabour(crew: Person[], c: Colony): number {
 export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
   const c = s.colony;
 
-  // ---- food: beds crop on a cycle, and only if someone plants and picks them ----
+  // ---- water: drawn before anything that needs it ----
+  //
+  // Life Support holds the tank, so this obeys §4 like every other material: it
+  // is not a ship-wide pool, it is one room's shelf, and it only refills because
+  // somebody carried ice up from the Cargo Bay. A player with no delivery rule
+  // and no eye on the gauge will run it down.
   const beds = s.assets.filter(a => a.id.startsWith("bed") && !a.faulted);
+  const wantWater = c.awake * WATER_PER_CREW_PER_DAY + beds.length * WATER_PER_BED_PER_DAY;
+  const gotWater = withdraw(s.rooms[WATER_ROOM], "ice", wantWater);
+  s.counters.waterUsed += gotWater;
+  /** 1 when the draw was met in full, 0 when the tank is dry. */
+  const wet = wantWater > 0 ? gotWater / wantWater : 1;
+  const wasDry = s.dry ?? false;
+  const isDry = wet < 0.999;
+  if (isDry && !wasDry)
+    emit(s, wet <= 0 ? "critical" : "warn", WATER_ROOM, "H2O-OUT",
+         wet <= 0 ? "Water tank empty. The scrubbers are running dry and nothing is growing."
+                  : `Water short in ${WATER_ROOM}. Beds and scrubbers running at ${(wet * 100).toFixed(0)}%.`);
+  else if (!isDry && wasDry)
+    emit(s, "info", WATER_ROOM, "H2O-OK", "Water restored to Life Support.");
+  else if (!isDry && wantWater > 0) {
+    // The warning that matters is the one that arrives with time to act on it.
+    const days = s.rooms[WATER_ROOM].ice / wantWater;
+    const wasLow = s.waterLow ?? false;
+    if (days < WATER_LOW_DAYS && !wasLow)
+      emit(s, "warn", WATER_ROOM, "H2O-LOW",
+           `Water down to ${s.rooms[WATER_ROOM].ice.toFixed(0)} — about ${days.toFixed(0)} days.`);
+    s.waterLow = days < WATER_LOW_DAYS;
+  }
+  s.dry = isDry;
+
+  // ---- food: beds crop on a cycle, and only if someone plants and picks them ----
   // §6: grow beds are `dimmable`, so a ship short of power grows less food
-  // rather than none. Dimming is paid for here, one meal at a time.
+  // rather than none. Dimming is paid for here, one meal at a time. A bed with
+  // no water does not grow slowly, it grows nothing.
   const perDay = beds.length * (BED_YIELD / BED_CYCLE_DAYS) * Math.min(1, botanistJobs)
-               * (b.dimmed ? 0.6 : 1);
+               * (b.dimmed ? 0.6 : 1) * wet;
   c.food += perDay;
   const ration = s.settings.rations;
   c.food -= c.awake * FOOD_PER_CREW_PER_DAY * ration;
@@ -109,8 +195,15 @@ export function tickColony(s: State, r: Rng, b: Bus, botanistJobs: number) {
   // The O2 generator and the atmosphere regulator are `critical`, so they are
   // the last things to lose power — air only fails once the bus cannot even
   // carry the critical block.
-  const airOk = !o2.faulted && nodesOk > 0.3 && b.load >= 175;
-  c.air = airOk ? Math.min(100, c.air + 3) : Math.max(0, c.air - 4);
+  //
+  // A dry loop is a slower death than a broken one: the scrubbers limp on what
+  // they can reclaim, so air falls at half the rate of a failed generator and
+  // there is time to notice and carry water up. Being half-supplied costs half
+  // as much again, so the tank running low is felt before it runs out.
+  const plantOk = !o2.faulted && nodesOk > 0.3 && b.load >= 175;
+  if (!plantOk) c.air = Math.max(0, c.air - 4);
+  else if (wet < 1) c.air = Math.max(0, c.air - 2 * (1 - wet));
+  else c.air = Math.min(100, c.air + 3);
 
   // ---- crew die of starvation or bad air ----
   const risk = (c.fed < 25 ? 0.004 : 0) + (c.air < 25 ? 0.010 : 0);

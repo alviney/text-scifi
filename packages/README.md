@@ -535,3 +535,62 @@ Until that is understood, treat *died frozen* as untuned. *Arrived* and *died aw
 
 **Still untested:** whether 13,000 maintenance tasks reads as pressure or noise. That one needs
 a player, not a harness.
+
+---
+
+## Water, and the two bugs it uncovered
+
+plan.md's raw-materials table has always said water is for *drinking, hydroponics, O₂ and
+drone propellant*. None of that was in the simulation. Water arrived, sat in the Cargo Bay
+against a 400-unit cap, and did nothing — air was a function of the oxygen generator and the
+power bus, grow beds drew nothing, food was rations and crops, and the one real consumer,
+drone propellant, was netted off inside `harvest()` before anything reached the bay.
+
+Across a voyage that is **34,818 units of water landed, 14,400 spent invisibly, and 20,418
+with no sink at all** — 26% of everything harvested, because C-types are 45% ice and comets
+65%, and those two classes are 45% of the route. The most abundant material on the route was
+the one thing the ship did not need, which made a comet the worst object you could be offered.
+The 400-unit cap was not a statement that water is worthless; it was damage control, because
+being worthless it filled the bay and once blocked electronics for 4,745 days.
+
+Water now has three sinks: the crew (0.9/day each, unavoidable), the beds (1.6/day each,
+optional, and a dry bed grows nothing rather than less), and the fleet (144 per wave, spent
+from the bay before launch instead of deducted from the catch afterwards). The tank lives in
+Life Support and obeys §4 — it only refills because somebody carried ice up.
+
+### The coupling that had to be caught
+
+Making the fleet burn water from the bay joined two ends of §4 that had never touched. A
+player game starts with **no rules**, so nothing hauls ore to the shop, so the bay sits full
+at 2000/2000, so ice cannot land, so the fleet runs out of propellant. Measured: **15 of 26
+encounters lost** in the first season, with the crew watching rocks go past and a hold full of
+material they could not move.
+
+The fix is the decision a crew would actually make — top a three-wave propellant reserve
+before loading cargo. A full bay costs you cargo, which it always did. It does not cost you
+the fleet. Encounters returned to 24.2/26, the figure before water existed.
+
+### Bug: every automated run has been carrying `food = NaN`
+
+Chasing whether water had broken the harness turned up something older. `init()` builds the
+policy path's `Settings` object by hand, and it silently lost `rations` when the ration lever
+was added:
+
+```
+c.food -= c.awake * FOOD_PER_CREW_PER_DAY * undefined   // NaN, from day one
+```
+
+So every figure the harness has reported about food was a NaN propagating through `fed`,
+`crewLabour` and the grow-bed yield. Spreading over `DEFAULT_SETTINGS` fixes it, and the
+steady policy immediately went from dying at y3 to dying at y36.
+
+### The harness is still measuring a ship that cannot go dark
+
+Confirmed by tracing, and unrelated to water — identical before and after the change. The
+autopilot never issues the command that ends a season, so it sits in `phase = "season"` for
+three hundred years: eight crew awake, no encounters after leg 1, food and now water draining
+against a route that never advances. Every policy dies "crew lost".
+
+**The real signal is `harness/season.ts`**, which drives `init(seed)` with no policy — the
+opening the game actually has. Four crew, no rules, three beds queued by hand: 24.2/26
+encounters, 165 meals left, air 100, nobody dead, across 12 seeds.
