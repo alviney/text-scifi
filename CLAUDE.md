@@ -26,6 +26,21 @@ measurement behind it. Look before re-deciding.
   thing, measure it, show it, and say what you found.
 - Findings get written down. A number nobody recorded gets re-derived later.
 
+### Replies
+
+Short. A table and three lines beats six paragraphs, and most of what is worth saying is a
+number and what it means. Lead with what changed or what you found, not with how you got
+there — the commit message and the findings log are where the reasoning belongs. Do not
+re-explain a decision that is already in `plan.md` or `packages/README.md`; cite it.
+
+### Rounds
+
+Expect batched feedback, and prefer one thorough pass over three quick ones: a round trip
+costs far more than the extra checking. Before saying something is done, re-read the request
+for the parts you did not do, and **say plainly what you skipped** — several times here the
+user has had to ask "did you miss the rest of it?", which is a round nobody should have
+needed. When you can see two or three likely follow-ups, do them now or name them.
+
 ## Shape of the code
 
 ```
@@ -62,9 +77,20 @@ useful for determinism and crash checks. **`season.ts` is the real signal** — 
 
 ## Verifying UI work
 
-Chromium is at `/opt/pw-browsers/chromium` (never run `playwright install`). Screenshot the
-built `dist/index.html`, and prefer measuring a property (pixel counts, scrollWidth, blank
-frames) over eyeballing a full-page image — it is cheaper and catches more.
+Chromium is at `/opt/pw-browsers/chromium` (never run `playwright install`). Drive the built
+`dist/index.html`.
+
+**Measure by default. Look only when asked.** Assert on a property — element counts,
+`scrollWidth` vs `clientWidth`, filled-pixel counts on a canvas, blank frames over a sample,
+computed order of two boxes, the text content of a panel. It is cheaper than an image and it
+catches more: the asteroid flicker was invisible in screenshots and obvious as "zero blank
+frames in 121 samples".
+
+**Do not take or read screenshots unless the user asks for one**, or a change is purely
+visual (spacing, colour, a new graphic) and there is no property that could stand in. Full-page
+images are one of the most expensive things in a turn. If you think a look is genuinely
+needed, say so in one line and let them decide — and when they do want one, crop to the
+element rather than shooting the whole page.
 
 ## Live artifacts
 
