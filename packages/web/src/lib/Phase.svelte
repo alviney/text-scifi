@@ -34,10 +34,20 @@
       arrived
     {/if}
   </span>
+  <!-- The strip's own bottom edge is the voyage indicator: five segments, one
+       lit. It replaces the border rather than sitting under it, so five legs
+       cost the layout two pixels instead of a whole row. -->
+  <span class="voy" aria-hidden="true">
+    {#each LEGS as _, i}<i class:done={i < ship.leg} class:now={i === ship.leg}></i>{/each}
+  </span>
 </div>
 
 <style>
-  .phase { display: flex; gap: 8px; align-items: baseline; padding: 6px 12px;
+  .voy { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 2px; }
+  .voy i { flex: 1; height: 2px; background: var(--rule); }
+  .voy i.done { background: var(--faint); }
+  .voy i.now { background: var(--accent); }
+  .phase { position: relative; display: flex; gap: 8px; align-items: baseline; padding: 6px 12px;
            border-bottom: 1px solid var(--rule); font-size: 11px; }
   .tag { color: var(--faint); letter-spacing: .08em; text-transform: uppercase; flex: none; }
   .name { color: var(--accent); flex: 1; min-width: 0; overflow: hidden;
